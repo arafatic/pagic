@@ -45,8 +45,8 @@ mod text_scale;
 #[path = "windows_manifest.rs"]
 mod windows_manifest;
 
-/// Freedesktop app id: the `.desktop` file name and the hicolor icon name.
-const APP_ID: &str = "local.recto.desktop";
+/// Isolated runtime/launcher namespace; existing artwork is retained during Stage 1.
+const APP_ID: &str = recto_engine::identity::APP_ID;
 
 /// The app icon (assets/app-icon/README.md). macOS gets the version on Apple's icon grid, with a
 /// transparent margin; Windows and Linux get the full-bleed tile.
@@ -81,14 +81,11 @@ fn print_and_exit(text: &str) -> eframe::Result {
     Ok(())
 }
 
-/// The app was called PrintCraft before; settings saved then are under this key.
-const LEGACY_STORAGE_KEY: &str = "printcraft";
-
 /// The preferences folder (`app.ron`, docs/development.md). In portable mode
-/// it is `RectoData` beside the executable (#157). XDG desktops use the configuration base;
-/// other platforms retain eframe's Recto folder. Logs and recovery stay in the data folder.
+/// it is `PagicData` beside the executable. XDG desktops use the configuration base;
+/// other platforms use eframe's Pagic folder. Logs and recovery stay in the data folder.
 fn settings_dir() -> Option<std::path::PathBuf> {
-    let legacy = eframe::storage_dir("Recto");
+    let legacy = eframe::storage_dir(recto_engine::identity::DATA_NAME);
     match settings::directory(
         cfg!(all(unix, not(target_os = "macos"))),
         recto_ui_egui::portable::data_dir(),
@@ -100,35 +97,6 @@ fn settings_dir() -> Option<std::path::PathBuf> {
         Err(e) => {
             log::warn!("could not migrate preferences to the XDG configuration folder; using the original location: {e}");
             legacy
-        }
-    }
-}
-
-/// Move the settings and crash-recovery folders of the app's former name, PrintCraft, to the new
-/// name once, so an upgrade keeps recent files, preferences and unsaved work. Best effort: a
-/// folder is left alone when the new one already exists or the move fails. A portable copy leaves
-/// the per-user folders alone.
-fn migrate_legacy_folders() {
-    if recto_ui_egui::portable::data_dir().is_some() {
-        return;
-    }
-    let mut moves = vec![(eframe::storage_dir("PrintCraft"), eframe::storage_dir("Recto"))];
-    // Recovery lives in the settings folder except on Windows, where it is under %LOCALAPPDATA%.
-    if cfg!(windows) {
-        let local = std::env::var_os("LOCALAPPDATA").filter(|v| !v.is_empty()).map(std::path::PathBuf::from);
-        moves.push((local.as_ref().map(|d| d.join("PrintCraft")), local.map(|d| d.join("Recto"))));
-    }
-    for (old, new) in moves {
-        let (Some(old), Some(new)) = (old, new) else { continue };
-        if !old.is_dir() || new.exists() {
-            continue;
-        }
-        if let Some(parent) = new.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-        match std::fs::rename(&old, &new) {
-            Ok(()) => log::info!("moved {} to {}", old.display(), new.display()),
-            Err(e) => log::warn!("moving {} to {}: {e}", old.display(), new.display()),
         }
     }
 }
@@ -238,13 +206,13 @@ fn main() -> eframe::Result {
     let integrated = cfg!(target_os = "macos");
     // GNOME on Wayland leaves the window frame to the app (src/decorations.rs).
     let window_controls = if cfg!(any(target_os = "macos", target_os = "windows")) { None } else { decorations::app_drawn() };
-    migrate_legacy_folders();
     // The log file stays in the data folder; opened after the arguments (so `--version` leaves
-    // no file behind) and after the PrintCraft migration (which a fresh folder would block).
+    // no file behind). Legacy product folders are never moved or claimed.
     // Records logged until now are written to it first.
-    if let (Some(logger), Some(dir)) =
-        (logger, recto_ui_egui::portable::data_dir().map(std::path::Path::to_path_buf).or_else(|| eframe::storage_dir("Recto")))
-    {
+    if let (Some(logger), Some(dir)) = (
+        logger,
+        recto_ui_egui::portable::data_dir().map(std::path::Path::to_path_buf).or_else(|| eframe::storage_dir(recto_engine::identity::DATA_NAME)),
+    ) {
         match logger.attach_dir(&dir.join("logs")) {
             Ok(path) => log::info!("Recto {}, log file {}", recto_engine::build_info::version(), path.display()),
             // Standard error only by now (`attach_dir` gave up on the file); unlike `eprintln!`, never panics.
@@ -274,7 +242,7 @@ fn main() -> eframe::Result {
     let started = Rc::new(Cell::new(false));
     let first = if choice == RendererChoice::Gl { eframe::Renderer::Glow } else { eframe::Renderer::Wgpu };
     let result = eframe::run_native(
-        "Recto",
+        recto_engine::identity::DATA_NAME,
         native_options(launch.integrated, launch.window_controls.is_some(), first),
         app_creator(
             launch.clone(),
@@ -292,7 +260,7 @@ fn main() -> eframe::Result {
             // usually still works there, so that's better than quitting.
             log::error!("the GPU renderer (wgpu) didn't start: {e}. Starting with OpenGL instead; set RECTO_RENDERER=gl to skip wgpu.");
             eframe::run_native(
-                "Recto",
+                recto_engine::identity::DATA_NAME,
                 native_options(launch.integrated, launch.window_controls.is_some(), eframe::Renderer::Glow),
                 app_creator(
                     launch,
@@ -405,7 +373,7 @@ fn app_creator<'a>(
         app.enable_desktop_theme();
         // The system's reopen-windows choice (macOS) starts the preference; a saved choice replaces it.
         app.reopen_last_session = reopen::system_default();
-        if let Some(json) = cc.storage.and_then(|s| s.get_string("recto").or_else(|| s.get_string(LEGACY_STORAGE_KEY))) {
+        if let Some(json) = cc.storage.and_then(|s| s.get_string(recto_engine::identity::STORAGE_KEY)) {
             app.restore(&json);
         }
         app.window_state = recto_ui_egui::window_state::WindowState::started_with(cc.storage);
@@ -507,7 +475,7 @@ fn open_control_channel(file: &str, endpoint: std::io::Result<recto_ui_egui::con
             Ok(())
         }
         Err(e) => {
-            let message = format!("--control {file}: {e}. Use a control file in a folder only you can write, such as ~/.recto-control.json");
+            let message = format!("--control {file}: {e}. Use a fresh control file in a folder only you can write, such as ~/.pagic-control.json");
             log::error!("{message}");
             Err(message)
         }
@@ -516,13 +484,13 @@ fn open_control_channel(file: &str, endpoint: std::io::Result<recto_ui_egui::con
 
 /// Write the control endpoint so that only the current user can read the token.
 ///
-/// The JSON goes to a new file next to `path`, created fresh (owner-only on Unix), which then
-/// replaces `path`. Opening `path` itself would follow a link planted there and truncate whatever
-/// it points at; a rename replaces the link and leaves its target alone. A reader polling for the
-/// file also never sees it half-written.
+/// The JSON goes to a new file next to `path`, created fresh (owner-only on Unix), which is then published without replacing `path`. An existing endpoint or symlink is
+/// always left untouched, including an endpoint owned by Recto. A caller must choose a fresh
+/// file for each launch. A reader never sees a half-written file.
 fn write_control_file(path: &str, port: u16, token: &str) -> std::io::Result<()> {
     use std::io::{ErrorKind, Write};
-    let json = serde_json::json!({ "port": port, "token": token, "pid": std::process::id() }).to_string();
+    let json =
+        serde_json::json!({ "application": recto_engine::identity::DATA_SLUG, "port": port, "token": token, "pid": std::process::id() }).to_string();
     let path = std::path::Path::new(path);
     let name = path.file_name().ok_or_else(|| std::io::Error::new(ErrorKind::InvalidInput, "not a file name"))?;
     // Unpredictable suffixes, so the name can't be planted in advance. `RandomState` is keyed from
@@ -553,10 +521,8 @@ fn write_control_file(path: &str, port: u16, token: &str) -> std::io::Result<()>
             let mut file = file;
             file.write_all(json.as_bytes())
         };
-        let done = written.and_then(|()| std::fs::rename(&staged, path));
-        if done.is_err() {
-            let _ = std::fs::remove_file(&staged);
-        }
+        let done = written.and_then(|()| std::fs::hard_link(&staged, path));
+        let _ = std::fs::remove_file(&staged);
         return done;
     }
     Err(std::io::Error::new(ErrorKind::AlreadyExists, "no free name for the control file's temporary copy"))

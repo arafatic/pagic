@@ -15,7 +15,7 @@ for arg in "$@"; do
     exec "$exe" "$@"
   fi
 done
-APP="$(dirname "$exe")/Recto.app"
+APP="$(dirname "$exe")/Pagic.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 TEMP_EXE="$APP/Contents/MacOS/.recto.$$"
 TEMP_PLIST="$APP/Contents/.Info.plist.$$"

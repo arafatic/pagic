@@ -7,7 +7,7 @@ use std::{io, path::Path};
 
 const OPEN_WITH: &str = "com.apple.LaunchServices.OpenWith";
 const QUARANTINE: &str = "com.apple.quarantine";
-const BUNDLE_ID: &str = "local.recto.desktop";
+const BUNDLE_ID: &str = recto_engine::identity::APP_ID;
 const MAX_ATTRIBUTE: usize = 64 * 1024;
 
 /// A bounded snapshot used only to decide whether native association recovery is eligible.
@@ -41,13 +41,7 @@ impl OpeningMetadata {
 
 /// Read a last-component-symlink-safe attribute with a strict allocation cap.
 fn read_attribute(path: &Path, name: &str) -> io::Result<Option<Vec<u8>>> {
-    read_attribute_with(|buffer| {
-        if buffer.is_empty() {
-            rustix::fs::lgetxattr_query(path, name)
-        } else {
-            rustix::fs::lgetxattr(path, name, buffer)
-        }
-    })
+    read_attribute_with(|buffer| if buffer.is_empty() { rustix::fs::lgetxattr_query(path, name) } else { rustix::fs::lgetxattr(path, name, buffer) })
 }
 
 /// Probe the length before allocating. A concurrently grown value fails safely; unreadable
@@ -349,6 +343,13 @@ mod tests {
         std::os::unix::fs::symlink(&app, &alias).unwrap();
         assert!(!points_to_this_app(&binding(&alias, BUNDLE_ID, 0, true), &app));
         std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn recto_bindings_remain_foreign_to_pagic() {
+        let app = Path::new("/Applications/Pagic.app");
+        assert!(!points_to_this_app(&binding(app, "local.recto.desktop", 0, true), app));
+        assert!(points_to_this_app(&binding(app, "local.pagic.desktop", 0, true), app));
     }
 
     /// Keep the captured upstream binding foreign and match Recto to its package identity.

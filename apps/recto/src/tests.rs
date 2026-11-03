@@ -601,22 +601,20 @@ fn written(dir: &std::path::Path) -> (serde_json::Value, Vec<String>) {
 }
 
 #[test]
-fn the_control_file_replaces_a_hard_link_instead_of_writing_through_it() {
-    // The file used to be opened with create + truncate, so a link planted at the path had its
-    // target truncated and overwritten with the token.
+fn control_publication_keeps_a_planted_hard_link_and_its_target_unchanged() {
     let dir = scratch();
     std::fs::write(dir.join("victim.txt"), "keep me").unwrap();
     std::fs::hard_link(dir.join("victim.txt"), dir.join("ctl.json")).unwrap();
-    super::write_control_file(&dir.join("ctl.json").to_string_lossy(), 4242, "t0ken").unwrap();
+    let result = super::write_control_file(&dir.join("ctl.json").to_string_lossy(), 4242, "t0ken");
+    assert_eq!(result.unwrap_err().kind(), std::io::ErrorKind::AlreadyExists);
     assert_eq!(std::fs::read_to_string(dir.join("victim.txt")).unwrap(), "keep me");
-    let (json, names) = written(&dir);
-    assert_eq!((json["port"].as_u64(), json["token"].as_str()), (Some(4242), Some("t0ken")));
-    assert_eq!(names, ["ctl.json", "victim.txt"], "no temporary file left behind");
-    let _ = std::fs::remove_dir_all(&dir);
+    assert_eq!(std::fs::read_to_string(dir.join("ctl.json")).unwrap(), "keep me");
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 2, "no staging file remains");
+    std::fs::remove_dir_all(dir).unwrap();
 }
 
 #[test]
-fn the_control_file_replaces_a_symlink_instead_of_writing_through_it() {
+fn control_publication_keeps_a_symlink_and_its_target_unchanged() {
     let dir = scratch();
     let (link, target) = (dir.join("ctl.json"), dir.join("victim.txt"));
     std::fs::write(&target, "keep me").unwrap();
@@ -625,33 +623,50 @@ fn the_control_file_replaces_a_symlink_instead_of_writing_through_it() {
     #[cfg(windows)]
     let made = std::os::windows::fs::symlink_file(&target, &link);
     if let Err(e) = made {
-        // Windows needs Developer Mode (or admin) for symlinks.
+        // Existing Windows test requirement: symlinks need Developer Mode or elevation.
         eprintln!("skipped: can't create a symlink here: {e}");
-        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::remove_dir_all(dir).unwrap();
         return;
     }
-    super::write_control_file(&link.to_string_lossy(), 4242, "t0ken").unwrap();
+    assert!(super::write_control_file(&link.to_string_lossy(), 4242, "t0ken").is_err());
     assert_eq!(std::fs::read_to_string(&target).unwrap(), "keep me");
-    assert!(!std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
-    assert_eq!(written(&dir).0["token"].as_str(), Some("t0ken"));
-    let _ = std::fs::remove_dir_all(&dir);
+    assert!(std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 2);
+    std::fs::remove_dir_all(dir).unwrap();
 }
 
 #[test]
-fn the_control_file_replaces_the_one_a_previous_run_left() {
+fn control_publication_never_overwrites_a_recto_or_previous_endpoint() {
+    for previous in
+        [r#"{"port":1,"token":"old"}"#, r#"{"application":"recto","port":1,"token":"old"}"#, r#"{"application":"pagic","port":1,"token":"old"}"#]
+    {
+        let dir = scratch();
+        std::fs::write(dir.join("ctl.json"), previous).unwrap();
+        assert_eq!(
+            super::write_control_file(&dir.join("ctl.json").to_string_lossy(), 4242, "t0ken").unwrap_err().kind(),
+            std::io::ErrorKind::AlreadyExists
+        );
+        assert_eq!(std::fs::read_to_string(dir.join("ctl.json")).unwrap(), previous);
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+}
+
+#[test]
+fn fresh_control_file_is_tagged_private_and_complete() {
     let dir = scratch();
-    std::fs::write(dir.join("ctl.json"), r#"{"port":1,"token":"old"}"#).unwrap();
     super::write_control_file(&dir.join("ctl.json").to_string_lossy(), 4242, "t0ken").unwrap();
     let (json, names) = written(&dir);
-    assert_eq!(json["token"].as_str(), Some("t0ken"));
+    assert_eq!(json["application"], "pagic");
+    assert_eq!(json["port"], 4242);
+    assert_eq!(json["token"], "t0ken");
     assert_eq!(names, ["ctl.json"]);
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        let mode = std::fs::metadata(dir.join("ctl.json")).unwrap().permissions().mode();
-        assert_eq!(mode & 0o077, 0, "only the owner can read the token: {mode:o}");
+        assert_eq!(std::fs::metadata(dir.join("ctl.json")).unwrap().permissions().mode() & 0o077, 0);
     }
-    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::remove_dir_all(dir).unwrap();
 }
 
 /// X11 startup notification and docks match a window to its launcher by `StartupWMClass`,

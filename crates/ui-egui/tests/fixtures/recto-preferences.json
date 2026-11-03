@@ -1,0 +1,46 @@
+{
+  "theme": "Light",
+  "language": "ja",
+  "units": "millimetres",
+  "default_page_gaps": false,
+  "author": "Compatibility fixture",
+  "javascript": false,
+  "recent": [
+    {
+      "name": "Legacy document.pdf",
+      "path": "/Recto/doc.pdf",
+      "pages": 1,
+      "size": 1912
+    }
+  ],
+  "last_session": {
+    "files": [
+      {
+        "path": "/Recto/doc.pdf",
+        "page": 0
+      }
+    ],
+    "active": "/Recto/doc.pdf"
+  },
+  "last_views": [],
+  "pinned_folders": [],
+  "digital_ids": [
+    {
+      "path": "/Recto/Digital IDs/test.p12",
+      "name": "Legacy test identity",
+      "issuer": "Test issuer",
+      "email": "fixture@example.invalid",
+      "expires": "2030-01-01"
+    }
+  ],
+  "trusted": [
+    "not-a-real-certificate"
+  ],
+  "signature": [],
+  "signature_text": null,
+  "signature_image": null,
+  "recovery": {
+    "encrypted": true
+  },
+  "future_private_key": "never import"
+}

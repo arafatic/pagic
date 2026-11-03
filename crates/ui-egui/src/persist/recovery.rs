@@ -164,21 +164,13 @@ impl RecoveryStore {
     }
 
     /// `Recovery` in the portable data folder in portable mode ([`crate::portable`]), otherwise
-    /// the platform's per-user data folder: `~/Library/Application Support/Recto/Recovery`
-    /// (macOS), `%LOCALAPPDATA%\Recto\Recovery` (Windows), or
-    /// `$XDG_DATA_HOME/recto/recovery` / `~/.local/share/recto/recovery` (others).
+    /// the platform's per-user data folder: `~/Library/Application Support/Pagic/Recovery`
+    /// (macOS), `%LOCALAPPDATA%\Pagic\Recovery` (Windows), or
+    /// `$XDG_DATA_HOME/pagic/recovery` / `~/.local/share/pagic/recovery` (others).
     pub fn default_dir() -> Option<PathBuf> {
-        if let Some(dir) = crate::portable::data_dir() {
-            return Some(dir.join("Recovery"));
-        }
-        let env = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from);
-        if cfg!(target_os = "macos") {
-            env("HOME").map(|h| h.join("Library/Application Support/Recto/Recovery"))
-        } else if cfg!(windows) {
-            env("LOCALAPPDATA").map(|d| d.join("Recto").join("Recovery"))
-        } else {
-            env("XDG_DATA_HOME").or_else(|| env("HOME").map(|h| h.join(".local/share"))).map(|d| d.join("recto/recovery"))
-        }
+        recovery_directory(std::env::consts::OS, crate::portable::data_dir(), |key| {
+            std::env::var_os(key).filter(|v| !v.is_empty()).map(PathBuf::from)
+        })
     }
 
     pub fn dir(&self) -> &Path {
@@ -591,5 +583,50 @@ mod idle_tests {
             }
             assert_eq!(delay, Duration::MAX);
         }
+    }
+}
+
+/// Pure path selection: resolving a Pagic location must not scan or claim a Recto store.
+fn recovery_directory(os: &str, portable: Option<&Path>, env: impl Fn(&str) -> Option<PathBuf>) -> Option<PathBuf> {
+    if let Some(dir) = portable {
+        return Some(dir.join("Recovery"));
+    }
+    if os == "macos" {
+        env("HOME").map(|h| h.join("Library/Application Support").join(recto_engine::identity::DATA_NAME).join("Recovery"))
+    } else if os == "windows" {
+        env("LOCALAPPDATA").map(|d| d.join(recto_engine::identity::DATA_NAME).join("Recovery"))
+    } else {
+        env("XDG_DATA_HOME")
+            .or_else(|| env("HOME").map(|h| h.join(".local/share")))
+            .map(|d| d.join(recto_engine::identity::DATA_SLUG).join("recovery"))
+    }
+}
+
+#[cfg(test)]
+mod identity_tests {
+    use super::*;
+    #[test]
+    fn recovery_paths_are_isolated_on_all_desktop_platforms() {
+        let env = |key: &str| match key {
+            "HOME" => Some(PathBuf::from("/sandbox/home")),
+            "LOCALAPPDATA" => Some(PathBuf::from("/sandbox/local")),
+            "XDG_DATA_HOME" => Some(PathBuf::from("/sandbox/data")),
+            _ => None,
+        };
+        for (os, expected) in [
+            ("macos", "/sandbox/home/Library/Application Support/Pagic/Recovery"),
+            ("windows", "/sandbox/local/Pagic/Recovery"),
+            ("linux", "/sandbox/data/pagic/recovery"),
+        ] {
+            assert_eq!(recovery_directory(os, None, env), Some(PathBuf::from(expected)));
+        }
+        assert_eq!(
+            recovery_directory("linux", None, |k| (k == "HOME").then(|| PathBuf::from("/sandbox/home"))),
+            Some(PathBuf::from("/sandbox/home/.local/share/pagic/recovery"))
+        );
+        assert_eq!(
+            recovery_directory("windows", Some(Path::new("/portable/PagicData")), |_| None),
+            Some(PathBuf::from("/portable/PagicData/Recovery"))
+        );
     }
 }

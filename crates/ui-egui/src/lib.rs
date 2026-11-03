@@ -65,6 +65,7 @@ use theme::{ThemeKind, ThemePreference};
 mod app;
 mod hooks;
 mod persist;
+pub use persist::import as preference_import;
 mod platform;
 mod state;
 mod tools;

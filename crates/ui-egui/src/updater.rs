@@ -43,10 +43,7 @@ pub fn is_newer_version(remote_tag: &str, current_version: &str) -> bool {
 
     // Fallback comparison for non-strict semver strings
     let parse_parts = |s: &str| -> Vec<u64> {
-        s.split(|c: char| !c.is_ascii_digit())
-            .filter(|part| !part.is_empty())
-            .filter_map(|part| part.parse::<u64>().ok())
-            .collect()
+        s.split(|c: char| !c.is_ascii_digit()).filter(|part| !part.is_empty()).filter_map(|part| part.parse::<u64>().ok()).collect()
     };
 
     let rem_parts = parse_parts(clean_remote);
@@ -58,10 +55,8 @@ pub fn is_newer_version(remote_tag: &str, current_version: &str) -> bool {
 /// Fetches the latest release info from the GitHub API synchronously.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn fetch_latest_release() -> Result<ReleaseResponse, String> {
-    let url = "https://api.github.com/repos/arafatic/recto/releases/latest";
-    let tls = ureq::tls::TlsConfig::builder()
-        .root_certs(ureq::tls::RootCerts::PlatformVerifier)
-        .build();
+    let url = recto_engine::identity::UPDATE_API.ok_or("No application update source is configured for this build")?;
+    let tls = ureq::tls::TlsConfig::builder().root_certs(ureq::tls::RootCerts::PlatformVerifier).build();
 
     let mut builder = ureq::Agent::config_builder()
         .tls_config(tls)
@@ -74,11 +69,7 @@ pub fn fetch_latest_release() -> Result<ReleaseResponse, String> {
 
     let agent = builder.build().new_agent();
 
-    let mut resp = agent
-        .get(url)
-        .header("Accept", "application/vnd.github+json")
-        .call()
-        .map_err(|e| format!("{e}"))?;
+    let mut resp = agent.get(url).header("Accept", "application/vnd.github+json").call().map_err(|e| format!("{e}"))?;
 
     let status = resp.status().as_u16();
     if status != 200 {
@@ -102,29 +93,23 @@ impl UpdateJob {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let _ = std::thread::Builder::new()
-                .name("recto-updater".into())
-                .spawn(move || {
-                    let outcome = match fetch_latest_release() {
-                        Ok(release) => {
-                            let current = env!("CARGO_PKG_VERSION");
-                            if is_newer_version(&release.tag_name, current) {
-                                let version = release.tag_name.trim_start_matches(|c| c == 'v' || c == 'V').to_string();
-                                let notes = release.body.unwrap_or_default().trim().to_string();
-                                let url = if release.html_url.is_empty() {
-                                    "https://github.com/arafatic/recto/releases/latest".to_string()
-                                } else {
-                                    release.html_url
-                                };
-                                UpdateOutcome::Available(UpdateDetails { version, url, notes })
-                            } else {
-                                UpdateOutcome::UpToDate
-                            }
+            let _ = std::thread::Builder::new().name("recto-updater".into()).spawn(move || {
+                let outcome = match fetch_latest_release() {
+                    Ok(release) => {
+                        let current = env!("CARGO_PKG_VERSION");
+                        if is_newer_version(&release.tag_name, current) {
+                            let version = release.tag_name.trim_start_matches(|c| c == 'v' || c == 'V').to_string();
+                            let notes = release.body.unwrap_or_default().trim().to_string();
+                            let url = release.html_url;
+                            UpdateOutcome::Available(UpdateDetails { version, url, notes })
+                        } else {
+                            UpdateOutcome::UpToDate
                         }
-                        Err(e) => UpdateOutcome::Error(e),
-                    };
-                    let _ = sender.send(outcome);
-                });
+                    }
+                    Err(e) => UpdateOutcome::Error(e),
+                };
+                let _ = sender.send(outcome);
+            });
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -141,15 +126,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_fetch_latest_release_connectivity() {
-        match fetch_latest_release() {
-            Ok(release) => {
-                assert!(!release.tag_name.is_empty(), "fetched release tag should not be empty");
-            }
-            Err(e) => {
-                // In environments without live internet or rate-limited by GitHub, verify error format
-                assert!(!e.is_empty());
-            }
-        }
+    fn unconfigured_source_returns_before_any_network_request() {
+        assert_eq!(fetch_latest_release().unwrap_err(), "No application update source is configured for this build");
     }
 }

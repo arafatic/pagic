@@ -2,8 +2,8 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_ui_egui::{Dialog, RectoApp, UpdateDetails};
 use recto_ui_egui::updater::is_newer_version;
+use recto_ui_egui::{Dialog, RectoApp, UpdateDetails};
 
 fn harness() -> Harness<'static, RectoApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(|_cc| {
@@ -45,10 +45,14 @@ fn update_command_is_in_palette() {
 }
 
 #[test]
-fn check_updates_command_triggers_check() {
+fn unconfigured_update_checks_never_start_a_network_job() {
     let mut h = harness();
+    h.state_mut().check_for_updates(false);
+    assert!(h.state().toast.is_none());
     assert!(h.state_mut().execute("help.check_updates"));
-    assert!(h.state().toast.is_some() || h.state().available_update.is_some());
+    assert!(h.state().toast.is_some());
+    assert!(h.state().available_update.is_none());
+    assert!(recto_ui_egui::updater::fetch_latest_release().unwrap_err().contains("No application update source"));
 }
 
 #[test]

@@ -159,7 +159,7 @@ fn socket_path() -> Option<std::path::PathBuf> {
     // own name so it never hands files to an installed copy (which keeps its settings elsewhere).
     // Never the portable folder itself: it may sit where other accounts can write (`C:\Tools`).
     let name = if recto_ui_egui::portable::data_dir().is_some() { format!("portable-{name}") } else { name };
-    std::env::var_os("LOCALAPPDATA").filter(|v| !v.is_empty()).map(|d| std::path::PathBuf::from(d).join("Recto").join(name))
+    std::env::var_os("LOCALAPPDATA").filter(|v| !v.is_empty()).map(|d| instance_directory(std::path::Path::new(&d), true).join(name))
 }
 
 /// The socket in `$XDG_RUNTIME_DIR/recto`; none when `$XDG_RUNTIME_DIR` is unset. Never `/tmp`
@@ -170,7 +170,7 @@ fn socket_path() -> Option<std::path::PathBuf> {
     let name = display_socket_name(var("WAYLAND_DISPLAY").or_else(|| var("DISPLAY")).as_deref());
     // The XDG base directory spec makes it the user's own (mode 0700), so the folder inside it is
     // out of other accounts' reach whatever the umask.
-    var("XDG_RUNTIME_DIR").map(|d| std::path::PathBuf::from(d).join("recto").join(name))
+    var("XDG_RUNTIME_DIR").map(|d| instance_directory(std::path::Path::new(&d), false).join(name))
 }
 
 /// The socket's file name for a display (`WAYLAND_DISPLAY`, else `DISPLAY`): a launch opens its
@@ -483,5 +483,25 @@ mod tests {
         // `symlink_metadata`, not `exists`, which follows the socket's reparse point and can fail.
         assert!(std::fs::symlink_metadata(&path).is_ok(), "the socket file stays behind");
         assert!(matches!(claim_at(&path, &["C:\\a.pdf".into()], true), Claim::Primary(_)));
+    }
+}
+
+/// The namespace is independent of the retained executable name. Windows and Unix must both
+/// avoid Recto's socket directory; the filename still separates sign-ins/displays as before.
+#[cfg(any(test, windows, all(unix, not(target_os = "macos"))))]
+fn instance_directory(base: &std::path::Path, windows: bool) -> std::path::PathBuf {
+    base.join(if windows { recto_engine::identity::DATA_NAME } else { recto_engine::identity::DATA_SLUG })
+}
+
+#[cfg(test)]
+mod identity_tests {
+    use super::*;
+    #[test]
+    fn both_socket_namespaces_are_separate_from_recto() {
+        let base = std::path::Path::new("/sandbox/runtime");
+        assert_eq!(instance_directory(base, true), base.join("Pagic"));
+        assert_eq!(instance_directory(base, false), base.join("pagic"));
+        assert_ne!(instance_directory(base, true), base.join("Recto"));
+        assert_ne!(instance_directory(base, false), base.join("recto"));
     }
 }

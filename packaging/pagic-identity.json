@@ -1,0 +1,20 @@
+{
+  "application_id": "local.pagic.desktop",
+  "data_name": "Pagic",
+  "data_slug": "pagic",
+  "storage_key": "pagic",
+  "portable_data": "PagicData",
+  "portable_marker": "pagic.portable",
+  "control_file": ".pagic-control.json",
+  "windows": {
+    "inno_app_id": "CEEEE167-9578-5601-A625-6EEF718D8D48",
+    "msi_upgrade_code": "B32690B0-33F8-5A31-993D-261F6042B8B0",
+    "progid": "pagic.document",
+    "registry_root": "Software\\pagic",
+    "executable": "pagic.exe"
+  },
+  "updates": {
+    "release_api": null,
+    "reason": "Private repository; distribution endpoint is not approved."
+  }
+}
