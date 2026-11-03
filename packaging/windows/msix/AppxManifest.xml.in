@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+ xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+ xmlns:uap2="http://schemas.microsoft.com/appx/manifest/uap/windows10/2"
+ xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+ xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+ xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+ IgnorableNamespaces="uap uap2 uap3 uap10 rescap">
+  <Identity Name="$name" Publisher="$publisher" Version="$version" ProcessorArchitecture="$architecture" />
+  <Properties>
+    <DisplayName>$display_name</DisplayName>
+    <PublisherDisplayName>$publisher_display_name</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Pagic PDF editor</Description>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="$minimum_windows_version" MaxVersionTested="$maximum_tested_windows_version" />
+  </Dependencies>
+  <Resources><Resource Language="en-US" /></Resources>
+  <Applications>
+    <Application Id="$application_id" Executable="$executable" uap10:RuntimeBehavior="packagedClassicApp" uap10:TrustLevel="mediumIL">
+      <uap:VisualElements DisplayName="$display_name" Description="Pagic PDF editor"
+        BackgroundColor="transparent" Square44x44Logo="Assets\Square44x44Logo.png" Square150x150Logo="Assets\Square150x150Logo.png" />
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap3:FileTypeAssociation Name="pagic.pdf">
+            <uap:DisplayName>PDF document</uap:DisplayName>
+            <uap:Logo>Assets\DocumentLogo.png</uap:Logo>
+            <uap:SupportedFileTypes><uap:FileType>.pdf</uap:FileType></uap:SupportedFileTypes>
+            <uap2:SupportedVerbs><uap3:Verb Id="open" Parameters="&quot;%1&quot;">Open</uap3:Verb></uap2:SupportedVerbs>
+          </uap3:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities><rescap:Capability Name="runFullTrust" /></Capabilities>
+</Package>

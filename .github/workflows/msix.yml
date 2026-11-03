@@ -1,0 +1,76 @@
+name: Windows MSIX validation
+
+on:
+  push:
+    branches: [codex/pagic-msix-validation]
+  workflow_dispatch:
+    inputs:
+      install_smoke:
+        description: Install a test-signed copy and verify native launch/PDF opening on the disposable runner
+        type: boolean
+        default: true
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Native Windows x64 MSIX
+    runs-on: windows-2025
+    timeout-minutes: 60
+    env:
+      PAGIC_FONTS_REQUIRED: "1"
+      CARGO_TERM_COLOR: always
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record exact source and require approved identity
+        run: |
+          git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot determine source commit' }
+          $origin = git remote get-url origin
+          if ($LASTEXITCODE -ne 0 -or $origin -notmatch '^https://github.com/arafatic/pagic(?:\.git)?$') {
+            throw 'This workflow is restricted to the Pagic repository.'
+          }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - name: Configure native MSVC tools
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Packaging regression tests
+        run: |
+          python packaging/windows/msix/test_msix.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'Packaging regression tests failed' }
+          ./packaging/windows/test-font-notices.ps1
+          cargo xtask assets
+          if ($LASTEXITCODE -ne 0) { throw 'Local font/asset validation failed' }
+      - name: Build and validate MSIX with Windows SDK
+        run: ./packaging/windows/msix/package.ps1
+      - name: Native test installation, launch and PDF opening
+        if: github.event_name == 'push' || inputs.install_smoke
+        run: |
+          $package = @(Get-ChildItem dist/msix/*.msix)
+          if ($package.Count -ne 1) { throw 'Expected exactly one unsigned package' }
+          ./packaging/windows/msix/test-install.ps1 -Package $package[0].FullName -ReportDirectory dist/msix
+      - name: Retain private validation artifacts and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pagic-msix-x64-${{ github.sha }}
+          path: |
+            dist/msix/*.msix
+            dist/msix/*.json
+            dist/msix/*.xml
+            dist/msix/*.txt
+            dist/msix/*.pdf
+            dist/msix/SHA256SUMS
+          if-no-files-found: warn
+          retention-days: 14

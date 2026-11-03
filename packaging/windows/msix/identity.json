@@ -1,0 +1,12 @@
+{
+  "name": "Arafatic.Pagic",
+  "publisher": "CN=8E27432A-B6BC-4F20-8810-A2256A3F60AF",
+  "publisher_display_name": "Arafatic",
+  "display_name": "Pagic",
+  "application_id": "Pagic",
+  "executable": "pagic.exe",
+  "architecture": "x64",
+  "target": "x86_64-pc-windows-msvc",
+  "minimum_windows_version": "10.0.19041.0",
+  "maximum_tested_windows_version": "10.0.26100.0"
+}
