@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build Recto for FreeBSD and package it:
-#   $DIST/recto-<version>-freebsd-<arch>.tar.gz   a /usr/local-style tree (bin/, share/)
+# Build Pagic for FreeBSD and package it:
+#   $DIST/pagic-<version>-freebsd-<arch>.tar.gz   a /usr/local-style tree (bin/, share/)
 #
-# Extract it into /usr/local (or anywhere, and run bin/recto from there). The desktop entry,
+# Extract it into /usr/local (or anywhere, and run bin/pagic from there). The desktop entry,
 # MIME type, AppStream metadata and icons are the freedesktop ones Linux uses.
 #
 # Usage: packaging/freebsd/package.sh [--skip-build]
@@ -10,9 +10,10 @@
 set -euo pipefail
 # shellcheck source=../env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/../env.sh"
+python3 "$ROOT/packaging/check-identity.py" --require-release-ready
 LINUX="$ROOT/packaging/linux"
-APP_ID=local.recto.desktop
-RESOURCE_ID=local.recto.desktop
+APP_ID=local.pagic.desktop
+RESOURCE_ID=local.pagic.desktop
 
 SKIP_BUILD=0
 while [[ $# -gt 0 ]]; do
@@ -43,12 +44,12 @@ HOST_ARCH="$(release_arch "$(uname -m)" 2>/dev/null)" || HOST_ARCH="$(uname -m)"
 if [ -n "${CARGO_BUILD_TARGET:-}" ] && [ "$(uname -s)" != FreeBSD ]; then
   HOST_ARCH="$(uname -s) $HOST_ARCH"
 fi
-BASENAME="recto-$VERSION-freebsd-$ARCH"
+BASENAME="pagic-$VERSION-freebsd-$ARCH"
 
-echo "==> Recto $VERSION for FreeBSD $ARCH"
+echo "==> Pagic $VERSION for FreeBSD $ARCH"
 
 if [[ "$SKIP_BUILD" = 0 ]]; then
-  (cd "$ROOT" && cargo build --release --locked -p recto -p recto-cli)
+  (cd "$ROOT" && cargo build --release --locked -p pagic -p pagic-cli)
 fi
 # Cargo puts a cross build under target/<triple>/release.
 BIN="$CARGO_TARGET_DIR/${CARGO_BUILD_TARGET:+$CARGO_BUILD_TARGET/}release"
@@ -58,22 +59,22 @@ rm -rf "$WORK"
 
 # FreeBSD's install(1) has no -D: create the directories first.
 mkdir -p "$STAGE/bin" "$STAGE/share/applications" "$STAGE/share/mime/packages" "$STAGE/share/metainfo" \
-  "$STAGE/share/icons" "$STAGE/share/doc/recto"
-install -m 755 "$BIN/recto" "$STAGE/bin/recto"
-install -m 755 "$BIN/recto-cli" "$STAGE/bin/recto-cli"
-strip "$STAGE/bin/recto" "$STAGE/bin/recto-cli" 2>/dev/null || true
+  "$STAGE/share/icons" "$STAGE/share/doc/pagic"
+install -m 755 "$BIN/pagic" "$STAGE/bin/pagic"
+install -m 755 "$BIN/pagic-cli" "$STAGE/bin/pagic-cli"
+strip "$STAGE/bin/pagic" "$STAGE/bin/pagic-cli" 2>/dev/null || true
 install -m 644 "$LINUX/$RESOURCE_ID.desktop" "$STAGE/share/applications/$APP_ID.desktop"
 install -m 644 "$LINUX/$RESOURCE_ID.mime.xml" "$STAGE/share/mime/packages/$APP_ID.xml"
-sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$RECTO_BUILD_DATE/g" \
+sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$PAGIC_BUILD_DATE/g" \
   "$LINUX/$RESOURCE_ID.metainfo.xml.in" >"$STAGE/share/metainfo/$APP_ID.metainfo.xml"
 cp -R "$ROOT/assets/app-icon/hicolor" "$STAGE/share/icons/"
-copy_docs "$STAGE/share/doc/recto"
-# OCR models: the app finds them at <bin>/../share/recto/models. They come from cargo xtask,
+copy_docs "$STAGE/share/doc/pagic"
+# OCR models: the app finds them at <bin>/../share/pagic/models. They come from cargo xtask,
 # which has to run here: build it for this machine, not for CARGO_BUILD_TARGET.
-(unset CARGO_BUILD_TARGET; stage_models "$STAGE/share/recto/models")
+(unset CARGO_BUILD_TARGET; stage_models "$STAGE/share/pagic/models")
 
 if [ "$ARCH" = "$HOST_ARCH" ]; then
-  "$STAGE/bin/recto" --version
+  "$STAGE/bin/pagic" --version
 else
   # They cannot run here, so check what they are instead: executables, not libraries or objects.
   # An older file(1) calls a PIE a shared object; its interpreter still marks it as a program.

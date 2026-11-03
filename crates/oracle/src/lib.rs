@@ -1,4 +1,4 @@
-//! External oracle processes: independent implementations Recto checks its own output against.
+//! External oracle processes: independent implementations Pagic checks its own output against.
 //!
 //! An oracle is only worth having when it runs. Before this crate every test that wanted one
 //! probed for it by hand and decided on its own what to do when it was missing, and the common
@@ -14,7 +14,7 @@
 //!
 //! ```no_run
 //! # fn main() {
-//! let qpdf = recto_oracle::or_skip!(recto_oracle::qpdf());
+//! let qpdf = pagic_oracle::or_skip!(pagic_oracle::qpdf());
 //! let out = qpdf.command().arg("--check").arg("f.pdf").output();
 //! # let _ = out;
 //! # }
@@ -204,12 +204,12 @@ mod tests {
     /// reason names the program.
     #[test]
     fn a_program_that_does_not_exist_is_absent_with_a_reason() {
-        let Err(absent) = find("recto-no-such-oracle-binary", "--version") else {
+        let Err(absent) = find("pagic-no-such-oracle-binary", "--version") else {
             panic!("a nonexistent program must not be reported as present");
         };
-        assert_eq!(absent.program(), "recto-no-such-oracle-binary");
+        assert_eq!(absent.program(), "pagic-no-such-oracle-binary");
         let text = absent.to_string();
-        assert!(text.contains("recto-no-such-oracle-binary"), "{text}");
+        assert!(text.contains("pagic-no-such-oracle-binary"), "{text}");
         assert!(text.contains("not on PATH"), "{text}");
     }
 

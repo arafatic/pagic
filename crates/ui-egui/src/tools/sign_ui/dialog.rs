@@ -1,10 +1,10 @@
 use super::{
-    Align, Appearance, AppearanceLabels, Color32, CornerRadius, KEY_ALGORITHMS, Layout, NewIdDraft, RectoApp, Rect, SavedSig, SignGraphic,
-    SignStep, Stroke, Tokens, icons, sign, theme, vec2, widgets,
+    Align, Appearance, AppearanceLabels, Color32, CornerRadius, KEY_ALGORITHMS, Layout, NewIdDraft, PagicApp, Rect, SavedSig, SignGraphic, SignStep,
+    Stroke, Tokens, icons, sign, theme, vec2, widgets,
 };
 
 /// Draw the signing dialogs; returns `true` when the dialog should close.
-pub(crate) fn dialog(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
+pub(crate) fn dialog(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) -> bool {
     let Some(step) = app.sign_draft.as_ref().map(|d| d.step) else { return true };
     match step {
         SignStep::Choose => choose(ui, app, t),
@@ -28,7 +28,7 @@ fn error(ui: &mut egui::Ui, err: &Option<String>) {
 }
 
 /// Draw the digital-ID chooser, including unusable certificates and removal confirmation.
-fn choose(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
+fn choose(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) -> bool {
     title(ui, "Sign with a Digital ID");
     ui.label(tl!("Choose the digital ID that you want to use for signing:"));
     ui.add_space(6.0);
@@ -138,7 +138,7 @@ fn choose(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
     close
 }
 
-fn configure(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
+fn configure(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) -> bool {
     title(ui, "Configure a Digital ID for Signing");
     let Some(d) = app.sign_draft.as_mut() else { return true };
     let mut close = false;
@@ -341,7 +341,7 @@ fn preview(
     ui.painter().galley(egui::pos2(x, inner.center().y - galley.size().y / 2.0), galley, Color32::BLACK);
 }
 
-fn sign_as(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
+fn sign_as(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) -> bool {
     let ids = app.digital_ids.clone();
     // The time as the signature will show it (signing takes the session clock then).
     let date = sign::pdf::display_date(&app.session.signing_date());
@@ -436,9 +436,9 @@ fn sign_as(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
             ui.label("");
             ui.label(
                 egui::RichText::new(if entry.path.starts_with("windows:") {
-                    tl!("The key is in the Windows certificate store, which may ask to allow Recto to use it.")
+                    tl!("The key is in the Windows certificate store, which may ask to allow Pagic to use it.")
                 } else {
-                    tl!("The key is in the macOS Keychain, which may ask to allow Recto to use it.")
+                    tl!("The key is in the macOS Keychain, which may ask to allow Pagic to use it.")
                 })
                 .small()
                 .color(t.text_muted),

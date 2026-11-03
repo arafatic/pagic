@@ -5,10 +5,10 @@
 //! into an image-only document, and that document is imposed on the paper like any other. The
 //! print is no longer searchable text.
 
-use recto_cos::{SaveOptions, write_incremental};
-use recto_create::ImageResolution;
-use recto_print::{Content, Raster};
-use recto_render::{PRINT_TAG, PageRenderer, RenderRequest};
+use pagic_cos::{SaveOptions, write_incremental};
+use pagic_create::ImageResolution;
+use pagic_print::{Content, Raster};
+use pagic_render::{PRINT_TAG, PageRenderer, RenderRequest};
 
 use crate::export::encode_png;
 use crate::{Document, guard};
@@ -23,8 +23,8 @@ pub fn rasterize(doc: &Document, pages: &[usize], raster: &Raster, content: Cont
     // The copy below holds only what prints, so the viewer's own comment hiding plays no part.
     config.hide_comments = false;
     let printed = guard(|| -> Result<Vec<u8>, String> {
-        let mut cos = recto_cos::Document::open_with_password(src.bytes.clone(), config.password.as_deref()).map_err(|e| e.to_string())?;
-        recto_print::keep_printed(&mut cos, content);
+        let mut cos = pagic_cos::Document::open_with_password(src.bytes.clone(), config.password.as_deref()).map_err(|e| e.to_string())?;
+        pagic_print::keep_printed(&mut cos, content);
         write_incremental(&cos, &SaveOptions::default()).map_err(|e| e.to_string())
     })??;
     let mut renderer = PageRenderer::new(std::sync::Arc::new(printed), config);
@@ -32,7 +32,7 @@ pub fn rasterize(doc: &Document, pages: &[usize], raster: &Raster, content: Cont
     let mut used: Option<f64> = None;
     for &page in pages {
         let (w, h) = src.sizes.get(page).copied().ok_or_else(|| format!("page {} does not exist", page + 1))?;
-        let scale = recto_render::effective_scale(w, h, (dpi / 72.0) as f32);
+        let scale = pagic_render::effective_scale(w, h, (dpi / 72.0) as f32);
         let page_dpi = f64::from(scale) * 72.0;
         // Every page of the image document shares one resolution, so its pages keep the
         // source's sizes; the lowest a page needed is used for all.
@@ -46,8 +46,8 @@ pub fn rasterize(doc: &Document, pages: &[usize], raster: &Raster, content: Cont
         images.push((format!("page-{}.png", page + 1), encode_png(r.width, r.height, &rgba)?));
     }
     let dpi = used.unwrap_or(dpi);
-    let doc = recto_create::from_images_with_resolution(&images, ImageResolution::Dpi(dpi)).map_err(|e| e.to_string())?;
-    recto_cos::write_full(&doc, &recto_cos::SaveOptions::default()).map_err(|e| e.to_string())
+    let doc = pagic_create::from_images_with_resolution(&images, ImageResolution::Dpi(dpi)).map_err(|e| e.to_string())?;
+    pagic_cos::write_full(&doc, &pagic_cos::SaveOptions::default()).map_err(|e| e.to_string())
 }
 
 /// Premultiplied RGBA composed over white paper (opaque), in grey when asked (Rec. 601 luma).

@@ -1,13 +1,13 @@
-//! Recto omits upstream promotion and keeps contributor credits.
+//! Pagic omits upstream promotion and keeps contributor credits.
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::{NodeT, Queryable};
-use recto_engine::links;
-use recto_ui_egui::{Dialog, RectoApp};
+use pagic_engine::links;
+use pagic_ui_egui::{Dialog, PagicApp};
 
-fn harness(setup: impl FnOnce(&mut RectoApp) + 'static) -> Harness<'static, RectoApp> {
+fn harness(setup: impl FnOnce(&mut PagicApp) + 'static) -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         setup(&mut app);
         app
@@ -19,8 +19,8 @@ fn harness(setup: impl FnOnce(&mut RectoApp) + 'static) -> Harness<'static, Rect
 #[test]
 fn workspace_has_no_promotional_links() {
     let h = harness(|_| {});
-    assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Recto"));
-    h.get_by_label("Welcome to Recto");
+    assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Pagic"));
+    h.get_by_label("Welcome to Pagic");
     for label in ["Discord", "Join our Discord", "Join the community", "LegacySuite"] {
         assert!(h.query_by_label(label).is_none(), "{label}");
     }
@@ -29,7 +29,7 @@ fn workspace_has_no_promotional_links() {
 #[test]
 fn about_retains_credits_without_trademark_graphics() {
     let h = harness(|app| app.dialog = Some(Dialog::About));
-    assert!(h.query_all_by_label("Recto").count() >= 1);
+    assert!(h.query_all_by_label("Pagic").count() >= 1);
     assert!(h.query_by_label("LegacySuite").is_none());
     assert!(h.query_by_label("Join our Discord").is_none());
 }
@@ -40,7 +40,7 @@ fn upstream_promotion_commands_are_inert() {
         let mut h = harness(|_| {});
         assert!(!h.state_mut().execute(l.command), "{}", l.command);
         assert!(h.state().last_opened_url.is_none());
-        assert_eq!(recto_engine::commands::command(l.command).unwrap().menu, Some("Help"));
+        assert_eq!(pagic_engine::commands::command(l.command).unwrap().menu, Some("Help"));
     }
 }
 
@@ -52,7 +52,7 @@ fn upstream_promotion_commands_are_inert() {
 /// contributors refresh (78 names instead of 5) on some machines, the click on Table landed where
 /// the button had been, and the table never opened (#671).
 #[allow(dead_code)]
-fn settled<'a>(h: &'a mut Harness<'static, RectoApp>, label: &'a str) -> egui_kittest::Node<'a> {
+fn settled<'a>(h: &'a mut Harness<'static, PagicApp>, label: &'a str) -> egui_kittest::Node<'a> {
     let mut last = None;
     for _ in 0..60 {
         h.run_steps(1);
@@ -68,5 +68,5 @@ fn settled<'a>(h: &'a mut Harness<'static, RectoApp>, label: &'a str) -> egui_ki
 #[test]
 fn about_dialog_renders_clean_about_content() {
     let h = harness(|app| app.dialog = Some(Dialog::About));
-    assert!(h.query_all_by_label("Recto").count() >= 1);
+    assert!(h.query_all_by_label("Pagic").count() >= 1);
 }

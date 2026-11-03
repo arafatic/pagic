@@ -1,5 +1,5 @@
 [package]
-name = "recto-print"
+name = "pagic-print"
 description = "Printing: page selection, sizing (fit, actual, shrink, custom), multiple pages per sheet, booklets, posters, comments & forms; print-ready PDF and the system spooler"
 version.workspace = true
 edition.workspace = true
@@ -10,10 +10,10 @@ workspace = true
 
 [dependencies]
 craft-print = { workspace = true }
-recto-cos = { workspace = true }
-recto-content = { workspace = true }
-recto-model = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-content = { workspace = true }
+pagic-model = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-recto-render = { workspace = true }
+pagic-render = { workspace = true }

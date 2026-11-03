@@ -11,10 +11,10 @@ use std::time::SystemTime;
 
 use egui::{Align, Color32, CornerRadius, Layout, Modifiers, Rect, Sense, Stroke, vec2};
 use egui_extras::{Column, TableBuilder};
-use recto_engine::SourceProblem;
+use pagic_engine::SourceProblem;
 
 use crate::theme::{self, Tokens};
-use crate::{RectoApp, icons, widgets};
+use crate::{PagicApp, icons, widgets};
 
 mod actions;
 mod files;

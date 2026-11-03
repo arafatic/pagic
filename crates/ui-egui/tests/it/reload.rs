@@ -7,7 +7,7 @@ use std::time::{Duration, SystemTime};
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::{By, Queryable};
-use recto_ui_egui::{RectoApp, SaveTarget};
+use pagic_ui_egui::{PagicApp, SaveTarget};
 
 /// An `n`-page document with a proper xref table; page `i` shows "Page i+1", and with `notes`
 /// each page has a sticky note.
@@ -50,7 +50,7 @@ struct TempPdf {
 
 impl TempPdf {
     fn new(test: &str, bytes: &[u8]) -> Self {
-        let dir = std::env::temp_dir().join(format!("recto-reload-{test}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("pagic-reload-{test}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("thesis.pdf").to_string_lossy().into_owned();
@@ -73,10 +73,10 @@ impl Drop for TempPdf {
     }
 }
 
-fn harness(path: &str) -> Harness<'static, RectoApp> {
+fn harness(path: &str) -> Harness<'static, PagicApp> {
     let path = path.to_owned();
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         // The labels looked for are English, whatever the machine's language.
         app.set_option("language", "en").unwrap();
@@ -90,19 +90,19 @@ fn harness(path: &str) -> Harness<'static, RectoApp> {
     h
 }
 
-fn pages(h: &Harness<'static, RectoApp>) -> usize {
+fn pages(h: &Harness<'static, PagicApp>) -> usize {
     let app = h.state();
     app.session.get(app.views[0].id).unwrap().info.pages.len()
 }
 
-fn dirty(h: &Harness<'static, RectoApp>) -> bool {
+fn dirty(h: &Harness<'static, PagicApp>) -> bool {
     let app = h.state();
     app.session.get(app.views[0].id).unwrap().dirty
 }
 
-fn rotate_first_page(h: &mut Harness<'static, RectoApp>) {
+fn rotate_first_page(h: &mut Harness<'static, PagicApp>) {
     h.state_mut().views[0].select_pages(&[0]);
-    h.state_mut().apply_edit(recto_engine::Edit::RotatePages { pages: vec![0], degrees: 90 });
+    h.state_mut().apply_edit(pagic_engine::Edit::RotatePages { pages: vec![0], degrees: 90 });
 }
 
 #[test]
@@ -110,7 +110,7 @@ fn a_rebuilt_file_reloads_in_place_keeping_the_page_and_zoom() {
     let file = TempPdf::new("rebuild", &fixture(3));
     let mut h = harness(&file.path);
     let id = h.state().views[0].id;
-    h.state_mut().views[0].fit = recto_ui_egui::canvas::Fit::None;
+    h.state_mut().views[0].fit = pagic_ui_egui::canvas::Fit::None;
     h.state_mut().views[0].zoom = 1.5;
     h.state_mut().views[0].go_to_page(2);
     h.run_steps(4);
@@ -125,8 +125,8 @@ fn a_rebuilt_file_reloads_in_place_keeping_the_page_and_zoom() {
 
 #[test]
 fn a_watched_label_replacement_keeps_the_display_mode_and_focused_page() {
-    use recto_engine::{Edit, LabelStyle, Session};
-    use recto_ui_egui::canvas::display_token;
+    use pagic_engine::{Edit, LabelStyle, Session};
+    use pagic_ui_egui::canvas::display_token;
     use std::sync::Arc;
 
     let labelled = |ranges: &[(usize, usize, LabelStyle)]| {
@@ -267,7 +267,7 @@ fn a_deleted_file_leaves_the_document_open() {
 
 #[test]
 fn nothing_reloads_with_the_preference_off() {
-    assert!(RectoApp::new().reload_changed_files, "on by default");
+    assert!(PagicApp::new().reload_changed_files, "on by default");
     let file = TempPdf::new("off", &fixture(2));
     let mut h = harness(&file.path);
     h.state_mut().reload_changed_files = false;
@@ -275,7 +275,7 @@ fn nothing_reloads_with_the_preference_off() {
     file.rebuild(&fixture(3));
     h.run_steps(4);
     assert_eq!(pages(&h), 2);
-    let mut restarted = RectoApp::new();
+    let mut restarted = PagicApp::new();
     restarted.restore(&h.state().persist());
     assert!(!restarted.reload_changed_files, "the choice is kept");
 }
@@ -332,7 +332,7 @@ fn saving_checks_the_file_with_the_watcher_off_too() {
     let file = TempPdf::new("overwrite-unwatched", &fixture(2));
     let path = file.path.clone();
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.run_inline = true;
         app.reload_changed_files = false;

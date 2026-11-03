@@ -107,7 +107,7 @@ impl Automation {
     /// the `page_render` tool only returns PNG, and encoding one to decode it again is wasted
     /// work on every scroll. It uses the same renderer, and the same per-document cache, as
     /// `page_render`.
-    pub fn render_pixels(&mut self, doc: u64, page: usize, scale: f32) -> Result<(u32, u32, recto_render::Pixels)> {
+    pub fn render_pixels(&mut self, doc: u64, page: usize, scale: f32) -> Result<(u32, u32, pagic_render::Pixels)> {
         if !(scale.is_finite() && scale > 0.0 && scale <= (MAX_DPI / 72.0) as f32) {
             return Err(ToolError::InvalidArgs(format!("scale must be between 0 and {}", MAX_DPI / 72.0)));
         }
@@ -178,7 +178,7 @@ impl Automation {
     }
 
     pub(crate) fn text_word_count(&self, a: &Args) -> Result<Value> {
-        use recto_engine::word_count::{self, Counts, Options};
+        use pagic_engine::word_count::{self, Counts, Options};
         let doc = self.doc_to_copy(a)?;
         let pages = match a.opt_ints("pages")? {
             Some(_) => self.pages(a, "pages")?,
@@ -321,7 +321,7 @@ impl Automation {
 
 /// A rendered raster as PNG, through the engine's encoder (Export ▸ Image writes the same).
 pub(crate) fn encode_png(width: u32, height: u32, premultiplied: &[u8]) -> Result<Vec<u8>> {
-    recto_engine::export::encode_png(width, height, premultiplied).map_err(failed)
+    pagic_engine::export::encode_png(width, height, premultiplied).map_err(failed)
 }
 
 /// Extract the text of `pages` (0-based) with one renderer per worker thread.

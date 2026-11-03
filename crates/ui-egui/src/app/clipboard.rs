@@ -10,12 +10,12 @@ pub(crate) fn print_refused() -> &'static str {
     tl!("The document's security settings don't allow printing")
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Whether text and images may be copied out of document `id`; says why not when they may
     /// not. Reading aloud and accessibility tools don't ask (assistive technology may read
     /// anything, §7.6.4.2).
     pub(crate) fn may_copy(&mut self, id: DocId) -> bool {
-        if self.session.get(id).is_none_or(recto_engine::Document::allows_copying) {
+        if self.session.get(id).is_none_or(pagic_engine::Document::allows_copying) {
             return true;
         }
         self.notify(copy_refused().to_string());

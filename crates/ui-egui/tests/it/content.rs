@@ -4,25 +4,25 @@
 use egui::{Pos2, pos2};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_ui_egui::{RectoApp, QuickTool};
+use pagic_ui_egui::{PagicApp, QuickTool};
 
 use crate::gpu;
 
-fn harness() -> Harness<'static, RectoApp> {
+fn harness() -> Harness<'static, PagicApp> {
     harness_with_step_dt(0.25)
 }
 
-fn harness_with_step_dt(step_dt: f32) -> Harness<'static, RectoApp> {
+fn harness_with_step_dt(step_dt: f32) -> Harness<'static, PagicApp> {
     harness_bytes_with_step_dt(include_bytes!("../data/form.pdf").to_vec(), step_dt)
 }
 
-fn harness_bytes(bytes: Vec<u8>) -> Harness<'static, RectoApp> {
+fn harness_bytes(bytes: Vec<u8>) -> Harness<'static, PagicApp> {
     harness_bytes_with_step_dt(bytes, 0.25)
 }
 
-fn harness_bytes_with_step_dt(bytes: Vec<u8>, step_dt: f32) -> Harness<'static, RectoApp> {
+fn harness_bytes_with_step_dt(bytes: Vec<u8>, step_dt: f32) -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).with_step_dt(step_dt).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("theme", "light").unwrap();
         app.set_option("language", "en").unwrap();
         app.open_bytes("form.pdf", None, bytes.clone()).unwrap();
@@ -33,13 +33,13 @@ fn harness_bytes_with_step_dt(bytes: Vec<u8>, step_dt: f32) -> Harness<'static, 
     h
 }
 
-fn at(h: &Harness<'static, RectoApp>, x: f32, y: f32) -> Pos2 {
+fn at(h: &Harness<'static, PagicApp>, x: f32, y: f32) -> Pos2 {
     let r = h.state().views[0].page_screen_rect(0).expect("on screen");
     let k = r.width() / 300.0;
     r.min + egui::vec2(x * k, y * k)
 }
 
-fn click(h: &mut Harness<'static, RectoApp>, p: Pos2) {
+fn click(h: &mut Harness<'static, PagicApp>, p: Pos2) {
     h.hover_at(p);
     h.run_steps(1);
     h.drag_at(p);
@@ -48,13 +48,13 @@ fn click(h: &mut Harness<'static, RectoApp>, p: Pos2) {
     h.run_steps(3);
 }
 
-fn added(h: &Harness<'static, RectoApp>) -> Vec<recto_engine::Added> {
+fn added(h: &Harness<'static, PagicApp>) -> Vec<pagic_engine::Added> {
     let s = h.state();
     s.session.get(s.views[0].id).unwrap().added().to_vec()
 }
 
 /// A click whose press and release arrive in the same frame, as a quick real mouse click does.
-fn quick_click(h: &mut Harness<'static, RectoApp>, p: Pos2) {
+fn quick_click(h: &mut Harness<'static, PagicApp>, p: Pos2) {
     h.hover_at(p);
     h.run_steps(1);
     for pressed in [true, false] {
@@ -63,11 +63,11 @@ fn quick_click(h: &mut Harness<'static, RectoApp>, p: Pos2) {
     h.run_steps(3);
 }
 
-fn texts(h: &Harness<'static, RectoApp>) -> Vec<String> {
+fn texts(h: &Harness<'static, PagicApp>) -> Vec<String> {
     added(h)
         .into_iter()
         .filter_map(|a| match a.content {
-            recto_engine::AddedContent::Text(t) => Some(t.text),
+            pagic_engine::AddedContent::Text(t) => Some(t.text),
             _ => None,
         })
         .collect()
@@ -88,18 +88,18 @@ fn text_tool_drafts_grow_for_latin_and_arabic() {
         let draft = h.state().views[0].content.draft.as_ref().unwrap();
         assert!(draft.rect[2] - draft.rect[0] > before[2] - before[0] + 10.0, "the editor grows before wrapping: {}", text);
         assert!(draft.rect[2] <= 300.0 && draft.rect[1] < before[1], "the frame stays on the page and grows vertically");
-        if let Ok(dir) = std::env::var("RECTO_SHOTS") {
+        if let Ok(dir) = std::env::var("PAGIC_SHOTS").or_else(|_| std::env::var("RECTO_SHOTS")) {
             let language = if text.starts_with("Wide") { "latin" } else { "arabic" };
             h.render().unwrap().save(format!("{dir}/growing-{language}-text.png")).unwrap();
         }
         h.get_by_label("Done adding text").click();
         h.run_steps(3);
-        if text.starts_with("سلام") && recto_fonts::document_arabic_font().is_none() {
+        if text.starts_with("سلام") && pagic_fonts::document_arabic_font().is_none() {
             assert!(h.state().views[0].content.draft.is_some(), "without a document font the draft remains available");
             assert!(added(&h).is_empty());
             continue;
         }
-        let recto_engine::AddedContent::Text(saved) = &added(&h)[0].content else { panic!() };
+        let pagic_engine::AddedContent::Text(saved) = &added(&h)[0].content else { panic!() };
         assert_eq!(saved.text, text.trim_end());
         assert!(saved.rect[2] - saved.rect[0] > before[2] - before[0] + 10.0, "Save uses the grown width");
     }
@@ -109,13 +109,13 @@ fn text_tool_drafts_grow_for_latin_and_arabic() {
 fn text_tool_single_click_retypes_added_text_without_another_item() {
     for command in ["edit.text", "edit.edit_text"] {
         for (original, replacement) in [("Original", "Replacement"), ("سلام", "سلام عليكم ورحمة الله")] {
-            if original == "سلام" && recto_fonts::document_arabic_font().is_none() {
+            if original == "سلام" && pagic_fonts::document_arabic_font().is_none() {
                 continue;
             }
             let mut h = harness();
-            assert!(h.state_mut().apply_edit(recto_engine::Edit::AddText {
+            assert!(h.state_mut().apply_edit(pagic_engine::Edit::AddText {
                 page: 0,
-                text: recto_engine::AddedText { rect: [40.0, 195.0, 140.0, 210.0], text: original.into(), ..Default::default() },
+                text: pagic_engine::AddedText { rect: [40.0, 195.0, 140.0, 210.0], text: original.into(), ..Default::default() },
             }));
             assert!(h.state_mut().execute(command));
             h.run_steps(3);
@@ -132,10 +132,10 @@ fn text_tool_single_click_retypes_added_text_without_another_item() {
             assert_eq!(texts(&h), [replacement]);
             let state = h.state();
             let bytes = state.session.save_bytes(state.views[0].id).unwrap();
-            let mut reopened = recto_engine::Session::new();
+            let mut reopened = pagic_engine::Session::new();
             let id = reopened.open("again.pdf", None, bytes, None).unwrap();
             assert_eq!(reopened.get(id).unwrap().added().len(), 1);
-            let recto_engine::AddedContent::Text(text) = &reopened.get(id).unwrap().added()[0].content else { panic!() };
+            let pagic_engine::AddedContent::Text(text) = &reopened.get(id).unwrap().added()[0].content else { panic!() };
             assert_eq!(text.text, replacement);
         }
     }
@@ -145,9 +145,9 @@ fn text_tool_single_click_retypes_added_text_without_another_item() {
 fn text_tool_deleting_a_draft_hides_the_old_added_glyphs_and_cancel_restores_them() {
     let _gpu = gpu();
     let mut h = harness();
-    assert!(h.state_mut().apply_edit(recto_engine::Edit::AddText {
+    assert!(h.state_mut().apply_edit(pagic_engine::Edit::AddText {
         page: 0,
-        text: recto_engine::AddedText { rect: [40.0, 195.0, 240.0, 220.0], text: "Original glyphs".into(), size: 18.0, ..Default::default() },
+        text: pagic_engine::AddedText { rect: [40.0, 195.0, 240.0, 220.0], text: "Original glyphs".into(), size: 18.0, ..Default::default() },
     }));
     let bytes = h.state().session.get(h.state().views[0].id).unwrap().bytes.clone();
     assert!(h.state_mut().execute("edit.edit_text"));
@@ -166,7 +166,7 @@ fn text_tool_deleting_a_draft_hides_the_old_added_glyphs_and_cancel_restores_the
             assert!(r > 200 && g > 200 && b > 200 && a == 255, "old glyph ink remains at {x},{y}: {r},{g},{b},{a}");
         }
     }
-    if let Ok(dir) = std::env::var("RECTO_SHOTS") {
+    if let Ok(dir) = std::env::var("PAGIC_SHOTS").or_else(|_| std::env::var("RECTO_SHOTS")) {
         shot.save(format!("{dir}/cleared-added-text.png")).unwrap();
     }
     assert_eq!(h.state().session.get(h.state().views[0].id).unwrap().bytes, bytes, "previewing does not edit the document");
@@ -223,7 +223,7 @@ fn typing_moving_styling_and_deleting_added_content() {
     h.run_steps(3);
     let a = added(&h);
     assert_eq!(a.len(), 1);
-    let recto_engine::AddedContent::Text(t) = &a[0].content else { panic!() };
+    let pagic_engine::AddedContent::Text(t) = &a[0].content else { panic!() };
     assert_eq!(t.text, "Reviewed");
     assert_eq!(h.state().quick_tool, QuickTool::Select);
     h.run_steps(2);
@@ -232,7 +232,7 @@ fn typing_moving_styling_and_deleting_added_content() {
     h.get_by_label("Bold").click();
     h.run_steps(3);
 
-    let recto_engine::AddedContent::Text(t) = &added(&h)[0].content else { panic!() };
+    let pagic_engine::AddedContent::Text(t) = &added(&h)[0].content else { panic!() };
     assert!(t.bold);
     {
         let s = h.state();
@@ -260,11 +260,11 @@ fn typing_moving_styling_and_deleting_added_content() {
     h.get_by_label("Rotate clockwise").click();
     h.run_steps(3);
     let a = added(&h);
-    let recto_engine::AddedContent::Image(img) = &a[0].content else { panic!() };
+    let pagic_engine::AddedContent::Image(img) = &a[0].content else { panic!() };
     assert_eq!((img.rotation, img.rect), (3, [140.0, 185.0, 160.0, 215.0]));
     h.get_by_label("Flip horizontal").click();
     h.run_steps(3);
-    let recto_engine::AddedContent::Image(img) = &added(&h)[0].content else { panic!() };
+    let pagic_engine::AddedContent::Image(img) = &added(&h)[0].content else { panic!() };
     assert!(img.flip_h);
 }
 
@@ -272,10 +272,10 @@ fn typing_moving_styling_and_deleting_added_content() {
 /// browser) places it on the current page, as Add Image does.
 #[test]
 fn a_picture_on_the_clipboard_is_pasted_onto_the_page() {
-    use recto_ui_egui::Clip;
+    use pagic_ui_egui::Clip;
     let mut h = harness();
     let v = |pressed, modifiers| egui::Event::Key { key: egui::Key::V, physical_key: None, pressed, repeat: false, modifiers };
-    let images = |h: &Harness<'static, RectoApp>| added(h).iter().filter(|a| matches!(a.content, recto_engine::AddedContent::Image(_))).count();
+    let images = |h: &Harness<'static, PagicApp>| added(h).iter().filter(|a| matches!(a.content, pagic_engine::AddedContent::Image(_))).count();
     // Text on the clipboard: egui gets a Paste event instead of the press; nothing lands on the page.
     h.state_mut().clipboard_override = Some(Clip::Text("hello".into()));
     h.event(egui::Event::Paste("hello".into()));
@@ -295,7 +295,7 @@ fn a_picture_on_the_clipboard_is_pasted_onto_the_page() {
     h.run_steps(3);
     let a = added(&h);
     assert_eq!(a.len(), 1);
-    let recto_engine::AddedContent::Image(img) = &a[0].content else { panic!("an image was added") };
+    let pagic_engine::AddedContent::Image(img) = &a[0].content else { panic!("an image was added") };
     assert_eq!(img.rect, [135.0, 190.0, 165.0, 210.0], "in the middle of the page, at its own size");
     assert_eq!(h.state().views[0].content.selected, Some((0, 0)));
     {
@@ -348,7 +348,7 @@ fn text_the_standard_fonts_cant_draw_stays_in_the_editor() {
     h.event(egui::Event::Text("Hello 世界".into()));
     h.run_steps(2);
     h.get_by_label_contains("can't draw “世” (U+4E16)");
-    if let Ok(dir) = std::env::var("RECTO_SHOTS") {
+    if let Ok(dir) = std::env::var("PAGIC_SHOTS").or_else(|_| std::env::var("RECTO_SHOTS")) {
         h.render().unwrap().save(format!("{dir}/undrawable-text.png")).unwrap();
     }
     h.get_by_label("Done adding text").click();
@@ -380,7 +380,7 @@ fn a_kept_draft_goes_with_its_deleted_page() {
         return;
     }
     let mut h = harness();
-    assert!(h.state_mut().apply_edit(recto_engine::Edit::InsertBlankPage { at: 1, width: 612.0, height: 792.0 }));
+    assert!(h.state_mut().apply_edit(pagic_engine::Edit::InsertBlankPage { at: 1, width: 612.0, height: 792.0 }));
     h.run_steps(2);
     assert!(h.state_mut().execute("edit.text"));
     h.state_mut().views[0].go_to_page(1);
@@ -390,18 +390,18 @@ fn a_kept_draft_goes_with_its_deleted_page() {
     h.event(egui::Event::Text("日本語".into()));
     h.run_steps(2);
     assert_eq!(h.state().views[0].content.draft.as_ref().map(|d| (d.page, d.text.as_str())), Some((1, "日本語")));
-    assert!(h.state_mut().apply_edit(recto_engine::Edit::DeletePages { pages: vec![1] }));
+    assert!(h.state_mut().apply_edit(pagic_engine::Edit::DeletePages { pages: vec![1] }));
     h.run_steps(2);
     assert!(h.state().views[0].content.draft.is_none());
 }
 
 #[test]
 fn typing_thai_text_keeps_marks_and_commits_to_page() {
-    if recto_fonts::document_thai_font().is_none() {
+    if pagic_fonts::document_thai_font().is_none() {
         return;
     }
-    let fonts = recto_ui_egui::theme::font_definitions();
-    let face = recto_fonts::document_thai_font().unwrap();
+    let fonts = pagic_ui_egui::theme::font_definitions();
+    let face = pagic_fonts::document_thai_font().unwrap();
     assert!(fonts.families[&egui::FontFamily::Proportional].contains(&face.name()));
     let mut h = harness();
     assert!(h.state_mut().execute("edit.text"));
@@ -456,7 +456,7 @@ fn finished_text_over_form_field_keeps_selection_and_drag_ownership() {
     assert_eq!(h.state().views[0].forms.focus.as_ref().map(|f| f.name.as_str()), Some("city"));
 }
 
-fn text_over_city() -> Harness<'static, RectoApp> {
+fn text_over_city() -> Harness<'static, PagicApp> {
     let mut h = harness_with_step_dt(1.0 / 60.0);
     assert!(h.state_mut().execute("edit.text"));
     h.run_steps(2);
@@ -526,7 +526,7 @@ fn closing_edit_panel_leaves_form_filling_available() {
 }
 
 /// The screen rectangle of an added item's display-space box (y up, from the page's bottom).
-fn item_on_screen(h: &Harness<'static, RectoApp>, r: [f64; 4]) -> egui::Rect {
+fn item_on_screen(h: &Harness<'static, PagicApp>, r: [f64; 4]) -> egui::Rect {
     let s = h.state();
     let ph = s.session.get(s.views[0].id).unwrap().info.pages[0].height;
     let page = s.views[0].page_screen_rect(0).expect("on screen");
@@ -550,14 +550,14 @@ fn probe(r: egui::Rect) -> egui::Rect {
 }
 
 /// Ink in the probes of the text's first and dragged places.
-fn ink_at(h: &mut Harness<'static, RectoApp>, from: egui::Rect, to: egui::Rect) -> (usize, usize) {
+fn ink_at(h: &mut Harness<'static, PagicApp>, from: egui::Rect, to: egui::Rect) -> (usize, usize) {
     let pixels = h.render().unwrap();
     (ink(&pixels, probe(from)), ink(&pixels, probe(to)))
 }
 
 /// Types text, finishes it, and drags it up without releasing, until the drag preview shows.
 /// Returns the text's box, its screen rectangles before and after, and the pointer.
-fn drag_added_text(h: &mut Harness<'static, RectoApp>) -> ([f64; 4], egui::Rect, egui::Rect, Pos2) {
+fn drag_added_text(h: &mut Harness<'static, PagicApp>) -> ([f64; 4], egui::Rect, egui::Rect, Pos2) {
     assert!(h.state_mut().execute("edit.text"));
     h.run_steps(2);
     let p = at(h, 40.0, 300.0);
@@ -604,7 +604,7 @@ fn dragged_text_follows_the_pointer_before_release() {
     let _gpu = gpu();
     let mut h = harness();
     let (rect, from, to, end) = drag_added_text(&mut h);
-    if let Ok(dir) = std::env::var("RECTO_SHOTS") {
+    if let Ok(dir) = std::env::var("PAGIC_SHOTS").or_else(|_| std::env::var("RECTO_SHOTS")) {
         h.render().unwrap().save(format!("{dir}/added-text-drag.png")).unwrap();
     }
     let (old, new) = ink_at(&mut h, from, to);
@@ -629,7 +629,7 @@ fn dragged_text_leaves_what_it_covered_behind() {
     let mut h = harness_bytes(pdf.into_bytes());
     let (rect, from, to, end) = drag_added_text(&mut h);
     assert!(rect[0] > 20.0 && rect[2] < 260.0 && rect[1] > 60.0 && rect[3] < 130.0, "the text starts on the red square: {rect:?}");
-    if let Ok(dir) = std::env::var("RECTO_SHOTS") {
+    if let Ok(dir) = std::env::var("PAGIC_SHOTS").or_else(|_| std::env::var("RECTO_SHOTS")) {
         h.render().unwrap().save(format!("{dir}/added-text-drag-over-red.png")).unwrap();
     }
     let pixels = h.render().unwrap();
@@ -686,7 +686,7 @@ fn released_text_does_not_jump_back_before_the_page_is_redrawn() {
 }
 
 /// Format text is laid out as Acrobat's: alignment from its flyout, style buttons by name, and
-/// the controls Recto can't apply yet present but disabled.
+/// the controls Pagic can't apply yet present but disabled.
 /// Format text lines its rows up (#3037): the size list is centred beside the colour swatch and
 /// the alignment button and is as tall as the font list, each spacing row's controls share one
 /// line, and nothing reaches past the font list, which spans the panel.
@@ -697,7 +697,7 @@ fn format_text_rows_line_up_and_fit_the_panel() {
     assert!(h.state_mut().execute("edit.text"));
     h.run_steps(3);
     h.get_by_label("FORMAT TEXT");
-    let combo = |h: &Harness<'static, RectoApp>, value: &str| {
+    let combo = |h: &Harness<'static, PagicApp>, value: &str| {
         h.query_all_by_role(Role::ComboBox).find(|n| n.value().as_deref() == Some(value)).map(|n| n.rect()).expect(value)
     };
     let (font, size) = (combo(&h, "Helvetica"), combo(&h, "12"));
@@ -736,7 +736,7 @@ fn format_text_panel_sets_alignment_and_lists_planned_controls_disabled() {
     h.run_steps(2);
     h.get_by_label("Centre").click();
     h.run_steps(2);
-    assert_eq!(h.state().text_style.align, recto_engine::TextAlign::Center);
+    assert_eq!(h.state().text_style.align, pagic_engine::TextAlign::Center);
     h.get_by_label("Bold").click();
     h.run_steps(2);
     assert!(h.state().text_style.bold);
@@ -749,8 +749,8 @@ fn the_text_editor_keeps_the_boxs_alignment() {
     let _gpu = gpu();
     let mut h = harness();
     let rect = [40.0, 195.0, 240.0, 210.0];
-    let text = recto_engine::AddedText { rect, text: "Hi".into(), align: recto_engine::TextAlign::Right, ..Default::default() };
-    assert!(h.state_mut().apply_edit(recto_engine::Edit::AddText { page: 0, text }));
+    let text = pagic_engine::AddedText { rect, text: "Hi".into(), align: pagic_engine::TextAlign::Right, ..Default::default() };
+    assert!(h.state_mut().apply_edit(pagic_engine::Edit::AddText { page: 0, text }));
     assert!(h.state_mut().execute("edit.text"));
     h.run_steps(3);
     let point = at(&h, 200.0, 195.0);
@@ -771,8 +771,8 @@ fn the_text_editor_aligns_a_narrow_box_to_its_own_edge() {
     let _gpu = gpu();
     let mut h = harness();
     let rect = [40.0, 195.0, 60.0, 210.0];
-    let text = recto_engine::AddedText { rect, text: "Hi".into(), align: recto_engine::TextAlign::Right, ..Default::default() };
-    assert!(h.state_mut().apply_edit(recto_engine::Edit::AddText { page: 0, text }));
+    let text = pagic_engine::AddedText { rect, text: "Hi".into(), align: pagic_engine::TextAlign::Right, ..Default::default() };
+    assert!(h.state_mut().apply_edit(pagic_engine::Edit::AddText { page: 0, text }));
     assert!(h.state_mut().execute("edit.text"));
     h.run_steps(3);
     let point = at(&h, 50.0, 195.0);
@@ -800,7 +800,7 @@ fn format_text_sets_character_spacing_for_added_text() {
     let mut h = harness();
     assert!(h.state_mut().execute("edit.text"));
     h.run_steps(3);
-    let disabled = |h: &Harness<'static, RectoApp>, label: &str| h.get_by_role_and_label(Role::SpinButton, label).accesskit_node().is_disabled();
+    let disabled = |h: &Harness<'static, PagicApp>, label: &str| h.get_by_role_and_label(Role::SpinButton, label).accesskit_node().is_disabled();
     assert!(disabled(&h, "Horizontal scale"), "added text has no scale yet");
     assert!(!disabled(&h, "Character spacing"), "added text takes character spacing");
     h.get_by_role_and_label(Role::SpinButton, "Character spacing").click();
@@ -813,17 +813,17 @@ fn format_text_sets_character_spacing_for_added_text() {
 }
 
 /// Where a mode bar tab is, by its label.
-fn mode_tab(h: &Harness<'static, RectoApp>, label: &str) -> egui::Rect {
+fn mode_tab(h: &Harness<'static, PagicApp>, label: &str) -> egui::Rect {
     h.get_all_by_role_and_label(egui::accesskit::Role::Button, label).map(|n| n.rect()).find(|r| r.bottom() < 120.0).expect("a mode tab")
 }
 
 /// Scroll the page until `what` (on screen) lies across the mode bar, then the cursor over each
 /// tab it lies under: with the All tools panel closed, every tab: All tools, Edit, Convert and E-Sign.
 fn mode_tab_cursors(
-    h: &mut Harness<'static, RectoApp>,
-    what: impl Fn(&Harness<'static, RectoApp>) -> egui::Rect,
+    h: &mut Harness<'static, PagicApp>,
+    what: impl Fn(&Harness<'static, PagicApp>) -> egui::Rect,
 ) -> [(&'static str, egui::CursorIcon); 4] {
-    let page = |h: &Harness<'static, RectoApp>| h.state().views[0].page_screen_rect(0).expect("on screen");
+    let page = |h: &Harness<'static, PagicApp>| h.state().views[0].page_screen_rect(0).expect("on screen");
     let y = what(h).center().y - page(h).top();
     let tabs = mode_tab(h, "Convert").center().y;
     h.state_mut().views[0].goto = Some((0, 0.0));
@@ -857,7 +857,7 @@ fn mode_tabs_keep_the_hand_over_added_text_scrolled_under_them() {
     assert!(h.state_mut().execute("edit.text"));
     h.state_mut().set_option("left", "closed").unwrap();
     // The page across the window, so text placed at its left edge reaches under the tabs.
-    h.state_mut().views[0].fit = recto_ui_egui::canvas::Fit::Width;
+    h.state_mut().views[0].fit = pagic_ui_egui::canvas::Fit::Width;
     h.run_steps(4);
     assert_eq!(h.state().quick_tool, QuickTool::AddText);
     // The empty page, ready for text.
@@ -877,11 +877,11 @@ fn mode_tabs_keep_the_hand_over_added_text_scrolled_under_them() {
     let kept = added(&h)[0].content.rect();
     assert_eq!(mode_tab_cursors(&mut h, |h| item_on_screen(h, kept)), HAND_ON_EVERY_TAB, "added text under the tabs");
     // The second box, still being typed.
-    let draft = |h: &Harness<'static, RectoApp>| item_on_screen(h, h.state().views[0].content.draft.as_ref().expect("the open box").rect);
+    let draft = |h: &Harness<'static, PagicApp>| item_on_screen(h, h.state().views[0].content.draft.as_ref().expect("the open box").rect);
     assert_eq!(mode_tab_cursors(&mut h, draft), HAND_ON_EVERY_TAB, "the open box under the tabs");
     let convert = mode_tab(&h, "Convert").center();
     click(&mut h, convert);
-    assert_eq!(h.state().mode, recto_ui_egui::Mode::Convert, "the tab takes the click, not the box");
+    assert_eq!(h.state().mode, pagic_ui_egui::Mode::Convert, "the tab takes the click, not the box");
 }
 
 /// Red pixels in `r`: the test picture.

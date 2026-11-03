@@ -2,7 +2,7 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_ui_egui::{Dialog, RectoApp};
+use pagic_ui_egui::{Dialog, PagicApp};
 
 /// Two pages; page 1 has a text field "name" (filled), a Reset button, a Next page button and a
 /// Print button (a JavaScript one-liner).
@@ -33,12 +33,12 @@ fn fixture() -> Vec<u8> {
     out
 }
 
-fn click_field(h: &mut Harness<'static, RectoApp>, name: &str) {
+fn click_field(h: &mut Harness<'static, PagicApp>, name: &str) {
     let p = {
         let s = h.state();
         let doc = s.session.get(s.views[0].id).unwrap();
         let f = doc.form.iter().find(|f| f.name == name).unwrap();
-        recto_ui_egui::forms_ui::field_screen_rect(&s.views[0], &doc.info, f, 0).expect("on screen").center()
+        pagic_ui_egui::forms_ui::field_screen_rect(&s.views[0], &doc.info, f, 0).expect("on screen").center()
     };
     h.hover_at(p);
     h.run_steps(1);
@@ -50,13 +50,13 @@ fn click_field(h: &mut Harness<'static, RectoApp>, name: &str) {
 
 #[test]
 fn buttons_reset_navigate_and_print() {
-    let dir = std::env::temp_dir().join(format!("recto-buttons-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pagic-buttons-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("buttons.pdf");
     std::fs::write(&path, fixture()).unwrap();
     let path_str = path.to_string_lossy().into_owned();
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("buttons.pdf", Some(path_str), fixture()).unwrap();
         app.set_option("zoom", "150").unwrap();
@@ -73,7 +73,7 @@ fn buttons_reset_navigate_and_print() {
     assert_eq!(h.state().dialog, Some(Dialog::Print), "this.print() opens the Print dialog");
     h.state_mut().dialog = None;
     h.run_steps(2);
-    // A document's Save named action never writes the file unasked (Recto's XFA buttons
+    // A document's Save named action never writes the file unasked (Pagic's XFA buttons
     // use SaveAs, which opens the Save As dialog, as a script's `execMenuItem` does): the
     // reset above made the document dirty, and the click leaves it so.
     let before = std::fs::read(&path).unwrap();
@@ -113,18 +113,18 @@ fn show_hide_fixture() -> Vec<u8> {
 }
 
 /// Whether the "name" widget (object 4) has the Hidden annotation flag in the saved document.
-fn name_hidden(h: &Harness<'static, RectoApp>) -> bool {
+fn name_hidden(h: &Harness<'static, PagicApp>) -> bool {
     let s = h.state();
     let bytes = s.session.save_bytes(s.views[0].id).unwrap();
-    let doc = recto_cos::Document::open(bytes).unwrap();
-    let f = doc.get(recto_cos::ObjRef::new(4, 0)).as_dict().and_then(|d| d.int(b"F")).unwrap_or(0);
+    let doc = pagic_cos::Document::open(bytes).unwrap();
+    let f = doc.get(pagic_cos::ObjRef::new(4, 0)).as_dict().and_then(|d| d.int(b"F")).unwrap_or(0);
     f & 2 != 0
 }
 
 #[test]
 fn hide_actions_hide_and_show_fields() {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("show-hide.pdf", None, show_hide_fixture()).unwrap();
         app.set_option("zoom", "150").unwrap();
@@ -137,7 +137,7 @@ fn hide_actions_hide_and_show_fields() {
         let s = h.state();
         let doc = s.session.get(s.views[0].id).unwrap();
         let f = doc.form.iter().find(|f| f.name == "hide").unwrap();
-        recto_ui_egui::forms_ui::field_screen_rect(&s.views[0], &doc.info, f, 0).expect("on screen").center()
+        pagic_ui_egui::forms_ui::field_screen_rect(&s.views[0], &doc.info, f, 0).expect("on screen").center()
     };
     h.hover_at(hide_at);
     h.run_steps(2);

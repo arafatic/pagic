@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use recto_render::{PageRenderer, RenderConfig, RenderPool, RenderRequest, RenderedPage};
+use pagic_render::{PageRenderer, RenderConfig, RenderPool, RenderRequest, RenderedPage};
 
 use crate::{Document, guard};
 
@@ -41,8 +41,8 @@ impl Document {
             }
             let editor = self.editor.as_ref().ok_or("the document can't be read")?;
             let mut cos = editor.cos.clone();
-            recto_edit::delete_content(&mut cos, page, index).map_err(|e| e.to_string())?;
-            let bytes = Arc::new(recto_cos::write_incremental(&cos, &recto_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
+            pagic_edit::delete_content(&mut cos, page, index).map_err(|e| e.to_string())?;
+            let bytes = Arc::new(pagic_cos::write_incremental(&cos, &pagic_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
             Ok(TextEditPreview { page, bytes, config: self.config.clone() })
         })?
     }
@@ -53,18 +53,18 @@ impl Document {
         page: usize,
         block: usize,
         text: &str,
-        style: &recto_edit::BlockStyle,
-    ) -> Result<recto_edit::text::TextEditLayout, String> {
+        style: &pagic_edit::BlockStyle,
+    ) -> Result<pagic_edit::text::TextEditLayout, String> {
         guard(|| {
             let editor = self.editor.as_ref().ok_or("the document can't be read")?;
-            recto_edit::text::text_edit_layout(&editor.cos, page, block, text, style).map_err(|e| e.to_string())
+            pagic_edit::text::text_edit_layout(&editor.cos, page, block, text, style).map_err(|e| e.to_string())
         })?
     }
 
     /// Embedded source faces for a text editor, bounded and validated as sfnt programs.
     /// This is read-only; no source font is installed or exported.
-    pub fn text_editor_fonts(&self, page: usize) -> Vec<recto_edit::text::TextEditorFont> {
-        self.editor.as_ref().and_then(|e| recto_edit::text::text_editor_fonts(&e.cos, page).ok()).unwrap_or_default()
+    pub fn text_editor_fonts(&self, page: usize) -> Vec<pagic_edit::text::TextEditorFont> {
+        self.editor.as_ref().and_then(|e| pagic_edit::text::text_editor_fonts(&e.cos, page).ok()).unwrap_or_default()
     }
 
     /// Preparing the background never changes working bytes, dirty state or undo history.
@@ -72,8 +72,8 @@ impl Document {
         guard(|| {
             let editor = self.editor.as_ref().ok_or("the document can't be read")?;
             let mut cos = editor.cos.clone();
-            recto_edit::clear_block(&mut cos, page, block).map_err(|e| e.to_string())?;
-            let bytes = Arc::new(recto_cos::write_incremental(&cos, &recto_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
+            pagic_edit::clear_block(&mut cos, page, block).map_err(|e| e.to_string())?;
+            let bytes = Arc::new(pagic_cos::write_incremental(&cos, &pagic_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
             Ok(TextEditPreview { page, bytes, config: self.config.clone() })
         })?
     }
@@ -84,8 +84,8 @@ impl Document {
         guard(|| {
             let editor = self.editor.as_ref().ok_or("the document can't be read")?;
             let mut cos = editor.cos.clone();
-            recto_edit::delete_content(&mut cos, page, index).map_err(|e| e.to_string())?;
-            let bytes = Arc::new(recto_cos::write_incremental(&cos, &recto_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
+            pagic_edit::delete_content(&mut cos, page, index).map_err(|e| e.to_string())?;
+            let bytes = Arc::new(pagic_cos::write_incremental(&cos, &pagic_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
             Ok(TextEditPreview { page, bytes, config: self.config.clone() })
         })?
     }
@@ -97,8 +97,8 @@ impl Document {
         guard(|| {
             let editor = self.editor.as_ref().ok_or("the document can't be read")?;
             let mut cos = editor.cos.clone();
-            recto_edit::isolate_content(&mut cos, page, index).map_err(|e| e.to_string())?;
-            let bytes = Arc::new(recto_cos::write_incremental(&cos, &recto_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
+            pagic_edit::isolate_content(&mut cos, page, index).map_err(|e| e.to_string())?;
+            let bytes = Arc::new(pagic_cos::write_incremental(&cos, &pagic_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
             Ok(TextEditPreview { page, bytes, config: RenderConfig { transparent: true, ..self.config.clone() } })
         })?
     }

@@ -1,5 +1,5 @@
 [package]
-name = "recto-sign"
+name = "pagic-sign"
 description = "Digital signatures (ISO 32000-2 §12.8, PAdES): X.509, CMS, PKCS #12, signing and validation"
 version.workspace = true
 edition.workspace = true
@@ -11,10 +11,10 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-recto-cos = { workspace = true }
-recto-annot = { workspace = true }
-recto-fonts = { workspace = true }
-recto-model = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-annot = { workspace = true }
+pagic-fonts = { workspace = true }
+pagic-model = { workspace = true }
 thiserror.workspace = true
 # ASN.1 UTCTime/GeneralizedTime conversion goes through chrono (no hand-rolled calendar code).
 chrono = { workspace = true }

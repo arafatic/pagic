@@ -2,7 +2,7 @@
 resolver = "3"
 members = ["crates/*", "apps/*", "xtask"]
 exclude = ["vendor"]
-default-members = ["crates/*", "apps/recto", "apps/recto-cli", "xtask"]
+default-members = ["crates/*", "apps/pagic", "apps/pagic-cli", "xtask"]
 
 [workspace.package]
 version = "0.14.0"
@@ -10,7 +10,7 @@ edition = "2024"
 authors = ["Arafat <typearaf@gmail.com>"]
 license = "MIT OR Apache-2.0"
 rust-version = "1.95"
-repository = "https://github.com/arafatic/recto"
+repository = "https://github.com/arafatic/pagic"
 
 [workspace.dependencies]
 # Shared frontend components; engines remain independent of egui.
@@ -20,45 +20,45 @@ craft-quit = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0"
 # One menu definition for the native macOS menu bar and the in-window bar elsewhere.
 craft-menu = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }
 craft-keymap = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545", default-features = false }
-# Shared system spooler; document composition remains in recto-print.
+# Shared system spooler; document composition remains in pagic-print.
 craft-print = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }
 # Whether a path stored in a document may be opened (GoToR link targets).
 craft-docpath = { version = "0.1.0", git = "https://github.com/arafatic/craft-libs", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }
 craft-update = { git = "https://github.com/arafatic/craft-libs", version = "=0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545", features = ["egui"] }
 # internal
-recto-geom = { path = "crates/geom", version = "0.14.0" }
-recto-filters = { path = "crates/filters", version = "0.14.0" }
-recto-cos = { path = "crates/cos", version = "0.14.0" }
-recto-crypt = { path = "crates/crypt", version = "0.14.0" }
-recto-organize = { path = "crates/organize", version = "0.14.0" }
-recto-measure = { path = "crates/measure", version = "0.14.0" }
-recto-annot = { path = "crates/annot", version = "0.14.0" }
-recto-audit = { path = "crates/audit", version = "0.14.0" }
-recto-fonts = { path = "crates/fonts", version = "0.14.0" }
-recto-model = { path = "crates/model", version = "0.14.0" }
-recto-content = { path = "crates/content", version = "0.14.0" }
-recto-redact = { path = "crates/redact", version = "0.14.0" }
-recto-print = { path = "crates/print", version = "0.14.0" }
-recto-xfdf = { path = "crates/xfdf", version = "0.14.0" }
-recto-sign = { path = "crates/sign", version = "0.14.0" }
-recto-optimize = { path = "crates/optimize", version = "0.14.0" }
-recto-a11y = { path = "crates/a11y", version = "0.14.0" }
-recto-oracle = { path = "crates/oracle", version = "0.14.0" }
-recto-testkit = { path = "crates/testkit", version = "0.14.0" }
-recto-ocr = { path = "crates/ocr", version = "0.14.0" }
-recto-js = { path = "crates/js", version = "0.14.0" }
-recto-compare = { path = "crates/compare", version = "0.14.0" }
-recto-preflight = { path = "crates/preflight", version = "0.14.0" }
-recto-export = { path = "crates/export", version = "0.14.0" }
-recto-edit = { path = "crates/edit", version = "0.14.0" }
-recto-create = { path = "crates/create", version = "0.14.0" }
-recto-forms = { path = "crates/forms", version = "0.14.0" }
-recto-xfa = { path = "crates/xfa", version = "0.14.0" }
-recto-render = { path = "crates/render", version = "0.14.0" }
-recto-engine = { path = "crates/engine", version = "0.14.0" }
-recto-platform = { path = "crates/platform", version = "0.14.0" }
-recto-ui-egui = { path = "crates/ui-egui", version = "0.14.0" }
-recto-automation = { path = "crates/automation", version = "0.14.0", default-features = false }
+pagic-geom = { path = "crates/geom", version = "0.14.0" }
+pagic-filters = { path = "crates/filters", version = "0.14.0" }
+pagic-cos = { path = "crates/cos", version = "0.14.0" }
+pagic-crypt = { path = "crates/crypt", version = "0.14.0" }
+pagic-organize = { path = "crates/organize", version = "0.14.0" }
+pagic-measure = { path = "crates/measure", version = "0.14.0" }
+pagic-annot = { path = "crates/annot", version = "0.14.0" }
+pagic-audit = { path = "crates/audit", version = "0.14.0" }
+pagic-fonts = { path = "crates/fonts", version = "0.14.0" }
+pagic-model = { path = "crates/model", version = "0.14.0" }
+pagic-content = { path = "crates/content", version = "0.14.0" }
+pagic-redact = { path = "crates/redact", version = "0.14.0" }
+pagic-print = { path = "crates/print", version = "0.14.0" }
+pagic-xfdf = { path = "crates/xfdf", version = "0.14.0" }
+pagic-sign = { path = "crates/sign", version = "0.14.0" }
+pagic-optimize = { path = "crates/optimize", version = "0.14.0" }
+pagic-a11y = { path = "crates/a11y", version = "0.14.0" }
+pagic-oracle = { path = "crates/oracle", version = "0.14.0" }
+pagic-testkit = { path = "crates/testkit", version = "0.14.0" }
+pagic-ocr = { path = "crates/ocr", version = "0.14.0" }
+pagic-js = { path = "crates/js", version = "0.14.0" }
+pagic-compare = { path = "crates/compare", version = "0.14.0" }
+pagic-preflight = { path = "crates/preflight", version = "0.14.0" }
+pagic-export = { path = "crates/export", version = "0.14.0" }
+pagic-edit = { path = "crates/edit", version = "0.14.0" }
+pagic-create = { path = "crates/create", version = "0.14.0" }
+pagic-forms = { path = "crates/forms", version = "0.14.0" }
+pagic-xfa = { path = "crates/xfa", version = "0.14.0" }
+pagic-render = { path = "crates/render", version = "0.14.0" }
+pagic-engine = { path = "crates/engine", version = "0.14.0" }
+pagic-platform = { path = "crates/platform", version = "0.14.0" }
+pagic-ui-egui = { path = "crates/ui-egui", version = "0.14.0" }
+pagic-automation = { path = "crates/automation", version = "0.14.0", default-features = false }
 
 # pdf
 hayro = "0.7.1"

@@ -1,6 +1,6 @@
 //! Cross-platform identity contract and recovery ownership. Native installer acceptance is separate.
-use recto_engine::{Edit, Protection, Session, identity};
-use recto_ui_egui::{RecoveryMeta, RecoveryStore};
+use pagic_engine::{Edit, Protection, Session, identity};
+use pagic_ui_egui::{RecoveryMeta, RecoveryStore};
 use std::sync::Arc;
 
 #[test]

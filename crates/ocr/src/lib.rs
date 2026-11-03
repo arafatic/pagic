@@ -1,4 +1,4 @@
-//! recto-ocr — Scan & OCR ▸ Recognize text (L4).
+//! pagic-ocr — Scan & OCR ▸ Recognize text (L4).
 //!
 //! Recognition runs the ocrs engine (MIT/Apache-2.0) with its pre-trained models (CC-BY-SA-4.0,
 //! fetched by `cargo xtask models`; see ATTRIBUTION.toml). The caller renders a page to pixels;
@@ -12,7 +12,7 @@
 
 use std::path::{Path, PathBuf};
 
-pub use recto_fonts::helvetica_width;
+pub use pagic_fonts::helvetica_width;
 
 /// The model files, as named in ATTRIBUTION.toml.
 pub const DETECTION_MODEL: &str = "text-detection.onnx";
@@ -30,7 +30,7 @@ pub const LANGUAGES: &[(&str, &str)] = &[("en", "English")];
 pub enum OcrError {
     /// Shown to end users (release packages ship the models; a source build fetches them with
     /// `cargo xtask models`). The UI catalogs key this exact text.
-    #[error("the text recognition models are not installed (reinstall Recto, or set RECTO_MODELS to the folder that holds them)")]
+    #[error("the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)")]
     NoModels,
     #[error("loading {0}: {1}")]
     Load(String, String),
@@ -66,7 +66,7 @@ impl Models {
     /// The directories [`Models::find`] looks in, in order.
     pub fn search_dirs() -> Vec<PathBuf> {
         let mut dirs = Vec::new();
-        if let Some(d) = std::env::var_os("RECTO_MODELS") {
+        if let Some(d) = std::env::var_os("PAGIC_MODELS").or_else(|| std::env::var_os("RECTO_MODELS")) {
             dirs.push(PathBuf::from(d));
         }
         if let Some(exe) = std::env::current_exe().ok().and_then(|e| e.parent().map(Path::to_path_buf)) {
@@ -80,14 +80,14 @@ impl Models {
     /// executable (packaging/*):
     /// - `models/` beside it: the Windows MSI and portable zip;
     /// - `../Resources/models`: the macOS app bundle (`Contents/MacOS` → `Contents/Resources`);
-    /// - `../share/recto/models`: the FHS-style trees (`bin/` → `share/`) of the Linux
+    /// - `../share/pagic/models`: the FHS-style trees (`bin/` → `share/`) of the Linux
     ///   deb/rpm/tar.gz/AppImage/Flatpak and the FreeBSD tarball, wherever they are installed.
     pub fn dirs_beside_exe(exe_dir: &Path) -> Vec<PathBuf> {
         vec![
             exe_dir.join("models"),
             exe_dir.join("../Resources/models"),
-            exe_dir.join("../share/recto/models"),
-            exe_dir.join("../share/recto/models"),
+            exe_dir.join("../share/pagic/models"),
+            exe_dir.join("../share/pagic/models"),
         ]
     }
 }
@@ -243,7 +243,7 @@ pub fn text_layer(words: &[PlacedWord]) -> Vec<u8> {
         let nums: Vec<String> = m.iter().map(|v| num(*v)).collect();
         out.extend_from_slice(nums.join(" ").as_bytes());
         out.extend_from_slice(b" Tm ");
-        out.extend(recto_fonts::literal(&recto_fonts::win_ansi(&w.text)));
+        out.extend(pagic_fonts::literal(&pagic_fonts::win_ansi(&w.text)));
         out.extend_from_slice(b" Tj\n");
     }
     out.extend_from_slice(b"ET\nQ\nEMC\n");
@@ -269,7 +269,7 @@ mod tests {
     /// alphabet (Chinese, for example) needs a text layer in another font first.
     #[test]
     fn the_model_alphabet_fits_the_text_layer_font() {
-        assert_eq!(recto_fonts::first_undrawable(ALPHABET), None);
+        assert_eq!(pagic_fonts::first_undrawable(ALPHABET), None);
     }
 
     #[test]
@@ -390,15 +390,15 @@ mod tests {
     /// Mirrors packaging/{windows/package.ps1,macos/package.sh,linux/package.sh,freebsd/package.sh}.
     #[test]
     fn finds_the_models_in_every_release_package_layout() {
-        let base = std::env::temp_dir().join(format!("recto-ocr-layouts-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("pagic-ocr-layouts-{}", std::process::id()));
         let layouts = [
-            ("windows", "Recto", "Recto/models"),
-            ("macos", "Recto.app/Contents/MacOS", "Recto.app/Contents/Resources/models"),
-            ("linux-deb-rpm", "usr/bin", "usr/share/recto/models"),
-            ("linux-tar", "recto-1.0.0-linux-x86_64/bin", "recto-1.0.0-linux-x86_64/share/recto/models"),
-            ("appimage", "Recto.AppDir/usr/bin", "Recto.AppDir/usr/share/recto/models"),
-            ("flatpak", "app/bin", "app/share/recto/models"),
-            ("freebsd", "usr/local/bin", "usr/local/share/recto/models"),
+            ("windows", "Pagic", "Pagic/models"),
+            ("macos", "Pagic.app/Contents/MacOS", "Pagic.app/Contents/Resources/models"),
+            ("linux-deb-rpm", "usr/bin", "usr/share/pagic/models"),
+            ("linux-tar", "pagic-1.0.0-linux-x86_64/bin", "pagic-1.0.0-linux-x86_64/share/pagic/models"),
+            ("appimage", "Pagic.AppDir/usr/bin", "Pagic.AppDir/usr/share/pagic/models"),
+            ("flatpak", "app/bin", "app/share/pagic/models"),
+            ("freebsd", "usr/local/bin", "usr/local/share/pagic/models"),
         ];
         for (name, exe_dir, models_dir) in layouts {
             let root = base.join(name);

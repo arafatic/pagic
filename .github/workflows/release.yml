@@ -13,7 +13,7 @@ jobs:
   build:
     name: Build (${{ matrix.name }})
     env:
-      RECTO_FONTS_REQUIRED: "1"
+      PAGIC_FONTS_REQUIRED: "1"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -21,13 +21,13 @@ jobs:
         include:
           - name: windows
             os: windows-latest
-            artifact: Recto-windows-x64.zip
+            artifact: Pagic-windows-x64.zip
           - name: linux
             os: ubuntu-latest
-            artifact: Recto-linux-x64.tar.gz
+            artifact: Pagic-linux-x64.tar.gz
           - name: macos
             os: macos-14
-            artifact: Recto-macos-arm64.zip
+            artifact: Pagic-macos-arm64.zip
 
     steps:
       - name: Checkout repository
@@ -42,8 +42,11 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Require approved Pagic packaging identities and artwork
+        run: python packaging/check-identity.py --require-release-ready
+
       - name: Build release binary
-        run: cargo build --release --bin recto
+        run: cargo build --release --bin pagic
 
       - name: Package Windows installer and archive
         if: matrix.os == 'windows-latest'
@@ -56,30 +59,30 @@ jobs:
           if ($env:GITHUB_REF_TYPE -ne 'tag') {
             $metadata = cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
             if ($LASTEXITCODE -ne 0) { throw 'cargo metadata failed' }
-            $VERSION = ($metadata.packages | Where-Object { $_.name -eq 'recto' }).version
+            $VERSION = ($metadata.packages | Where-Object { $_.name -eq 'pagic' }).version
           }
 
           ./packaging/windows/test-font-notices.ps1
           . ./packaging/windows/font-notices.ps1
-          Copy-RectoFontNotices $PWD.Path (Join-Path $PWD.Path 'target/font-licences')
+          Copy-PagicFontNotices $PWD.Path (Join-Path $PWD.Path 'target/font-licences')
           iscc "/DMyAppVersion=$VERSION" packaging/windows/setup.iss
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
 
           New-Item -ItemType Directory -Force -Path dist-windows
-          Copy-Item target/release/recto.exe dist-windows/
+          Copy-Item target/release/pagic.exe dist-windows/
           Copy-Item target/font-licences/*.txt dist-windows/
-          7z a -tzip Recto-windows-x64.zip ./dist-windows/*
+          7z a -tzip Pagic-windows-x64.zip ./dist-windows/*
 
       - name: Package Linux archive
         if: matrix.os == 'ubuntu-latest'
         run: |
           bash packaging/test-font-notices.sh
           mkdir -p dist-linux/bin
-          cp target/release/recto dist-linux/bin/
+          cp target/release/pagic dist-linux/bin/
           chmod +x dist-linux/bin/*
           . packaging/font-notices.sh
-          copy_font_licences dist-linux/share/doc/recto
-          tar -czvf Recto-linux-x64.tar.gz -C dist-linux .
+          copy_font_licences dist-linux/share/doc/pagic
+          tar -czvf Pagic-linux-x64.tar.gz -C dist-linux .
 
       - name: Package macOS application bundle
         if: matrix.os == 'macos-14'
@@ -90,13 +93,13 @@ jobs:
           fi
           SHORT_VERSION="${VERSION%%-*}"
           
-          APP="Recto.app"
+          APP="Pagic.app"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-          cp "target/release/recto" "$APP/Contents/MacOS/recto"
-          chmod +x "$APP/Contents/MacOS/recto"
+          cp "target/release/pagic" "$APP/Contents/MacOS/pagic"
+          chmod +x "$APP/Contents/MacOS/pagic"
           
-          if [ -f "assets/app-icon/recto.icns" ]; then
-            cp "assets/app-icon/recto.icns" "$APP/Contents/Resources/recto.icns"
+          if [ -f "assets/app-icon/pagic.icns" ]; then
+            cp "assets/app-icon/pagic.icns" "$APP/Contents/Resources/pagic.icns"
           fi
           
           sed -e "s/@VERSION@/$VERSION/g" \
@@ -116,7 +119,7 @@ jobs:
           copy_font_licences "$APP/Contents/Resources"
 
           codesign --force --options runtime --entitlements packaging/macos/entitlements.plist --deep --sign - "$APP"
-          ditto -c -k --keepParent "$APP" "Recto-macos-arm64.zip"
+          ditto -c -k --keepParent "$APP" "Pagic-macos-arm64.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -124,7 +127,7 @@ jobs:
           name: ${{ matrix.name }}-archive
           path: |
             ${{ matrix.artifact }}
-            Recto-windows-x64-setup.exe
+            Pagic-windows-x64-setup.exe
           if-no-files-found: ignore
 
   release:
@@ -144,7 +147,7 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            artifacts/Recto-windows-x64-setup.exe
-            artifacts/Recto-windows-x64.zip
-            artifacts/Recto-linux-x64.tar.gz
-            artifacts/Recto-macos-arm64.zip
+            artifacts/Pagic-windows-x64-setup.exe
+            artifacts/Pagic-windows-x64.zip
+            artifacts/Pagic-linux-x64.tar.gz
+            artifacts/Pagic-macos-arm64.zip

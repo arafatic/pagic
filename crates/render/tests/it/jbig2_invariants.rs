@@ -26,23 +26,19 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use recto_render::{PageRenderer, RenderConfig, RenderRequest, RequestKind};
+use pagic_render::{PageRenderer, RenderConfig, RenderRequest, RequestKind};
 
 /// `corpus/pdfjs/test/pdfs`, or `None` when nothing has been fetched.
 ///
 /// Panics when the checkout exists without the stamp `cargo xtask corpus` writes on a successful
-/// verification: an unverified corpus must fail loudly rather than skip, as in `recto-cos`'s
+/// verification: an unverified corpus must fail loudly rather than skip, as in `pagic-cos`'s
 /// corpus tests.
 fn corpus() -> Option<std::path::PathBuf> {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/pdfjs");
     if !dir.is_dir() {
         return None;
     }
-    assert!(
-        dir.join(".recto-corpus.json").is_file(),
-        "{} exists but has not been verified against the pin; run `cargo xtask corpus`",
-        dir.display()
-    );
+    assert!(dir.join(".pagic-corpus.json").is_file(), "{} exists but has not been verified against the pin; run `cargo xtask corpus`", dir.display());
     Some(dir.join("test/pdfs"))
 }
 

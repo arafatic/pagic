@@ -1,9 +1,9 @@
-//! recto-engine — the façade every frontend talks to (architecture §4).
+//! pagic-engine — the façade every frontend talks to (architecture §4).
 //!
 //! Holds open documents, their edit history and the tool catalogue. Frontends never touch the
 //! parsing, rendering or editing crates directly.
 //!
-//! **Editing model.** Each document keeps a `recto_cos::Document` (the object graph with a
+//! **Editing model.** Each document keeps a `pagic_cos::Document` (the object graph with a
 //! copy-on-write overlay of edits). An edit runs on a clone, and on success the previous state is
 //! pushed onto the undo stack (clones share all unchanged data, so this is cheap). After every
 //! edit the *working file* is produced by an incremental write — original bytes plus one
@@ -69,57 +69,57 @@ pub use signature_scan::{PhotoRect, ScanError, SignaturePhoto, Turn};
 pub use stamp_preview::StampPreview;
 pub use text_preview::TextEditPreview;
 
-pub use recto_organize::{BoxSpec, FieldConflicts, PageBox, SplitBy, Transition, TransitionSpec, mime_for_name, split_ranges};
+pub use pagic_organize::{BoxSpec, FieldConflicts, PageBox, SplitBy, Transition, TransitionSpec, mime_for_name, split_ranges};
 
-pub use recto_organize::LabelStyle;
-pub use recto_organize::Standard;
-pub use recto_organize::check_custom_key;
-pub use recto_organize::view::{InitialView, Layout as InitialLayout, Magnification, Navigation};
+pub use pagic_organize::LabelStyle;
+pub use pagic_organize::Standard;
+pub use pagic_organize::check_custom_key;
+pub use pagic_organize::view::{InitialView, Layout as InitialLayout, Magnification, Navigation};
 
-pub use recto_cos::Algorithm;
-pub use recto_create::{CONVERTIBLE, CreateError, ImageResolution, SourceKind, decode_text, source_kind};
-pub use recto_edit::added::{
+pub use pagic_cos::Algorithm;
+pub use pagic_create::{CONVERTIBLE, CreateError, ImageResolution, SourceKind, decode_text, source_kind};
+pub use pagic_edit::added::{
     CHAR_SPACING_LIMIT as ADDED_CHAR_SPACING_LIMIT, paste_place as added_paste_place, paste_rect as added_paste_rect, text_rect as added_text_rect,
     text_width as added_text_width,
 };
-pub use recto_edit::{
+pub use pagic_edit::{
     Added, AddedImage, AddedText, Align as TextAlign, Background, Content as AddedContent, Family as FontFamily, HeaderFooter, MarkKind, Watermark,
 };
-pub use recto_forms::{
+pub use pagic_forms::{
     BorderStyle, CalculatedField, CalculationIssue, CalculationOrder, CheckStyle, Field as FormField, FieldAction, FieldChange, FieldFont,
     FieldKind as FormFieldKind, FieldProps, FieldValue, Look as FieldLook, LookPatch as FieldLookPatch, NewField, TabOrder, Trigger as FieldTrigger,
     Widget as FormWidget, af as form_scripts, appearance as form_appearance, appearance::auto_text_size_by as field_auto_text_size_by,
     calculations_changed as form_calculations_changed, flags as field_flags,
 };
 
-pub use recto_a11y as a11y;
-pub use recto_edit::{BlockKey, BlockStyle, PageImage, RangeStyle, TextBlock, TextLine, block_overlapping, first_undrawable};
-pub use recto_measure as measure;
-pub use recto_xfa::Report as XfaLayout;
+pub use pagic_a11y as a11y;
+pub use pagic_edit::{BlockKey, BlockStyle, PageImage, RangeStyle, TextBlock, TextLine, block_overlapping, first_undrawable};
+pub use pagic_measure as measure;
+pub use pagic_xfa::Report as XfaLayout;
 
-pub use recto_edit::{EditableObject, MAX_MOVE_OBJECTS, ObjectKind, ObjectTarget};
+pub use pagic_edit::{EditableObject, MAX_MOVE_OBJECTS, ObjectKind, ObjectTarget};
 
-pub use recto_fonts::{MAX_SIGNATURE_CHARS, ScriptOutline, script_missing, script_outline, undrawable_message};
+pub use pagic_fonts::{MAX_SIGNATURE_CHARS, ScriptOutline, script_missing, script_outline, undrawable_message};
 
 /// Comment geometry helpers (text-box line breaking) for frontends.
-pub use recto_annot::appearance as annot_text;
-pub use recto_annot::links::{Highlight as LinkHighlight, LinkAction, LinkItem, LinkStyle};
-pub use recto_annot::{
+pub use pagic_annot::appearance as annot_text;
+pub use pagic_annot::links::{Highlight as LinkHighlight, LinkAction, LinkItem, LinkStyle};
+pub use pagic_annot::{
     AppearanceCache, AttachIcon, FillMark, LineEnding, Markup, NOTE_SIZE, NewAnnotation, NoteIcon, OverlayFont, OverlayLook, Props as CommentProps,
     ReviewState, Rgb, Shape, StampGroup, StampKind, Style, rect_quad,
 };
-pub use recto_forms::detect;
-pub use recto_optimize as optimize;
-pub use recto_preflight as pdfa;
-pub use recto_print as print;
-pub use recto_redact::codes::{CODE_SETS as REDACTION_CODE_SETS, CodeSet as RedactionCodeSet};
-pub use recto_redact::patterns::{
+pub use pagic_forms::detect;
+pub use pagic_optimize as optimize;
+pub use pagic_preflight as pdfa;
+pub use pagic_print as print;
+pub use pagic_redact::codes::{CODE_SETS as REDACTION_CODE_SETS, CodeSet as RedactionCodeSet};
+pub use pagic_redact::patterns::{
     MAX_WORDS as REDACT_MAX_WORDS, PATTERNS as REDACT_PATTERNS, Pattern as RedactPattern, find as find_pattern, word_list as redact_word_list,
 };
-pub use recto_redact::sanitize::{HIDDEN, Hidden};
-pub use recto_sign as sign;
-pub use recto_sign::{SignOptions, SignatureInfo, Status as SignatureStatus, TrustStore};
-pub use recto_xfdf::Format as DataFormat;
+pub use pagic_redact::sanitize::{HIDDEN, Hidden};
+pub use pagic_sign as sign;
+pub use pagic_sign::{SignOptions, SignatureInfo, Status as SignatureStatus, TrustStore};
+pub use pagic_xfdf::Format as DataFormat;
 
 use bookmarks::outline_rows;
 pub use bookmarks::{BookmarkPage, BookmarkRow};

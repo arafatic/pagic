@@ -1,5 +1,5 @@
 [package]
-name = "recto-preflight"
+name = "pagic-preflight"
 description = "Standards: verify PDF/A (ISO 19005) conformance and convert documents to PDF/A-2b or 3b"
 version.workspace = true
 edition.workspace = true
@@ -11,9 +11,9 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-recto-content = { workspace = true }
-recto-cos = { workspace = true }
-recto-model = { workspace = true }
+pagic-content = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-model = { workspace = true }
 roxmltree = "0.20"
 
 [dev-dependencies]

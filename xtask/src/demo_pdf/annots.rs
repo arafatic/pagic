@@ -81,7 +81,7 @@ impl Kind {
     }
 }
 
-const AUTHOR: &str = "Recto Reviewer";
+const AUTHOR: &str = "Pagic Reviewer";
 const AUTHOR_2: &str = "Layout Editor";
 
 /// Builds annotation dictionaries (and their appearance XObjects) for one document.
@@ -119,7 +119,7 @@ impl Annotator {
             "Subj" => text(subtype),
             "M" => Object::string_literal(when.pdf.clone()),
             "CreationDate" => Object::string_literal(when.pdf),
-            "NM" => Object::string_literal(format!("recto-showcase-{:03}-{}", self.seq, subtype.to_lowercase())),
+            "NM" => Object::string_literal(format!("pagic-showcase-{:03}-{}", self.seq, subtype.to_lowercase())),
         }
     }
 
@@ -269,7 +269,7 @@ impl Annotator {
         reply.set("AP", dictionary! { "N" => icon });
         let reply_id = doc.add_object(reply);
 
-        let mut state = self.base("Text", r, colors::TEAL, AUTHOR, "Accepted set by Recto Reviewer", page);
+        let mut state = self.base("Text", r, colors::TEAL, AUTHOR, "Accepted set by Pagic Reviewer", page);
         state.set("F", 30); // hidden: review-state annotations are shown only in the comments list
         state.set("Name", "Comment");
         state.set("IRT", self_id);
@@ -463,7 +463,7 @@ impl Annotator {
     fn stamp(&mut self, doc: &mut Document, page: ObjectId, r: Rect) -> Dictionary {
         let green = Rgb::hex(0x1d7f4e);
         let mut dict = self.base("Stamp", r, green, AUTHOR, "Approved for the showcase.", page);
-        dict.set("Name", "RectoApproved");
+        dict.set("Name", "PagicApproved");
         dict.set("CA", 0.92);
         let (w, h) = (r.w(), r.h());
         let mut c = Content::new();
@@ -488,7 +488,7 @@ impl Annotator {
     }
 
     fn attachment(&mut self, doc: &mut Document, page: ObjectId, r: Rect) -> Dictionary {
-        let note = "Review notes for the Recto showcase.\n\n\
+        let note = "Review notes for the Pagic showcase.\n\n\
                     - Page 9 exercises every common annotation type.\n\
                     - Each annotation carries its own appearance stream.\n";
         let fs = embedded_file(doc, "review-notes.txt", "text/plain", note.as_bytes(), "Notes attached to a comment", &self.now);

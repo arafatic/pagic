@@ -1,11 +1,11 @@
-//! Rendering checks for form fields. They live here, not in recto-forms, because forms and
+//! Rendering checks for form fields. They live here, not in pagic-forms, because forms and
 //! render are both layer 3 and may not depend on each other, not even for tests.
 
 use std::sync::Arc;
 
-use recto_cos::{Dict, Document, Object, SaveOptions, write_incremental};
-use recto_forms::{FieldProps, FieldValue, NewField, add_field, set_props, set_value};
-use recto_render::{PageRenderer, RenderConfig, RenderRequest, RequestKind};
+use pagic_cos::{Dict, Document, Object, SaveOptions, write_incremental};
+use pagic_forms::{FieldProps, FieldValue, NewField, add_field, set_props, set_value};
+use pagic_render::{PageRenderer, RenderConfig, RenderRequest, RequestKind};
 
 fn one_page() -> Document {
     let mut doc = Document::new_empty();

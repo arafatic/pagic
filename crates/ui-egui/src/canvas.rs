@@ -9,12 +9,12 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use egui::{Align2, Color32, CornerRadius, Pos2, Rect, Sense, Stroke, TextureHandle, TextureOptions, Vec2, pos2, vec2};
-use recto_engine::{DocId, Edit};
-use recto_render::{DestView, DocInfo, LayerOp, LinkTarget, PRINT_TAG, PageText, RenderPool, RenderRequest, RequestKind, Tile, device_pixels};
+use pagic_engine::{DocId, Edit};
+use pagic_render::{DestView, DocInfo, LayerOp, LinkTarget, PRINT_TAG, PageText, RenderPool, RenderRequest, RequestKind, Tile, device_pixels};
 
 use crate::page_pointer::PagePointer;
 use crate::theme::{self, Tokens};
-use crate::{RectoApp, QuickTool, RightPanel, comments, icons, widgets};
+use crate::{PagicApp, QuickTool, RightPanel, comments, icons, widgets};
 
 mod area;
 pub(super) mod autoscroll;
@@ -128,7 +128,7 @@ impl PageLayout {
         }
     }
 
-    /// Registry command that switches to this base layout (`RectoApp::execute`).
+    /// Registry command that switches to this base layout (`PagicApp::execute`).
     pub fn command(self) -> &'static str {
         match self {
             Self::Single => "view.layout.single",
@@ -249,7 +249,7 @@ pub struct Snapshot {
 /// A snapshot reads like its source document, plus the snapshot suffix that tells
 /// the tabs apart. Without a title the file name (which already carries the suffix)
 /// is enough.
-pub(crate) fn tab_label(app: &RectoApp, index: usize) -> Option<String> {
+pub(crate) fn tab_label(app: &PagicApp, index: usize) -> Option<String> {
     let view = app.views.get(index)?;
     let doc = app.session.get(view.id)?;
     let Some(snap) = view.snapshot.as_ref() else { return Some(doc.display_name()) };
@@ -414,7 +414,7 @@ pub struct DocView {
     pub pending_edit: Option<Edit>,
     /// Edit text: the lines per page (with the document generation they were read at), and the
     /// line being edited.
-    pub(crate) edit_lines: HashMap<usize, (u64, Vec<recto_engine::TextBlock>)>,
+    pub(crate) edit_lines: HashMap<usize, (u64, Vec<pagic_engine::TextBlock>)>,
     pub line_editor: Option<crate::edit_text_ui::LineEditor>,
     /// The paragraph editor whose edit was just queued. It opens again with its typing if the
     /// edit fails, as a refused form field does.
@@ -422,11 +422,11 @@ pub struct DocView {
     /// The box a click switched to while another paragraph was being edited: it opens once the
     /// queued edit has applied, so its index and geometry come from the document it now is (#2022).
     /// It is held as the paragraph's text and box, not an index: the edit can regroup the page.
-    pub(crate) pending_text_open: Option<(usize, recto_engine::BlockKey)>,
+    pub(crate) pending_text_open: Option<(usize, pagic_engine::BlockKey)>,
     pub(crate) text_background: crate::edit_text_ui::TextBackground,
     pub(crate) move_background: crate::content_ui::MoveBackground,
     /// Edit text & images: the images per page (by document generation), and the selected one.
-    pub(crate) edit_images: HashMap<usize, (u64, Vec<recto_engine::PageImage>)>,
+    pub(crate) edit_images: HashMap<usize, (u64, Vec<pagic_engine::PageImage>)>,
     pub(crate) objects: crate::object_ui::ObjectSelection,
     pub image_selection: Option<crate::edit_text_ui::ImageSelection>,
     /// Select tool: the picture clicked, to copy in its original format.
@@ -814,7 +814,7 @@ type PageRenders = (Vec<(usize, f32, u64, Option<Tile>)>, Vec<usize>);
 /// What the page-scroll closure reads: this frame's zoom, scrolling, tool and document state.
 #[derive(Clone, Copy)]
 struct PageEnv<'a> {
-    added: &'a Vec<recto_engine::Added>,
+    added: &'a Vec<pagic_engine::Added>,
     allowed: bool,
     author: &'a String,
     auto_delta: Vec2,
@@ -831,11 +831,11 @@ struct PageEnv<'a> {
     content_w: f32,
     custom_stamp: &'a Option<crate::stamps_ui::CustomStamp>,
     date_text: &'a Result<String, String>,
-    doc: &'a recto_engine::Document,
-    doc_links: &'a Vec<recto_engine::LinkItem>,
+    doc: &'a pagic_engine::Document,
+    doc_links: &'a Vec<pagic_engine::LinkItem>,
     edge_delta: Vec2,
     editing_content: bool,
-    form: &'a Arc<Vec<recto_engine::FormField>>,
+    form: &'a Arc<Vec<pagic_engine::FormField>>,
     generation: u64,
     glide: Vec2,
     hand: bool,
@@ -860,7 +860,7 @@ struct PageEnv<'a> {
     t: &'a Tokens,
     table_preview: &'a Option<crate::field_table_ui::Preview>,
     tag: u64,
-    text_style: &'a recto_engine::AddedText,
+    text_style: &'a pagic_engine::AddedText,
     tool: QuickTool,
     units: crate::units::Unit,
     unobstructed: bool,
@@ -1073,7 +1073,7 @@ pub(crate) struct PageToolContext<'a> {
     pub xf: &'a PageXform,
     pub ptr: &'a PagePointer,
     pub page: usize,
-    pub doc: &'a recto_engine::Document,
+    pub doc: &'a pagic_engine::Document,
     pub info: &'a DocInfo,
 }
 
@@ -1131,11 +1131,11 @@ fn page_tool_input(ui: &mut egui::Ui, view: &mut DocView, frame: &mut PageFrame<
             let corners = [(vx as f64 - w / 2.0, vy as f64 - h / 2.0), (vx as f64 + w / 2.0, vy as f64 + h / 2.0)];
             let u: Vec<[f32; 2]> = corners.iter().map(|(x, y)| info.pages[i].view_to_user(*x as f32, *y as f32)).collect();
             let rect = [u[0][0].min(u[1][0]) as f64, u[0][1].min(u[1][1]) as f64, u[0][0].max(u[1][0]) as f64, u[0][1].max(u[1][1]) as f64];
-            let by = (kind.group() == recto_engine::StampGroup::Dynamic).then(|| by_line.clone());
-            let shape = recto_engine::Shape::Stamp { rect, stamp: kind, by };
-            view.pending_edit = Some(recto_engine::Edit::AddAnnotation(recto_engine::NewAnnotation {
+            let by = (kind.group() == pagic_engine::StampGroup::Dynamic).then(|| by_line.clone());
+            let shape = pagic_engine::Shape::Stamp { rect, stamp: kind, by };
+            view.pending_edit = Some(pagic_engine::Edit::AddAnnotation(pagic_engine::NewAnnotation {
                 page: i,
-                style: recto_engine::Style::default_for(&shape),
+                style: pagic_engine::Style::default_for(&shape),
                 shape,
                 contents: String::new(),
                 author: author.clone(),
@@ -1153,11 +1153,11 @@ fn page_tool_input(ui: &mut egui::Ui, view: &mut DocView, frame: &mut PageFrame<
             let (vx, vy) = xf.screen_to_view(p);
             let u = info.pages[i].view_to_user(vx, vy);
             let (x, y) = (u[0] as f64, u[1] as f64);
-            view.pending_edit = Some(recto_engine::Edit::AddCustomStamp {
+            view.pending_edit = Some(pagic_engine::Edit::AddCustomStamp {
                 page: i,
                 rect: [x, y, x, y],
                 name: cs.name.clone(),
-                file: recto_engine::MarkFile { name: cs.file.clone(), bytes: cs.data.clone(), page: cs.page },
+                file: pagic_engine::MarkFile { name: cs.file.clone(), bytes: cs.data.clone(), page: cs.page },
                 author: author.clone(),
             });
             frame.out.stamp_placed = true;
@@ -1705,17 +1705,18 @@ fn page_overlays(ui: &mut egui::Ui, view: &mut DocView, frame: &mut PageFrame<'_
     }
 }
 
-fn paint_field_highlights(painter: &egui::Painter, xf: &PageXform, info: &DocInfo, form: &[recto_engine::FormField], page: usize, enabled: bool) {
+fn paint_field_highlights(painter: &egui::Painter, xf: &PageXform, info: &DocInfo, form: &[pagic_engine::FormField], page: usize, enabled: bool) {
     if !enabled {
         return;
     }
     for field in form.iter() {
-        let required = field.has(recto_engine::field_flags::REQUIRED);
+        let required = field.has(pagic_engine::field_flags::REQUIRED);
         for widget in field.widgets.iter().filter(|widget| widget.page == Some(page) && !widget.hidden && !widget.read_only) {
             let rect = widget.rect;
             let screen_rect = xf.user_rect(info, page, [rect[0] as f32, rect[1] as f32, rect[2] as f32, rect[3] as f32]);
             let tint = Color32::from_rgba_unmultiplied(0x6E, 0x8E, 0xF5, 48);
-            let (width, color) = if required { (2.0, Color32::from_rgb(0xE0, 0x24, 0x24)) } else { (1.0, Color32::from_rgba_unmultiplied(0x6E, 0x8E, 0xF5, 128)) };
+            let (width, color) =
+                if required { (2.0, Color32::from_rgb(0xE0, 0x24, 0x24)) } else { (1.0, Color32::from_rgba_unmultiplied(0x6E, 0x8E, 0xF5, 128)) };
             if widget.round {
                 let radius = screen_rect.width().min(screen_rect.height()) / 2.0;
                 painter.circle_filled(screen_rect.center(), radius, tint);
@@ -2381,7 +2382,7 @@ fn plan_renders(ui: &egui::Ui, view: &mut DocView, info: &DocInfo, renders: Page
 }
 
 /// Acts on the notice bar button that was clicked.
-fn apply_notice(app: &mut RectoApp, index: usize, notice: Option<Notice>) {
+fn apply_notice(app: &mut PagicApp, index: usize, notice: Option<Notice>) {
     match notice {
         #[cfg(not(target_arch = "wasm32"))]
         Some(Notice::Reload) => app.watch.reload_request = app.views.get(index).map(|view| view.id),
@@ -2413,7 +2414,7 @@ fn apply_notice(app: &mut RectoApp, index: usize, notice: Option<Notice>) {
 /// The snapshot notice bar's Close was clicked: close here, where no document borrow is held. The
 /// tab is looked up by id: indices may have shifted since the click, and the flag rides its own
 /// view, so a stale flag can never close the wrong tab. Whether a tab was closed (or asked about).
-fn close_requested_tab(app: &mut RectoApp, index: usize) -> bool {
+fn close_requested_tab(app: &mut PagicApp, index: usize) -> bool {
     let pending = app.views.get(index).filter(|v| v.close_requested).map(|v| v.id).and_then(|id| app.views.iter().position(|v| v.id == id));
     let Some(i) = pending else { return false };
     app.views[i].close_requested = false;
@@ -2613,10 +2614,10 @@ fn schedule_presentation_turn(ui: &egui::Ui, view: &mut DocView, click: Option<b
 /// Follows the link that was clicked. A link to another file comes back, to be opened once the
 /// document is no longer borrowed.
 fn follow_link(
-    app: &mut RectoApp,
+    app: &mut PagicApp,
     index: usize,
     target: Option<LinkTarget>,
-) -> Option<(recto_engine::DocId, String, recto_render::RemoteDestination)> {
+) -> Option<(pagic_engine::DocId, String, pagic_render::RemoteDestination)> {
     let view_id = app.views[index].id;
     match target? {
         LinkTarget::Page(p, dest) => {
@@ -2635,7 +2636,7 @@ fn follow_link(
 
 /// A finished marquee zoom, a signature rectangle drawn, or an empty signature field clicked.
 /// Returns the tool to go on with.
-fn finish_sign_requests(app: &mut RectoApp, index: usize, mut tool: QuickTool) -> QuickTool {
+fn finish_sign_requests(app: &mut PagicApp, index: usize, mut tool: QuickTool) -> QuickTool {
     if let Some(done) = app.views[index].marquee_done.take() {
         app.finish_marquee(index, done);
     }
@@ -2825,7 +2826,7 @@ fn refine_goto_point(mut scroll: egui::ScrollArea, view: &mut DocView, geometry:
 
 /// Draws the document tab at `index`: its notice bars, then its pages (or the Organize grid) in a
 /// scroll area with this frame's zoom, scrolling, tool input, overlays and render requests.
-pub fn document_area(app: &mut RectoApp, index: usize, ui: &mut egui::Ui) {
+pub fn document_area(app: &mut PagicApp, index: usize, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     // Keyboard scrolling applies to this frame's page view only, never later.
     let key_scroll = std::mem::take(&mut app.views[index].key_scroll);
@@ -3114,7 +3115,7 @@ pub fn document_area(app: &mut RectoApp, index: usize, ui: &mut egui::Ui) {
     }
     let form_notice = view.forms.notice.take();
     // One crop, then back to selecting (as Acrobat does).
-    let cropped = view.pending_edit.as_ref().is_some_and(|e| matches!(e, recto_engine::Edit::SetPageBox { .. }));
+    let cropped = view.pending_edit.as_ref().is_some_and(|e| matches!(e, pagic_engine::Edit::SetPageBox { .. }));
     let mut tool = app.quick_tool;
     comments::keys(ui.ctx(), view, &mut tool, allowed);
     if preparing {
@@ -3195,14 +3196,14 @@ struct FrameRequests {
     open_table: Option<(usize, [f64; 4])>,
     form_notice: Option<crate::forms_ui::FormNotice>,
     copy_selected: bool,
-    remote_open: Option<(recto_engine::DocId, String, recto_render::RemoteDestination)>,
-    form: Arc<Vec<recto_engine::FormField>>,
+    remote_open: Option<(pagic_engine::DocId, String, pagic_render::RemoteDestination)>,
+    form: Arc<Vec<pagic_engine::FormField>>,
     generation: u64,
     avail: Rect,
 }
 
 /// Opens the dialogs and runs the app commands the frame asked for.
-fn apply_frame_requests(app: &mut RectoApp, index: usize, ui: &mut egui::Ui, requests: FrameRequests) {
+fn apply_frame_requests(app: &mut PagicApp, index: usize, ui: &mut egui::Ui, requests: FrameRequests) {
     let FrameRequests {
         open_props,
         field_props,
@@ -3252,9 +3253,9 @@ fn apply_frame_requests(app: &mut RectoApp, index: usize, ui: &mut egui::Ui, req
         app.views[index].pending_edit = Some(if app.quick_tool == QuickTool::Comment(comments::CommentTool::Highlight) {
             // An area highlight: a highlight over the box.
             let style = app.comment_prefs.style(comments::CommentTool::Highlight);
-            recto_engine::Edit::AddAnnotation(recto_engine::NewAnnotation {
+            pagic_engine::Edit::AddAnnotation(pagic_engine::NewAnnotation {
                 page,
-                shape: recto_engine::Shape::TextMarkup { kind: recto_engine::Markup::Highlight, quads },
+                shape: pagic_engine::Shape::TextMarkup { kind: pagic_engine::Markup::Highlight, quads },
                 style,
                 contents: String::new(),
                 author,

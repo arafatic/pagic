@@ -2,8 +2,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use recto_content::Pieces;
-use recto_cos::{CosError, Dict, Document, ObjRef, Object};
+use pagic_content::Pieces;
+use pagic_cos::{CosError, Dict, Document, ObjRef, Object};
 
 use crate::{RedactError, page_streams};
 
@@ -131,7 +131,7 @@ struct UsedInGlyphs {
 }
 
 fn collect_used_resources_in_stream(data: &[u8], used: &mut UsedInGlyphs) -> Result<(), CosError> {
-    let parsed = recto_content::parse(data);
+    let parsed = pagic_content::parse(data);
     if parsed.skipped > 0 {
         return Err(CosError::Syntax { offset: 0, detail: "redaction could not fully inspect glyph stream syntax".into() });
     }
@@ -262,7 +262,7 @@ fn scan_content_stream(
 
 /// Apply an operator that changes or uses the current font: `Tf`, `gs`, and the text-showing
 /// operators, which record the glyphs they draw.
-fn apply_text_op(ctx: &mut ScanContext<'_>, res: &Dict, op: &recto_content::Op, current_font: &mut Option<FontKey>) {
+fn apply_text_op(ctx: &mut ScanContext<'_>, res: &Dict, op: &pagic_content::Op, current_font: &mut Option<FontKey>) {
     match op.op.as_slice() {
         b"Tf" => {
             if let Some(name) = op.name(0) {
@@ -456,7 +456,7 @@ pub(crate) fn unlink_type3(doc: &mut Document) -> Result<(), RedactError> {
     }
 
     // Scan all page contents and reachable forms to discover surviving glyph usage.
-    let page_list = recto_model::pages(doc);
+    let page_list = pagic_model::pages(doc);
     let mut used_glyphs: HashMap<FontKey, HashSet<Vec<u8>>> = HashMap::new();
     let mut seen_drawn_forms = HashSet::new();
 

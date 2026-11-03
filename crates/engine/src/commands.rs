@@ -393,12 +393,12 @@ pub const COMMANDS: &[CommandSpec] = &[
     c("page.split", "Split document…", PAGES, None, Assembly, "scissors"),
     c("page.number", "Number pages…", PAGES, None, Assembly, "hash"),
     c("help.shortcuts", "Keyboard shortcuts", HELP, None, Nothing, "circle-help"),
-    c("help.discord", "Recto Discussions", HELP, None, Nothing, "messages-square"),
-    c("help.app_page", "Recto web page", HELP, None, Nothing, "globe"),
-    c("help.github", "Recto on GitHub", HELP, None, Nothing, "code-xml"),
+    c("help.discord", "Pagic Discussions", HELP, None, Nothing, "messages-square"),
+    c("help.app_page", "Pagic web page", HELP, None, Nothing, "globe"),
+    c("help.github", "Pagic on GitHub", HELP, None, Nothing, "code-xml"),
     c("help.website", "Documentation", HELP, None, Nothing, "external-link"),
     c("help.check_updates", "Check for updates…", HELP, None, Nothing, "cloud"),
-    c("help.about", "About Recto", HELP, None, Nothing, "info"),
+    c("help.about", "About Pagic", HELP, None, Nothing, "info"),
 ];
 
 pub fn command(id: &str) -> Option<&'static CommandSpec> {

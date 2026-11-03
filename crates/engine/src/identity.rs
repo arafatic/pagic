@@ -1,4 +1,4 @@
-//! Pagic runtime namespaces. Display branding and Cargo package names change in a later stage.
+//! Pagic runtime namespaces. Cargo packages and display branding use these Pagic namespaces.
 //! Legacy document markers and protocol names are deliberately independent of this identity.
 
 pub const APP_ID: &str = "local.pagic.desktop";

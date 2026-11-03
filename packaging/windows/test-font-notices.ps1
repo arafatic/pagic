@@ -1,7 +1,7 @@
 param([string] $CraftFontsRoot)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'font-notices.ps1')
-$fixture = Join-Path ([IO.Path]::GetTempPath()) ('recto-font-notices-' + [guid]::NewGuid())
+$fixture = Join-Path ([IO.Path]::GetTempPath()) ('pagic-font-notices-' + [guid]::NewGuid())
 function Assert-Rejected([scriptblock] $Action, [string] $Message) {
   $rejected = $false
   try { & $Action | Out-Null } catch { $rejected = $true }
@@ -42,7 +42,7 @@ try {
   try {
     Remove-Item Env:RECTO_FONTS_DIR -ErrorAction SilentlyContinue
     $dest = Join-Path $fixture 'staged'
-    Copy-RectoFontNotices $repo $dest
+    Copy-PagicFontNotices $repo $dest
     foreach ($notice in Get-ChildItem (Join-Path $repo 'crates/fonts/assets/fonts/*/OFL.txt')) {
       $copy = Join-Path $dest "OFL-$($notice.Directory.Name).txt"
       if ((Get-FileHash $copy).Hash -ne (Get-FileHash $notice.FullName).Hash) { throw "Changed notice: $copy" }

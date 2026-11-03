@@ -12,11 +12,14 @@ mod cjk_scripts;
 /// when `RECTO_FONTS_REQUIRED` is set, and write `embedded_fonts.rs` to `OUT_DIR`.
 fn main() {
     println!("cargo::rerun-if-env-changed=RECTO_FONTS_DIR");
+    println!("cargo::rerun-if-env-changed=PAGIC_FONTS_DIR");
     println!("cargo::rerun-if-env-changed=RECTO_FONTS_REQUIRED");
-    let mut src = String::from("pub static RECTO_FONTS: &[EmbeddedFont] = &[\n");
-    let required = std::env::var_os("RECTO_FONTS_REQUIRED").is_some();
+    println!("cargo::rerun-if-env-changed=PAGIC_FONTS_REQUIRED");
+    let mut src = String::from("pub static PAGIC_FONTS: &[EmbeddedFont] = &[\n");
+    let required = std::env::var_os("PAGIC_FONTS_REQUIRED").or_else(|| std::env::var_os("RECTO_FONTS_REQUIRED")).is_some();
     let local_assets = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap_or_default()).join("assets");
-    let dir = std::env::var_os("RECTO_FONTS_DIR")
+    let dir = std::env::var_os("PAGIC_FONTS_DIR")
+        .or_else(|| std::env::var_os("RECTO_FONTS_DIR"))
         .map(PathBuf::from)
         .or_else(|| if local_assets.join("fonts/manifest.txt").is_file() { Some(local_assets) } else { None });
     if let Some(dir) = dir {
@@ -26,7 +29,7 @@ fn main() {
             Err(e) => println!("cargo::warning=building without font assets: {}: {e}", dir.display()),
         }
     } else if required {
-        println!("cargo::error=RECTO_FONTS_REQUIRED is set but no font directory was found");
+        println!("cargo::error=PAGIC_FONTS_REQUIRED is set but no font directory was found");
     }
     src.push_str("];\n");
     let out = PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join("embedded_fonts.rs");
@@ -46,7 +49,7 @@ fn craft_fonts(dir: &std::path::Path, required: bool) -> Result<String, String> 
         println!("cargo::rerun-if-changed={}", chinese.display());
         match chinese.try_exists() {
             Ok(false) if required => {
-                return Err(format!("{}: RECTO_FONTS_REQUIRED is set but the simplified-Chinese font manifest is missing", chinese.display()));
+                return Err(format!("{}: PAGIC_FONTS_REQUIRED is set but the simplified-Chinese font manifest is missing", chinese.display()));
             }
             Ok(false) => {}
             Ok(true) => match manifest(dir, &chinese, false, required) {
@@ -91,7 +94,7 @@ fn manifest(dir: &std::path::Path, manifest: &std::path::Path, wasm: bool, stric
                 cjk_scripts::CjkSizeDecision::Reject => {
                     let cap = cjk_scripts::cjk_cap_bytes(family, wasm);
                     return Err(format!(
-                        "{file}: the {family} face is larger than the {cap}-byte native Chinese UI cap; RECTO_FONTS_REQUIRED cannot embed it"
+                        "{file}: the {family} face is larger than the {cap}-byte native Chinese UI cap; PAGIC_FONTS_REQUIRED cannot embed it"
                     ));
                 }
             }
@@ -126,7 +129,7 @@ fn manifest(dir: &std::path::Path, manifest: &std::path::Path, wasm: bool, stric
     }
     if strict_cap && !has_hans {
         return Err(format!(
-            "{}: RECTO_FONTS_REQUIRED is set but the manifest emits no Hans face (a Simplified Chinese face is required)",
+            "{}: PAGIC_FONTS_REQUIRED is set but the manifest emits no Hans face (a Simplified Chinese face is required)",
             manifest.display()
         ));
     }
@@ -141,7 +144,7 @@ mod manifest_tests {
     /// input accepts another script and a missing asset still fails.
     #[test]
     fn required_native_manifest_rejects_non_hans_faces_after_parsing() {
-        let root = std::env::temp_dir().join(format!("recto-required-hans-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("pagic-required-hans-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(root.join("face.ttf"), b"synthetic manifest fixture").unwrap();
         let path = root.join("manifest.txt");

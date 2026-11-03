@@ -16,32 +16,32 @@ use anyhow::{Context, Result, bail};
 
 /// (file stem, title, what it shows, shot arguments after the PDF path).
 pub const SCENES: &[(&str, &str, &str, &[&str])] = &[
-    ("recto-viewer", "Viewer with comments", "README hero", &["--panel", "comments", "--zoom", "72"]),
-    ("recto-dark", "Dark theme", "README: themes", &["--theme", "dark", "--panel", "comments", "--page", "11", "--zoom", "80", "--notice", "off"]),
-    ("recto-organize", "Organize pages", "README: organize", &["--organize", "on", "--panel", "none", "--select", "5,6,7"]),
-    ("recto-find", "Find text", "README: search", &["--find", "type", "--page", "4", "--zoom", "90", "--panel", "none", "--notice", "off"]),
-    ("recto-bookmarks", "Bookmarks", "README: navigation", &["--panel", "bookmarks", "--page", "7", "--zoom", "75", "--notice", "off"]),
-    ("recto-forms", "Interactive form", "README: forms", &["--page", "13", "--fields", "on", "--zoom", "80", "--panel", "fields"]),
-    ("recto-layers", "Layers", "README: layers", &["--panel", "layers", "--page", "12", "--zoom", "75", "--notice", "off"]),
+    ("pagic-viewer", "Viewer with comments", "README hero", &["--panel", "comments", "--zoom", "72"]),
+    ("pagic-dark", "Dark theme", "README: themes", &["--theme", "dark", "--panel", "comments", "--page", "11", "--zoom", "80", "--notice", "off"]),
+    ("pagic-organize", "Organize pages", "README: organize", &["--organize", "on", "--panel", "none", "--select", "5,6,7"]),
+    ("pagic-find", "Find text", "README: search", &["--find", "type", "--page", "4", "--zoom", "90", "--panel", "none", "--notice", "off"]),
+    ("pagic-bookmarks", "Bookmarks", "README: navigation", &["--panel", "bookmarks", "--page", "7", "--zoom", "75", "--notice", "off"]),
+    ("pagic-forms", "Interactive form", "README: forms", &["--page", "13", "--fields", "on", "--zoom", "80", "--panel", "fields"]),
+    ("pagic-layers", "Layers", "README: layers", &["--panel", "layers", "--page", "12", "--zoom", "75", "--notice", "off"]),
     (
-        "recto-scripts",
+        "pagic-scripts",
         "Scripts of the world",
         "README: rendering",
         &["--page", "7", "--zoom", "125", "--left", "closed", "--panel", "none", "--notice", "off"],
     ),
-    ("recto-properties", "Document properties", "README: metadata", &["--dialog", "properties", "--notice", "off"]),
-    ("recto-palette", "Command palette", "README: tools", &["--palette", "page", "--notice", "off"]),
-    ("recto-split", "Split dialog", "README: split", &["--organize", "on", "--panel", "none", "--dialog", "split", "--notice", "off"]),
-    ("recto-tools", "All tools", "README: tool catalogue", &["--tools", "expanded", "--home", "on"]),
+    ("pagic-properties", "Document properties", "README: metadata", &["--dialog", "properties", "--notice", "off"]),
+    ("pagic-palette", "Command palette", "README: tools", &["--palette", "page", "--notice", "off"]),
+    ("pagic-split", "Split dialog", "README: split", &["--organize", "on", "--panel", "none", "--dialog", "split", "--notice", "off"]),
+    ("pagic-tools", "All tools", "README: tool catalogue", &["--tools", "expanded", "--home", "on"]),
     (
-        "recto-twoup",
+        "pagic-twoup",
         "Two-up reading",
         "README: layouts",
         &["--layout", "two-up", "--mode", "read", "--page", "4", "--theme", "dark", "--notice", "off"],
     ),
 ];
 
-const PDF: &str = "dist/demo/recto-showcase.pdf";
+const PDF: &str = "dist/demo/pagic-showcase.pdf";
 
 pub fn run(args: &[String]) -> Result<()> {
     let root = crate::assets::root();
@@ -50,7 +50,7 @@ pub fn run(args: &[String]) -> Result<()> {
         crate::demo_pdf::run(&[])?;
     }
     let status = Command::new(env!("CARGO"))
-        .args(["build", "--release", "-p", "recto-ui-egui", "--example", "shot"])
+        .args(["build", "--release", "-p", "pagic-ui-egui", "--example", "shot"])
         .current_dir(&root)
         .status()
         .context("building the shot example")?;
@@ -71,7 +71,7 @@ pub fn run(args: &[String]) -> Result<()> {
             .args(["--size", "1440x900", "--scale", "2", "--width", "1600"])
             .args(*scene)
             // Published images show only the embedded, openly licensed fonts (AGENTS.md §1.2).
-            .env("RECTO_SYSTEM_FONTS", "0")
+            .env("PAGIC_SYSTEM_FONTS", "0")
             .current_dir(&root)
             .status()
             .with_context(|| format!("running shot for {name}"))?;
@@ -105,11 +105,11 @@ fn update_attribution(root: &Path) -> Result<()> {
     for file in images.iter().filter(|f| f.ends_with(".png")) {
         let stem = file.trim_end_matches(".png");
         let scene = SCENES.iter().find(|(n, ..)| *n == stem);
-        let (title, usage) = scene.map(|(_, t, u, _)| (*t, *u)).unwrap_or(("Recto screenshot", "README"));
-        let contents = "Shows Recto UI, Lucide icons, the Recto mark and the showcase PDF built from the [[fetched]] OFL fonts";
+        let (title, usage) = scene.map(|(_, t, u, _)| (*t, *u)).unwrap_or(("Pagic screenshot", "README"));
+        let contents = "Shows Pagic UI, Lucide icons, the showcase PDF built from the [[fetched]] OFL fonts";
         let bytes = std::fs::read(root.join("docs/images").join(file))?;
         out.push_str(&format!(
-            "\n[[asset]]\npath = \"docs/images/{file}\"\ntitle = \"Recto screenshot: {title}\"\nauthor = \"Recto contributors (generated by `cargo xtask screenshots`)\"\nsource = \"this repository\"\nlicence = \"MIT OR Apache-2.0\"\nlicence_file = \"LICENSE-MIT\"\nkind = \"image\"\nusage = \"{usage}. {contents}\"\nsha256 = \"{}\"\n",
+            "\n[[asset]]\npath = \"docs/images/{file}\"\ntitle = \"Pagic screenshot: {title}\"\nauthor = \"Recto contributors (generated by `cargo xtask screenshots`)\"\nsource = \"this repository\"\nlicence = \"MIT OR Apache-2.0\"\nlicence_file = \"LICENSE-MIT\"\nkind = \"image\"\nusage = \"{usage}. {contents}\"\nsha256 = \"{}\"\n",
             crate::assets::sha256_hex(&bytes)
         ));
     }

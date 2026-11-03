@@ -1,4 +1,4 @@
-//! recto-geom — L0 geometry primitives shared by every Recto crate.
+//! pagic-geom — L0 geometry primitives shared by every Pagic crate.
 //!
 //! PDF user space is y-up with the origin at the bottom-left of the page; view space is y-down.
 //! `PageRect` is always in PDF user space (points, 1/72 inch).

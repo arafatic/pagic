@@ -11,7 +11,7 @@ use craft_ui::panes::{Edge, PaneContent, PaneHost, PaneLabels, PaneRequest, Pane
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::{Mode, RectoApp};
+use crate::{Mode, PagicApp};
 
 /// Default width of the Tools pane.
 pub const TOOLS_WIDTH: f32 = 272.0;
@@ -58,8 +58,8 @@ pub enum ToolsSide {
     Right,
 }
 
-/// The saved side panel layout. Which side panel is open stays in `RectoApp::right` and the
-/// Tools pane's open state in `RectoApp::left_open`.
+/// The saved side panel layout. Which side panel is open stays in `PagicApp::right` and the
+/// Tools pane's open state in `PagicApp::left_open`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SidePanels {
     /// The one setting that places the Tools pane; [`SidePanels::tools_edge`] is its only reader
@@ -264,7 +264,7 @@ fn migrate(old: &Value) -> Option<Restored> {
 }
 
 /// What `ui.panel` and `ui.state` report.
-pub fn state(app: &RectoApp) -> Value {
+pub fn state(app: &PagicApp) -> Value {
     let panels = &app.side_panels;
     json!({
         "tools_side": panels.tools_side,
@@ -277,7 +277,7 @@ pub fn state(app: &RectoApp) -> Value {
 }
 
 /// `ui.panel {panel, open?, width?}` and `ui.dock.reset` (`reset`).
-pub fn command(app: &mut RectoApp, reset: bool, params: &Value) -> Result<Value, String> {
+pub fn command(app: &mut PagicApp, reset: bool, params: &Value) -> Result<Value, String> {
     if reset {
         app.side_panels = SidePanels::default();
         app.left_open = true;
@@ -306,7 +306,7 @@ pub fn command(app: &mut RectoApp, reset: bool, params: &Value) -> Result<Value,
 }
 
 struct Content<'a> {
-    app: &'a mut RectoApp,
+    app: &'a mut PagicApp,
 }
 
 impl PaneContent<Pane> for Content<'_> {
@@ -322,7 +322,7 @@ impl PaneContent<Pane> for Content<'_> {
         match pane {
             Pane::Tools => crate::panels::left_panel(self.app, ui),
             Pane::Side => {
-                ui.data_mut(|data| data.insert_temp(egui::Id::unique("recto-inspector-body"), ui.max_rect()));
+                ui.data_mut(|data| data.insert_temp(egui::Id::unique("pagic-inspector-body"), ui.max_rect()));
                 crate::panels::right_panel(self.app, ui);
             }
         }
@@ -355,7 +355,7 @@ fn state_of(panels: &SidePanels, pane: Pane) -> PaneState {
 }
 
 /// The panes that show this frame, outermost first on a shared edge.
-fn open_panes(app: &RectoApp) -> Vec<Pane> {
+fn open_panes(app: &PagicApp) -> Vec<Pane> {
     let mut open = Vec::new();
     // Read mode hides the tools, not the navigation panes.
     if app.left_open && app.mode != Mode::Read {
@@ -369,7 +369,7 @@ fn open_panes(app: &RectoApp) -> Vec<Pane> {
 }
 
 /// Draws the rail and the open panes. Call after the top bars and before the central panel.
-pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
     if let Some(panel) = app.right {
         app.last_right = panel;
     }
@@ -389,7 +389,7 @@ pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
     let labels = PaneLabels { resize: crate::i18n::t("Resize panels").to_owned(), ..PaneLabels::default() };
     let panels = app.side_panels;
     // Columns: both panes may share the right edge, Tools outermost, as `open` lists them.
-    let output = PaneHost::new(egui::Id::unique("recto-side-panels"))
+    let output = PaneHost::new(egui::Id::unique("pagic-side-panels"))
         .policy(SidePolicy::Columns)
         .f6(false)
         .labels(labels)

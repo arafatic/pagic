@@ -140,7 +140,7 @@ fn hinting_test_fonts(platform: FontPolicyPlatform) -> Fonts {
 /// the top of the row.
 fn baselines(fallback: FontData, size: f32, text: &str) -> Vec<f32> {
     let mut defs = FontDefinitions::empty();
-    defs.font_data.insert("Inter".into(), Arc::new(FontData::from_static(recto_fonts::INTER_REGULAR)));
+    defs.font_data.insert("Inter".into(), Arc::new(FontData::from_static(pagic_fonts::INTER_REGULAR)));
     defs.font_data.insert("fallback".into(), Arc::new(fallback));
     defs.families.insert(FontFamily::Proportional, vec!["Inter".into(), "fallback".into()]);
     let mut fonts = Fonts::new(TextOptions::default(), defs);
@@ -302,7 +302,7 @@ fn text_is_readable_on_every_surface() {
 #[test]
 fn interface_tokens_are_monochrome_and_dark_is_the_default() {
     assert_eq!(ThemePreference::default(), ThemePreference::Dark);
-    let app = crate::RectoApp::new();
+    let app = crate::PagicApp::new();
     assert_eq!((app.theme_preference, app.theme), (ThemePreference::Dark, ThemeKind::Dark));
     for kind in [ThemeKind::Light, ThemeKind::Dark] {
         let t = Tokens::for_kind(kind);

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Build and package Recto for Linux (<arch> is x86_64 or aarch64, or riscv64 when cross-compiling):
+# Build and package Pagic for Linux (<arch> is x86_64 or aarch64, or riscv64 when cross-compiling):
 #
-#   $DIST/recto-<version>-linux-<arch>.AppImage  any distro with glibc >= the build host's
-#   $DIST/recto-<version>-linux-<arch>.AppImage.zsync  delta updates (needs zsyncmake)
-#   $DIST/recto-<version>-linux-<arch>.deb       Debian, Ubuntu, Mint, Pop!_OS, ...
-#   $DIST/recto-<version>-linux-<arch>.rpm       Fedora, openSUSE, RHEL, ...
-#   $DIST/recto-<version>-linux-<arch>.tar.gz    plain FHS-style tree (bin/, share/)
-#   $DIST/recto-cli-<version>-linux-<arch>.tar.gz  the headless CLI alone (servers, CI, agents)
+#   $DIST/pagic-<version>-linux-<arch>.AppImage  any distro with glibc >= the build host's
+#   $DIST/pagic-<version>-linux-<arch>.AppImage.zsync  delta updates (needs zsyncmake)
+#   $DIST/pagic-<version>-linux-<arch>.deb       Debian, Ubuntu, Mint, Pop!_OS, ...
+#   $DIST/pagic-<version>-linux-<arch>.rpm       Fedora, openSUSE, RHEL, ...
+#   $DIST/pagic-<version>-linux-<arch>.tar.gz    plain FHS-style tree (bin/, share/)
+#   $DIST/pagic-cli-<version>-linux-<arch>.tar.gz  the headless CLI alone (servers, CI, agents)
 #
-# A local or patched build: set RECTO_BUILD_LABEL (e.g. `titlebar`). `--version` and About then
+# A local or patched build: set PAGIC_BUILD_LABEL (e.g. `titlebar`). `--version` and About then
 # show `0.7.1 (titlebar)`, file names carry `-titlebar`, and the .rpm/.deb release becomes
 # `1.titlebar`, which upgrades over the release of the same version (and the next release over it).
 #
@@ -25,9 +25,10 @@
 set -euo pipefail
 # shellcheck source=../env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/../env.sh"
+python3 "$ROOT/packaging/check-identity.py" --require-release-ready
 HERE="$ROOT/packaging/linux"
-APP_ID=local.recto.desktop
-RESOURCE_ID=local.recto.desktop
+APP_ID=local.pagic.desktop
+RESOURCE_ID=local.pagic.desktop
 
 SKIP_BUILD=0
 FORMATS="appimage deb rpm tar cli"
@@ -48,16 +49,16 @@ case "$ARCH" in
   *) echo "unsupported architecture $ARCH" >&2; exit 2 ;;
 esac
 export RECTO_MAINTAINER="${RECTO_MAINTAINER:-Arafat <typearaf@gmail.com>}"
-LABEL_SUFFIX="${RECTO_BUILD_LABEL:+-$RECTO_BUILD_LABEL}"
-BASENAME="recto-$VERSION$LABEL_SUFFIX-linux-$ARCH"
+LABEL_SUFFIX="${PAGIC_BUILD_LABEL:+-$PAGIC_BUILD_LABEL}"
+BASENAME="pagic-$VERSION$LABEL_SUFFIX-linux-$ARCH"
 
-echo "==> Recto $VERSION$LABEL_SUFFIX for Linux $ARCH ($FORMATS)"
+echo "==> Pagic $VERSION$LABEL_SUFFIX for Linux $ARCH ($FORMATS)"
 
 if [[ "$SKIP_BUILD" = 0 ]]; then
   if [[ -n "${CROSS_TARGET:-}" ]]; then
-    (cd "$ROOT" && cargo build --release --locked -p recto -p recto-cli --target "$CROSS_TARGET")
+    (cd "$ROOT" && cargo build --release --locked -p pagic -p pagic-cli --target "$CROSS_TARGET")
   else
-    (cd "$ROOT" && cargo build --release --locked -p recto -p recto-cli)
+    (cd "$ROOT" && cargo build --release --locked -p pagic -p pagic-cli)
   fi
 fi
 BIN="$CARGO_TARGET_DIR/${CROSS_TARGET:+$CROSS_TARGET/}release"
@@ -66,20 +67,20 @@ STAGE="$WORK/root"
 rm -rf "$WORK"
 
 # ---- stage an FHS tree (shared by every format) -------------------------------------------------
-install -Dm755 "$BIN/recto" "$STAGE/usr/bin/recto"
-install -Dm755 "$BIN/recto-cli" "$STAGE/usr/bin/recto-cli"
-"${CROSS_COMPILE:-}strip" "$STAGE/usr/bin/recto" "$STAGE/usr/bin/recto-cli" 2>/dev/null || true
+install -Dm755 "$BIN/pagic" "$STAGE/usr/bin/pagic"
+install -Dm755 "$BIN/pagic-cli" "$STAGE/usr/bin/pagic-cli"
+"${CROSS_COMPILE:-}strip" "$STAGE/usr/bin/pagic" "$STAGE/usr/bin/pagic-cli" 2>/dev/null || true
 install -Dm644 "$HERE/$RESOURCE_ID.desktop" "$STAGE/usr/share/applications/$APP_ID.desktop"
 install -Dm644 "$HERE/$RESOURCE_ID.mime.xml" "$STAGE/usr/share/mime/packages/$APP_ID.xml"
 mkdir -p "$STAGE/usr/share/metainfo"
-sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$RECTO_BUILD_DATE/g" \
+sed -e "s/@VERSION@/$VERSION/g" -e "s/@DATE@/$PAGIC_BUILD_DATE/g" \
   "$HERE/$RESOURCE_ID.metainfo.xml.in" >"$STAGE/usr/share/metainfo/$APP_ID.metainfo.xml"
 mkdir -p "$STAGE/usr/share/icons"
 cp -R "$ROOT/assets/app-icon/hicolor" "$STAGE/usr/share/icons/"
-mkdir -p "$STAGE/usr/share/doc/recto"
-copy_docs "$STAGE/usr/share/doc/recto"
-# OCR models: the app finds them at <bin>/../share/recto/models, so in every format below.
-stage_models "$STAGE/usr/share/recto/models"
+mkdir -p "$STAGE/usr/share/doc/pagic"
+copy_docs "$STAGE/usr/share/doc/pagic"
+# OCR models: the app finds them at <bin>/../share/pagic/models, so in every format below.
+stage_models "$STAGE/usr/share/pagic/models"
 
 if command -v desktop-file-validate >/dev/null; then
   desktop-file-validate "$STAGE/usr/share/applications/$APP_ID.desktop"
@@ -108,13 +109,13 @@ if has tar; then
 fi
 
 # ---- CLI-only .tar.gz ---------------------------------------------------------------------------
-# The stripped recto-cli (and its opt-in MCP server) with the licences, for machines that never
+# The stripped pagic-cli (and its opt-in MCP server) with the licences, for machines that never
 # open a window. Like the other formats it needs glibc >= the build host's.
 if has cli; then
-  CLI_NAME="recto-cli-$VERSION$LABEL_SUFFIX-linux-$ARCH"
+  CLI_NAME="pagic-cli-$VERSION$LABEL_SUFFIX-linux-$ARCH"
   CLI_DIR="$WORK/cli/$CLI_NAME"
   mkdir -p "$CLI_DIR"
-  cp "$STAGE/usr/bin/recto-cli" "$CLI_DIR/"
+  cp "$STAGE/usr/bin/pagic-cli" "$CLI_DIR/"
   copy_docs "$CLI_DIR"
   tar -C "$WORK/cli" -czf "$DIST/$CLI_NAME.tar.gz" "$CLI_NAME"
   echo "wrote $DIST/$CLI_NAME.tar.gz"
@@ -124,7 +125,7 @@ fi
 if has deb || has rpm; then
   command -v nfpm >/dev/null || { echo "error: nfpm not found (https://nfpm.goreleaser.com/docs/install/)" >&2; exit 1; }
   export VERSION
-  export RELEASE="1${RECTO_BUILD_LABEL:+.$RECTO_BUILD_LABEL}"
+  export RELEASE="1${PAGIC_BUILD_LABEL:+.$PAGIC_BUILD_LABEL}"
   export NFPM_ARCH="$DEB_ARCH"
   # nfpm expands env vars in fields like `version` and `arch`, but not in `contents[].src`.
   sed "s|\${STAGE}|$STAGE|g" "$HERE/nfpm.yaml" >"$WORK/nfpm.yaml"
@@ -152,9 +153,9 @@ if has appimage; then
     echo "no pinned AppImage runtime for $ARCH; build the AppImage on x86_64 or aarch64" >&2
     exit 2
   fi
-  APPDIR="$WORK/Recto.AppDir"
+  APPDIR="$WORK/Pagic.AppDir"
   cp -R "$STAGE" "$APPDIR"
-  ln -s usr/bin/recto "$APPDIR/AppRun"
+  ln -s usr/bin/pagic "$APPDIR/AppRun"
   cp "$HERE/$RESOURCE_ID.desktop" "$APPDIR/$APP_ID.desktop"
   cp "$ROOT/assets/app-icon/hicolor/256x256/apps/$APP_ID.png" "$APPDIR/$APP_ID.png"
   ln -s "$APP_ID.png" "$APPDIR/.DirIcon"
@@ -197,8 +198,8 @@ if has appimage; then
   # fetch only the blocks that changed in a newer release, through the .zsync published next to
   # each AppImage on GitHub Releases. `latest` is the newest published release that is not a
   # pre-release. A fork's builds point at its own releases through GITHUB_REPOSITORY.
-  REPO="${GITHUB_REPOSITORY:-arafatic/recto}"
-  UPDATE_INFO="gh-releases-zsync|${REPO%%/*}|${REPO#*/}|latest|recto-*-linux-$ARCH.AppImage.zsync"
+  REPO="${GITHUB_REPOSITORY:-arafatic/pagic}"
+  UPDATE_INFO="gh-releases-zsync|${REPO%%/*}|${REPO#*/}|latest|pagic-*-linux-$ARCH.AppImage.zsync"
   # Extract-and-run: works without FUSE (containers, CI). The output embeds the static runtime,
   # so users don't need libfuse2 either. With zsyncmake on the host (CI installs the zsync
   # package) appimagetool also writes the .zsync, into its working directory, hence the cd.
@@ -212,9 +213,9 @@ if has appimage; then
 fi
 
 if [[ -z "${CROSS_TARGET:-}" ]]; then
-  "$STAGE/usr/bin/recto-cli" --version
+  "$STAGE/usr/bin/pagic-cli" --version
 elif [[ -n "${EMULATOR:-}" ]]; then
-  "$EMULATOR" "$STAGE/usr/bin/recto-cli" --version
+  "$EMULATOR" "$STAGE/usr/bin/pagic-cli" --version
 fi
 echo "==> done"
 ls -lh "$DIST"

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Record the facts behind a scanner detection of Recto Windows files: SHA-256, Authenticode
+  Record the facts behind a scanner detection of Pagic Windows files: SHA-256, Authenticode
   status and, with -YaraExe and -YaraRule, the matched strings and offsets of an external YARA rule.
 
 .DESCRIPTION
@@ -13,10 +13,10 @@
   condition branch that fired.
 
 .EXAMPLE
-  pwsh packaging/windows/security-audit.ps1 -Path dist\release\recto-0.5.0-windows-x64-portable\recto.exe
+  pwsh packaging/windows/security-audit.ps1 -Path dist\release\pagic-0.5.0-windows-x64-portable\pagic.exe
 
 .EXAMPLE
-  pwsh packaging/windows/security-audit.ps1 -Path .\recto.exe, .\recto-cli.exe -YaraExe C:\tools\yara64.exe -YaraRule C:\rules\CobaltStrikeBeacon.yar
+  pwsh packaging/windows/security-audit.ps1 -Path .\pagic.exe, .\pagic-cli.exe -YaraExe C:\tools\yara64.exe -YaraRule C:\rules\CobaltStrikeBeacon.yar
 #>
 param(
   [Parameter(Mandatory)] [string[]] $Path,

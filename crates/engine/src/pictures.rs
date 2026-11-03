@@ -15,11 +15,11 @@ pub struct MarkFile {
 
 /// Embed an image that is placed on a page, turned the way its EXIF Orientation says.
 pub(crate) fn embed_image(
-    doc: &mut recto_cos::Document,
+    doc: &mut pagic_cos::Document,
     name: &str,
     bytes: &[u8],
-) -> Result<(recto_cos::ObjRef, (f64, f64)), recto_create::CreateError> {
-    recto_create::image_xobject(doc, name, bytes)
+) -> Result<(pagic_cos::ObjRef, (f64, f64)), pagic_create::CreateError> {
+    pagic_create::image_xobject(doc, name, bytes)
 }
 
 /// The largest box of `w`:`h` shape inside `rect`, centred in it: a stamp's picture keeps its
@@ -46,14 +46,14 @@ pub(crate) fn fit_picture(rect: [f64; 4], w: f64, h: f64) -> [f64; 4] {
 }
 
 /// Bring a mark's picture into `doc`: a PDF page as a form XObject, or an image.
-pub(crate) fn mark_source(doc: &mut recto_cos::Document, f: &MarkFile) -> Result<recto_edit::MarkSource, EditError> {
+pub(crate) fn mark_source(doc: &mut pagic_cos::Document, f: &MarkFile) -> Result<pagic_edit::MarkSource, EditError> {
     let head = &f.bytes[..f.bytes.len().min(1024)];
     if head.windows(5).any(|w| w == b"%PDF-") {
-        let src = recto_cos::Document::open(f.bytes.clone()).map_err(|e| EditError::Source(format!("{}: {e}", f.name)))?;
-        let (xobject, size) = recto_organize::page_as_form(doc, &src, f.page)?;
-        Ok(recto_edit::MarkSource { xobject, size, image: false })
+        let src = pagic_cos::Document::open(f.bytes.clone()).map_err(|e| EditError::Source(format!("{}: {e}", f.name)))?;
+        let (xobject, size) = pagic_organize::page_as_form(doc, &src, f.page)?;
+        Ok(pagic_edit::MarkSource { xobject, size, image: false })
     } else {
         let (xobject, size) = embed_image(doc, &f.name, &f.bytes)?;
-        Ok(recto_edit::MarkSource { xobject, size, image: true })
+        Ok(pagic_edit::MarkSource { xobject, size, image: true })
     }
 }

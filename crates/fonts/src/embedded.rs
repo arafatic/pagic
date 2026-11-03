@@ -1,4 +1,4 @@
-//! Embedded font assets for Recto (`crates/fonts/assets/fonts/`).
+//! Embedded font assets for Pagic (`crates/fonts/assets/fonts/`).
 //!
 //! `build.rs` embeds fonts from the local `crates/fonts/assets/` directory or from
 //! `RECTO_FONTS_DIR=<path>` when specified.
@@ -31,7 +31,7 @@ impl EmbeddedFont {
 /// The `Jpan` bundled font faces in the order the interface prefers them: BIZ UDPGothic (a UI
 /// face) first, then the rest in manifest order. Empty without bundled fonts.
 pub fn ui_japanese_fonts() -> Vec<&'static EmbeddedFont> {
-    let mut fonts: Vec<&EmbeddedFont> = RECTO_FONTS.iter().filter(|f| f.covers("Jpan")).collect();
+    let mut fonts: Vec<&EmbeddedFont> = PAGIC_FONTS.iter().filter(|f| f.covers("Jpan")).collect();
     // Stable: manifest order within each group.
     fonts.sort_by_key(|f| f.family != "BIZ UDPGothic");
     fonts
@@ -41,13 +41,13 @@ pub fn ui_japanese_fonts() -> Vec<&'static EmbeddedFont> {
 /// Empty when built without bundled fonts (Chinese text then shows the font system's
 /// replacement glyph, the same degraded mode as Japanese without bundled fonts).
 pub fn ui_chinese_fonts() -> Vec<&'static EmbeddedFont> {
-    RECTO_FONTS.iter().filter(|f| f.covers("Hans")).collect()
+    PAGIC_FONTS.iter().filter(|f| f.covers("Hans")).collect()
 }
 
 /// The `Arab` bundled font faces for Arabic-script interface text (file names, document titles),
 /// in manifest order. Empty when built without bundled fonts or when it has no Arabic face.
 pub fn ui_arabic_fonts() -> Vec<&'static EmbeddedFont> {
-    arabic(RECTO_FONTS.iter())
+    arabic(PAGIC_FONTS.iter())
 }
 
 /// The face for Arabic text written into PDFs: the first `Arab` face. `None` when built without
@@ -64,12 +64,12 @@ fn arabic<'a>(faces: impl IntoIterator<Item = &'a EmbeddedFont>) -> Vec<&'a Embe
 /// document titles), in manifest order. Empty when built without bundled fonts or when it has no
 /// Telugu face.
 pub fn ui_telugu_fonts() -> Vec<&'static EmbeddedFont> {
-    RECTO_FONTS.iter().filter(|f| f.covers("Telu")).collect()
+    PAGIC_FONTS.iter().filter(|f| f.covers("Telu")).collect()
 }
 
 /// Thai faces shared by the interface and PDF text writer.
 pub fn ui_thai_fonts() -> Vec<&'static EmbeddedFont> {
-    RECTO_FONTS.iter().filter(|f| f.covers("Thai")).collect()
+    PAGIC_FONTS.iter().filter(|f| f.covers("Thai")).collect()
 }
 
 pub fn document_thai_font() -> Option<&'static EmbeddedFont> {
@@ -81,7 +81,7 @@ pub fn document_thai_font() -> Option<&'static EmbeddedFont> {
 /// has no Devanagari face; a desktop build then falls back to one font already installed on the
 /// machine (`SYSTEM_DEVANAGARI_FALLBACK`), and the web build shows replacement boxes.
 pub fn ui_devanagari_fonts() -> Vec<&'static EmbeddedFont> {
-    RECTO_FONTS.iter().filter(|f| f.covers("Deva")).collect()
+    PAGIC_FONTS.iter().filter(|f| f.covers("Deva")).collect()
 }
 
 /// The face for Devanagari text written into PDFs: the first `Deva` face. `None` when built
@@ -94,13 +94,13 @@ pub fn document_devanagari_font() -> Option<&'static EmbeddedFont> {
 /// being edited), in manifest order. Empty when built without bundled fonts or when it has no
 /// Hebrew face.
 pub fn ui_hebrew_fonts() -> Vec<&'static EmbeddedFont> {
-    RECTO_FONTS.iter().filter(|f| f.covers("Hebr")).collect()
+    PAGIC_FONTS.iter().filter(|f| f.covers("Hebr")).collect()
 }
 
 /// The face for Hebrew text written into PDFs: the `Hebr` face of the asked weight, else its
 /// Regular, else any `Hebr` face. `None` without bundled fonts or without a Hebrew face.
 pub fn document_hebrew_font(bold: bool) -> Option<&'static EmbeddedFont> {
-    hebrew_face(RECTO_FONTS, bold)
+    hebrew_face(PAGIC_FONTS, bold)
 }
 
 fn hebrew_face(faces: &[EmbeddedFont], bold: bool) -> Option<&EmbeddedFont> {
@@ -118,7 +118,7 @@ fn hebrew_face(faces: &[EmbeddedFont], bold: bool) -> Option<&EmbeddedFont> {
 /// metrics then sink it below the line. Preferring the UI language's face keeps one line in
 /// one face with one baseline.
 pub fn ui_cjk_fonts(prefer_hans: bool) -> Vec<&'static EmbeddedFont> {
-    order_cjk(RECTO_FONTS.iter(), prefer_hans)
+    order_cjk(PAGIC_FONTS.iter(), prefer_hans)
 }
 
 fn order_cjk<'a>(faces: impl IntoIterator<Item = &'a EmbeddedFont>, prefer_hans: bool) -> Vec<&'a EmbeddedFont> {
@@ -134,7 +134,7 @@ fn order_cjk<'a>(faces: impl IntoIterator<Item = &'a EmbeddedFont>, prefer_hans:
 /// The face for Japanese text written into PDFs (serif document text): Shippori Mincho, then
 /// BIZ UDMincho, then any other regular `Jpan` face. `None` without bundled fonts.
 pub fn document_japanese_font() -> Option<&'static EmbeddedFont> {
-    document_face(RECTO_FONTS, true, false)
+    document_face(PAGIC_FONTS, true, false)
 }
 
 /// A real Japanese document face matching serif/sans and weight where available.
@@ -142,7 +142,7 @@ pub fn document_japanese_font() -> Option<&'static EmbeddedFont> {
 /// serif text keeps the document Mincho preference. No synthetic weight or slant is applied.
 /// `None` without bundled fonts. The small web input currently has only Gothic Regular.
 pub fn document_japanese_font_for_style(serif: bool, bold: bool) -> Option<&'static EmbeddedFont> {
-    document_face(RECTO_FONTS, serif, bold)
+    document_face(PAGIC_FONTS, serif, bold)
 }
 
 /// Every `Jpan` face that can stand in for the document text, the best match for the style first
@@ -150,7 +150,7 @@ pub fn document_japanese_font_for_style(serif: bool, bold: bool) -> Option<&'sta
 /// every glyph (their coverage of e.g. Cyrillic differs), so a caller can move on to the next one.
 /// Empty without bundled fonts.
 pub fn document_japanese_fonts_for_style(serif: bool, bold: bool) -> Vec<&'static EmbeddedFont> {
-    document_faces(RECTO_FONTS, serif, bold)
+    document_faces(PAGIC_FONTS, serif, bold)
 }
 
 /// The scripts the bundled Inter faces are for.
@@ -212,8 +212,8 @@ const fn str_eq(a: &str, b: &str) -> bool {
 
 const fn find(family: &str, style: &str) -> Option<&'static [u8]> {
     let mut i = 0;
-    while i < RECTO_FONTS.len() {
-        let f = &RECTO_FONTS[i];
+    while i < PAGIC_FONTS.len() {
+        let f = &PAGIC_FONTS[i];
         if str_eq(f.family, family) && str_eq(f.style, style) {
             return Some(f.bytes);
         }
@@ -223,7 +223,7 @@ const fn find(family: &str, style: &str) -> Option<&'static [u8]> {
 }
 
 /// Shippori Mincho Regular from bundled fonts, the preferred face for Japanese document text.
-/// `None` when Recto was built without bundled fonts.
+/// `None` when Pagic was built without bundled fonts.
 pub static SHIPPORI_MINCHO: Option<&[u8]> = find("Shippori Mincho", "Regular");
 
 #[cfg(test)]
@@ -295,7 +295,7 @@ mod tests {
         assert_eq!(ar, ["FakeNaskh", "FakeKufi"]);
         // An Arabic face is never a CJK fallback, and the other way round.
         assert!(order_cjk(&faces, false).iter().all(|f| f.family == "BIZ UDPGothic"));
-        assert_eq!(ui_arabic_fonts().len(), RECTO_FONTS.iter().filter(|f| f.covers("Arab")).count());
+        assert_eq!(ui_arabic_fonts().len(), PAGIC_FONTS.iter().filter(|f| f.covers("Arab")).count());
     }
 
     #[test]
@@ -311,8 +311,8 @@ mod tests {
         // No bold face: Regular, never a face of another script.
         assert_eq!(hebrew_face(&faces[..2], true).map(|f| f.bytes), Some(&b"regular"[..]));
         assert!(hebrew_face(&faces[..1], false).is_none());
-        assert_eq!(ui_hebrew_fonts().len(), RECTO_FONTS.iter().filter(|f| f.covers("Hebr")).count());
-        assert_eq!(document_hebrew_font(false).is_some(), RECTO_FONTS.iter().any(|f| f.covers("Hebr")));
+        assert_eq!(ui_hebrew_fonts().len(), PAGIC_FONTS.iter().filter(|f| f.covers("Hebr")).count());
+        assert_eq!(document_hebrew_font(false).is_some(), PAGIC_FONTS.iter().any(|f| f.covers("Hebr")));
     }
 
     /// `build.rs` embeds the Japanese CJK faces whole and any other CJK face only up to
@@ -326,7 +326,7 @@ mod tests {
         // A tag can carry a region after the code: bundled fonts tags Noto Sans HK UI `Hant-HK`.
         assert!(["Hant-HK", "Hans", "Jpan", "Hang"].iter().all(|s| is_cjk_script(s)));
         assert!(!["Latn", "Arab", "Hebr"].iter().any(|s| is_cjk_script(s)));
-        let cjk = RECTO_FONTS.iter().filter(|f| f.scripts.iter().any(|s| is_cjk_script(s)));
+        let cjk = PAGIC_FONTS.iter().filter(|f| f.scripts.iter().any(|s| is_cjk_script(s)));
         let (whole, other): (Vec<_>, Vec<_>) = cjk.partition(|f| WHOLE_CJK_FAMILIES.contains(&f.family));
         for face in &other {
             let len = face.bytes.len();
@@ -356,19 +356,19 @@ mod tests {
     #[test]
     fn craft_fonts_are_optional_and_consistent() {
         // Holds with or without RECTO_FONTS_DIR.
-        assert_eq!(SHIPPORI_MINCHO.is_some(), RECTO_FONTS.iter().any(|f| f.family == "Shippori Mincho" && f.style == "Regular"));
-        assert_eq!(document_japanese_font().is_some(), RECTO_FONTS.iter().any(|f| f.covers("Jpan")));
+        assert_eq!(SHIPPORI_MINCHO.is_some(), PAGIC_FONTS.iter().any(|f| f.family == "Shippori Mincho" && f.style == "Regular"));
+        assert_eq!(document_japanese_font().is_some(), PAGIC_FONTS.iter().any(|f| f.covers("Jpan")));
         let ui = ui_japanese_fonts();
-        assert_eq!(ui.len(), RECTO_FONTS.iter().filter(|f| f.covers("Jpan")).count());
+        assert_eq!(ui.len(), PAGIC_FONTS.iter().filter(|f| f.covers("Jpan")).count());
         let ui_zh = ui_chinese_fonts();
-        assert_eq!(ui_zh.len(), RECTO_FONTS.iter().filter(|f| f.covers("Hans")).count());
-        if RECTO_FONTS.is_empty() {
+        assert_eq!(ui_zh.len(), PAGIC_FONTS.iter().filter(|f| f.covers("Hans")).count());
+        if PAGIC_FONTS.is_empty() {
             eprintln!("built without bundled fonts (no matching local font assets): no Japanese faces, as expected");
             assert!(SHIPPORI_MINCHO.is_none() && ui.is_empty() && ui_zh.is_empty());
             return;
         }
-        assert!(RECTO_FONTS.iter().all(|f| !f.bytes.is_empty()));
-        if RECTO_FONTS.iter().any(|f| f.family == "BIZ UDPGothic") {
+        assert!(PAGIC_FONTS.iter().all(|f| !f.bytes.is_empty()));
+        if PAGIC_FONTS.iter().any(|f| f.family == "BIZ UDPGothic") {
             assert_eq!(ui.first().map(|f| f.family), Some("BIZ UDPGothic"));
         }
         assert_eq!(document_japanese_font().map(|f| f.family), Some("Shippori Mincho"));

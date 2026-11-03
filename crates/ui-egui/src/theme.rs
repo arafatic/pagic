@@ -24,7 +24,7 @@ pub enum ThemePreference {
 
 impl ThemePreference {
     /// The colours to draw. `system` is what the operating system says, `None` when it says
-    /// nothing; `fallback` is supplied by the caller. Recto uses Light for an unknown desktop.
+    /// nothing; `fallback` is supplied by the caller. Pagic uses Light for an unknown desktop.
     pub fn resolve(self, system: Option<bool>, fallback: ThemeKind) -> ThemeKind {
         match self {
             Self::Light => ThemeKind::Light,
@@ -123,7 +123,7 @@ impl Tokens {
 
     /// Return the cached theme tokens, falling back to the dark palette before the first apply.
     pub fn get(ctx: &egui::Context) -> Self {
-        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::unique("recto-theme"))).unwrap_or_else(|| Self::for_kind(ThemeKind::Dark))
+        ctx.data(|d| d.get_temp::<Tokens>(egui::Id::unique("pagic-theme"))).unwrap_or_else(|| Self::for_kind(ThemeKind::Dark))
     }
 
     pub fn dark(&self) -> bool {
@@ -288,10 +288,10 @@ pub fn installed_font_definitions(cjk: CjkPreference) -> FontDefinitions {
                 stack.push(name.to_owned());
             }
         }
-        let need = installed_fallback_need(cjk, !recto_fonts::ui_chinese_fonts().is_empty());
+        let need = installed_fallback_need(cjk, !pagic_fonts::ui_chinese_fonts().is_empty());
         if let Some(data) = fallback(need) {
             fonts.font_data.insert(SYSTEM_FALLBACK.to_owned(), data);
-            let japanese: Vec<String> = recto_fonts::ui_japanese_fonts().iter().map(|f| f.name()).collect();
+            let japanese: Vec<String> = pagic_fonts::ui_japanese_fonts().iter().map(|f| f.name()).collect();
             for stack in fonts.families.values_mut() {
                 let at = match need {
                     Need::Other => None,
@@ -361,7 +361,7 @@ fn font_definitions_for_platform(prefer_hans: bool, platform: FontPolicyPlatform
         fonts.font_data.insert(name.to_owned(), Arc::new(data));
     };
     // Shared with typed signatures' fallback glyphs, so the font is embedded once.
-    add(&mut fonts, "Inter", recto_fonts::INTER_REGULAR);
+    add(&mut fonts, "Inter", pagic_fonts::INTER_REGULAR);
     add(&mut fonts, "Inter-Medium", include_bytes!("../../../assets/fonts/Inter-Medium.ttf"));
     add(&mut fonts, "Inter-SemiBold", include_bytes!("../../../assets/fonts/Inter-SemiBold.ttf"));
     add(&mut fonts, "JetBrainsMono", include_bytes!("../../../assets/fonts/JetBrainsMono-Regular.ttf"));
@@ -373,8 +373,8 @@ fn font_definitions_for_platform(prefer_hans: bool, platform: FontPolicyPlatform
     // Keep missing Latin/Cyrillic letters in the app's own faces (for example Bulgarian ѝ,
     // absent from JetBrains Mono), before egui's defaults or optional system/CJK fallbacks.
     fonts.families.entry(FontFamily::Monospace).or_default().insert(1, "Inter".to_owned());
-    // The same static bytes recto-fonts uses for Japanese/Chinese text in PDFs: one copy, not two.
-    for face in recto_fonts::ui_cjk_fonts(prefer_hans) {
+    // The same static bytes pagic-fonts uses for Japanese/Chinese text in PDFs: one copy, not two.
+    for face in pagic_fonts::ui_cjk_fonts(prefer_hans) {
         let name = face.name();
         // Japanese and Chinese faces have distinct family names, so no collision here.
         if !fonts.font_data.contains_key(&name) {
@@ -387,12 +387,12 @@ fn font_definitions_for_platform(prefer_hans: bool, platform: FontPolicyPlatform
     // Arabic-script faces (file names, document titles), Telugu faces (the Telugu interface,
     // file names), Hebrew faces (file names, text being edited), Thai faces and Devanagari faces
     // (the Hindi interface) after the CJK ones; the ranges don't overlap.
-    for face in recto_fonts::ui_arabic_fonts()
+    for face in pagic_fonts::ui_arabic_fonts()
         .into_iter()
-        .chain(recto_fonts::ui_telugu_fonts())
-        .chain(recto_fonts::ui_hebrew_fonts())
-        .chain(recto_fonts::ui_thai_fonts())
-        .chain(recto_fonts::ui_devanagari_fonts())
+        .chain(pagic_fonts::ui_telugu_fonts())
+        .chain(pagic_fonts::ui_hebrew_fonts())
+        .chain(pagic_fonts::ui_thai_fonts())
+        .chain(pagic_fonts::ui_devanagari_fonts())
     {
         let name = face.name();
         if !fonts.font_data.contains_key(&name) {
@@ -432,7 +432,7 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     ctx.set_theme(egui::ThemePreference::System);
     let rtl = crate::i18n::current().rtl();
     let t = Tokens::for_kind(kind);
-    ctx.data_mut(|d| d.insert_temp(egui::Id::unique("recto-theme"), t));
+    ctx.data_mut(|d| d.insert_temp(egui::Id::unique("pagic-theme"), t));
     let mut v = if t.dark() { Visuals::dark() } else { Visuals::light() };
     v.panel_fill = t.panel;
     v.window_fill = t.card;
@@ -502,7 +502,7 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
 
 /// Return the stable egui id holding the current right-to-left style flag.
 fn direction_key() -> egui::Id {
-    egui::Id::unique("recto-style-right-to-left")
+    egui::Id::unique("pagic-style-right-to-left")
 }
 
 /// Keep stock egui chrome's direction in step with the drawing language, after a language

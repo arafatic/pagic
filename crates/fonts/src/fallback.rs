@@ -1,10 +1,10 @@
-//! The one chain Recto follows when a document does not embed a font program, and a record of
+//! The one chain Pagic follows when a document does not embed a font program, and a record of
 //! what it chose and why.
 //!
 //! Substitution used to be decided per caller and never written down: `edit` picked a craft face
 //! by the script of the text it was drawing, `Std14::from_base_font` matched Latin names, and the
 //! renderer did its own thing. Nothing told the *user* that the glyphs they are looking at are not
-//! the ones the document asked for, which is the difference between "Recto shows nothing for my
+//! the ones the document asked for, which is the difference between "Pagic shows nothing for my
 //! Chinese PDF" being a mystery and being a sentence.
 //!
 //! This module answers the *dictionary* question — "the document does not carry this program; what
@@ -181,7 +181,7 @@ pub fn substitute(req: &Request<'_>) -> Substitution {
     }
     if let Some(script) = req.ordering.and_then(script_for) {
         // A script we hold a face for; otherwise there is no honest substitute to offer.
-        return match crate::RECTO_FONTS.iter().find(|f| f.covers(script)) {
+        return match crate::PAGIC_FONTS.iter().find(|f| f.covers(script)) {
             Some(f) => at(Face::Craft(f), Why::ScriptFace),
             None => at(Face::None, Why::NoFaceForScript),
         };
@@ -319,7 +319,7 @@ mod tests {
         // the font inventory can be overridden, so both outcomes are correct -- but they must be
         // distinguishable, and neither may be a silent Latin stand-in.
         let s = substitute(&req("SomeJapaneseFont", false, 0, Some("Japan1")));
-        if crate::RECTO_FONTS.iter().any(|f| f.covers("Jpan")) {
+        if crate::PAGIC_FONTS.iter().any(|f| f.covers("Jpan")) {
             assert_eq!(s.why, Why::ScriptFace);
             assert!(matches!(s.face, Face::Craft(_)));
             assert!(s.face_name().is_some_and(|n| !n.is_empty()));

@@ -11,7 +11,7 @@ use super::{
 /// One paragraph being edited: the document as it was opened, and the page's lines then.
 pub struct TextSession {
     base: Document,
-    base_state: recto_cos::ReadState,
+    base_state: pagic_cos::ReadState,
     page: usize,
     block: usize,
     lines: Vec<TextLine>,

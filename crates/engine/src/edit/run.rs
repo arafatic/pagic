@@ -4,7 +4,7 @@ use super::{
 };
 
 /// Whether the opening password allows an edit (§7.6.4.2, Table 22).
-pub(crate) fn check_permission(edit: &Edit, p: &recto_cos::Permissions) -> Result<(), EditError> {
+pub(crate) fn check_permission(edit: &Edit, p: &pagic_cos::Permissions) -> Result<(), EditError> {
     match edit {
         Edit::RotatePages { .. }
         | Edit::DeletePages { .. }
@@ -146,10 +146,10 @@ pub(crate) struct EditCtx {
     pub(crate) js: Option<js::JsRunner>,
     /// A laid-out XFA form's template (`None`: not an XFA form, or JavaScript is off) and what
     /// its scripts produced.
-    pub(crate) xfa: Option<Arc<recto_xfa::model::Template>>,
+    pub(crate) xfa: Option<Arc<pagic_xfa::model::Template>>,
     pub(crate) xfa_out: js::JsOutput,
     /// The datasets stream this edit wrote (later writes in the edit replace it in place).
-    pub(crate) xfa_datasets: Option<recto_cos::ObjRef>,
+    pub(crate) xfa_datasets: Option<pagic_cos::ObjRef>,
     /// A form script ran too long and was abandoned: the document's scripts go off.
     pub(crate) xfa_ran_away: bool,
     /// What the XFA scripts' time limits are multiplied by ([`Session::with_xfa_time_scale`]).
@@ -168,7 +168,7 @@ pub(crate) struct EditCtx {
     pub(crate) renamed_fields: Vec<(String, String)>,
     /// The overlay streams the edit's applied redactions added, which alone the renderer's check
     /// leaves out.
-    pub(crate) redaction_overlays: Vec<recto_cos::ObjRef>,
+    pub(crate) redaction_overlays: Vec<pagic_cos::ObjRef>,
 }
 
 impl EditCtx {
@@ -191,7 +191,7 @@ impl EditCtx {
             xfa_time_scale: 1,
             xfa_removed: Vec::new(),
             pages: 0,
-            date: now.map(recto_cos::pdf_date),
+            date: now.map(pagic_cos::pdf_date),
             today: (1970, 1, 1),
             seed,
             count: 0,
@@ -216,7 +216,7 @@ impl EditCtx {
     }
 
     /// A fresh `/NM`: a random-looking UUID (version 4 layout) from a splitmix64 stream.
-    fn meta(&mut self) -> recto_annot::Meta {
+    fn meta(&mut self) -> pagic_annot::Meta {
         let mut next = || {
             self.count += 1;
             let mut z = self.seed.wrapping_add(self.count.wrapping_mul(0x9E37_79B9_7F4A_7C15));
@@ -233,70 +233,70 @@ impl EditCtx {
             0x8000 | (b >> 48) & 0x3fff,
             b & 0xffff_ffff_ffff
         );
-        recto_annot::Meta { date: self.date.clone(), id }
+        pagic_annot::Meta { date: self.date.clone(), id }
     }
 }
 
 /// Perform an edit on a working copy (the caller discards it on error).
-pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut EditCtx) -> Result<(), EditError> {
+pub(crate) fn run_edit(doc: &mut pagic_cos::Document, edit: &Edit, cx: &mut EditCtx) -> Result<(), EditError> {
     match edit {
-        Edit::RotatePages { pages, degrees } => recto_organize::rotate_pages(doc, pages, *degrees)?,
-        Edit::DeletePages { pages } => recto_organize::delete_pages(doc, pages)?,
-        Edit::MovePages { pages, to } => recto_organize::move_pages(doc, pages, *to)?,
-        Edit::ReversePages { pages } => recto_organize::reverse_pages(doc, pages)?,
+        Edit::RotatePages { pages, degrees } => pagic_organize::rotate_pages(doc, pages, *degrees)?,
+        Edit::DeletePages { pages } => pagic_organize::delete_pages(doc, pages)?,
+        Edit::MovePages { pages, to } => pagic_organize::move_pages(doc, pages, *to)?,
+        Edit::ReversePages { pages } => pagic_organize::reverse_pages(doc, pages)?,
         Edit::InsertBlankPage { at, width, height } => {
-            recto_organize::insert_blank_page(doc, *at, *width, *height)?;
+            pagic_organize::insert_blank_page(doc, *at, *width, *height)?;
         }
-        Edit::SetInfo { key, value } => recto_organize::set_info(doc, key, value)?,
-        Edit::DuplicatePages { pages, at } => recto_organize::duplicate_pages(doc, pages, *at)?,
+        Edit::SetInfo { key, value } => pagic_organize::set_info(doc, key, value)?,
+        Edit::DuplicatePages { pages, at } => pagic_organize::duplicate_pages(doc, pages, *at)?,
         Edit::ReplacePages { pages, name, bytes, src_pages } => {
             let src = open_source(name, bytes)?;
-            recto_organize::replace_pages(doc, pages, &src, src_pages)?;
+            pagic_organize::replace_pages(doc, pages, &src, src_pages)?;
         }
-        Edit::SetPageBox { pages, which, spec } => recto_organize::set_page_box(doc, pages, *which, *spec)?,
-        Edit::SetTransition { pages, spec } => recto_organize::set_transition(doc, pages, spec)?,
+        Edit::SetPageBox { pages, which, spec } => pagic_organize::set_page_box(doc, pages, *which, *spec)?,
+        Edit::SetTransition { pages, spec } => pagic_organize::set_transition(doc, pages, spec)?,
         Edit::InsertPagesFrom { name, bytes, pages, at, field_conflicts } => {
             let src = open_source(name, bytes)?;
             let pages = match pages {
                 Some(p) => p.clone(),
-                None => (0..recto_organize::page_count(&src)?).collect(),
+                None => (0..pagic_organize::page_count(&src)?).collect(),
             };
             // The file's bookmarks come along under one named after it, as in Combine Files.
             let title = std::path::Path::new(name).file_stem().map_or_else(|| name.clone(), |s| s.to_string_lossy().into_owned());
-            let outcome = recto_organize::insert_file_pages(doc, &src, &title, &pages, *at, *field_conflicts)?;
+            let outcome = pagic_organize::insert_file_pages(doc, &src, &title, &pages, *at, *field_conflicts)?;
             cx.renamed_fields = outcome.renamed_fields;
         }
         Edit::AddBookmark { parent, index, title, page, left, top } => {
-            recto_organize::add_bookmark_at(doc, parent, *index, title, *page, *left, *top)?;
+            pagic_organize::add_bookmark_at(doc, parent, *index, title, *page, *left, *top)?;
         }
-        Edit::RenameBookmark { path, title } => recto_organize::rename_bookmark(doc, path, title)?,
-        Edit::DeleteBookmark { path } => recto_organize::delete_bookmark(doc, path)?,
+        Edit::RenameBookmark { path, title } => pagic_organize::rename_bookmark(doc, path, title)?,
+        Edit::DeleteBookmark { path } => pagic_organize::delete_bookmark(doc, path)?,
         Edit::MoveBookmark { from, to_parent, index } => {
-            recto_organize::move_bookmark(doc, from, to_parent, *index)?;
+            pagic_organize::move_bookmark(doc, from, to_parent, *index)?;
         }
-        Edit::SetBookmarkPage { path, page } => recto_organize::set_bookmark_page(doc, path, *page)?,
-        Edit::SetBookmarkColor { path, color } => recto_organize::set_bookmark_color(doc, path, *color)?,
-        Edit::SetBookmarkStyle { path, bold, italic } => recto_organize::set_bookmark_style(doc, path, *bold, *italic)?,
+        Edit::SetBookmarkPage { path, page } => pagic_organize::set_bookmark_page(doc, path, *page)?,
+        Edit::SetBookmarkColor { path, color } => pagic_organize::set_bookmark_color(doc, path, *color)?,
+        Edit::SetBookmarkStyle { path, bold, italic } => pagic_organize::set_bookmark_style(doc, path, *bold, *italic)?,
         Edit::BookmarksFromStructure => {
-            let entries: Vec<_> = recto_a11y::headings(doc)
+            let entries: Vec<_> = pagic_a11y::headings(doc)
                 .into_iter()
-                .map(|h| recto_organize::OutlineEntry { level: h.level, title: h.title, page: h.page, element: h.obj })
+                .map(|h| pagic_organize::OutlineEntry { level: h.level, title: h.title, page: h.page, element: h.obj })
                 .collect();
-            recto_organize::add_bookmark_tree(doc, "Untitled", &entries)?;
+            pagic_organize::add_bookmark_tree(doc, "Untitled", &entries)?;
         }
-        Edit::NumberPages { from, to, style, prefix, first } => recto_organize::number_pages(doc, *from, *to, *style, prefix, *first)?,
+        Edit::NumberPages { from, to, style, prefix, first } => pagic_organize::number_pages(doc, *from, *to, *style, prefix, *first)?,
         Edit::AddMeasurement(m) => {
             measure::add(doc, m, &cx.meta())?;
         }
         Edit::SetMeasurementScale { page, bbox, name, scale } => measure::set_scale(doc, *page, *bbox, name, scale)?,
         Edit::AddAnnotation(a) => {
-            recto_annot::add_annotation(doc, a, &cx.meta())?;
+            pagic_annot::add_annotation(doc, a, &cx.meta())?;
         }
         Edit::AddCustomStamp { page, rect, name, file, author } => {
             let src = mark_source(doc, file)?;
             let (sw, sh) = (src.size.0.max(1.0), src.size.1.max(1.0));
             let natural = rect[2] == rect[0] && rect[3] == rect[1];
-            let rotation = recto_organize::page_rotation(doc, *page)?;
+            let rotation = pagic_organize::page_rotation(doc, *page)?;
             // The picture as displayed: a quarter turn swaps its sides in user space.
             let (dw, dh) = if matches!(rotation, 90 | 270) { (sh, sw) } else { (sw, sh) };
             let rect = if natural {
@@ -307,33 +307,33 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
                 fit_picture(*rect, dw, dh)
             };
             let shape = Shape::CustomStamp { rect, name: name.clone(), picture: src.xobject, image: src.image, size: (sw, sh) };
-            let style = recto_annot::Style::default_for(&shape);
+            let style = pagic_annot::Style::default_for(&shape);
             let new = NewAnnotation { page: *page, shape, style, contents: name.clone(), author: author.clone() };
-            let index = recto_annot::add_annotation(doc, &new, &cx.meta())?;
-            recto_annot::orient_image_stamp(doc, *page, index, rotation)?;
+            let index = pagic_annot::add_annotation(doc, &new, &cx.meta())?;
+            pagic_annot::orient_image_stamp(doc, *page, index, rotation)?;
         }
-        Edit::DeleteAnnotation { page, index } => recto_annot::delete_annotation(doc, *page, *index)?,
-        Edit::SetAnnotationContents { page, index, text } => recto_annot::set_contents(doc, *page, *index, text, &cx.meta())?,
+        Edit::DeleteAnnotation { page, index } => pagic_annot::delete_annotation(doc, *page, *index)?,
+        Edit::SetAnnotationContents { page, index, text } => pagic_annot::set_contents(doc, *page, *index, text, &cx.meta())?,
         Edit::ReplyToAnnotation { page, index, text, author } => {
-            recto_annot::add_reply(doc, *page, *index, text, author, &cx.meta())?;
+            pagic_annot::add_reply(doc, *page, *index, text, author, &cx.meta())?;
         }
         Edit::SetAnnotationStatus { page, index, state, author } => {
-            recto_annot::set_review_state(doc, *page, *index, *state, author, &cx.meta())?;
+            pagic_annot::set_review_state(doc, *page, *index, *state, author, &cx.meta())?;
         }
         Edit::EraseInk { page, index, path, radius } => {
-            recto_annot::erase_ink(doc, *page, *index, path, *radius, &cx.meta())?;
+            pagic_annot::erase_ink(doc, *page, *index, path, *radius, &cx.meta())?;
         }
         Edit::AddAttachment { name, bytes, description, mime } => {
-            recto_organize::add_attachment(doc, name, bytes, description.as_deref(), mime.as_deref(), cx.date.as_deref())?;
+            pagic_organize::add_attachment(doc, name, bytes, description.as_deref(), mime.as_deref(), cx.date.as_deref())?;
         }
-        Edit::DeleteAttachment { key } => recto_organize::delete_attachment(doc, key)?,
+        Edit::DeleteAttachment { key } => pagic_organize::delete_attachment(doc, key)?,
         Edit::ReplaceText { page, quads, text, author, strike, caret } => {
             // One `/NM` each: the caret replies to the strikeout, and XFDF names that reply by
             // the strikeout's `/NM` (#2666).
             let (strike_meta, caret_meta) = (cx.meta(), cx.meta());
-            recto_annot::add_text_replacement(
+            pagic_annot::add_text_replacement(
                 doc,
-                recto_annot::TextReplacement {
+                pagic_annot::TextReplacement {
                     page: *page,
                     quads,
                     replacement: text,
@@ -346,37 +346,37 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
             )?;
         }
         Edit::MarkAnnotation { page, index, marked, author } => {
-            recto_annot::set_marked(doc, *page, *index, *marked, author, &cx.meta())?;
+            pagic_annot::set_marked(doc, *page, *index, *marked, author, &cx.meta())?;
         }
-        Edit::LockAnnotation { page, index, locked } => recto_annot::set_locked(doc, *page, *index, *locked)?,
-        Edit::MoveAnnotation { page, index, dx, dy } => recto_annot::move_annotation(doc, *page, *index, *dx, *dy, &cx.meta())?,
-        Edit::ReshapeAnnotation { page, index, points } => recto_annot::set_points(doc, *page, *index, points, &cx.meta())?,
-        Edit::ResizeAnnotation { page, index, rect } => recto_annot::set_rect(doc, *page, *index, *rect, &cx.meta())?,
+        Edit::LockAnnotation { page, index, locked } => pagic_annot::set_locked(doc, *page, *index, *locked)?,
+        Edit::MoveAnnotation { page, index, dx, dy } => pagic_annot::move_annotation(doc, *page, *index, *dx, *dy, &cx.meta())?,
+        Edit::ReshapeAnnotation { page, index, points } => pagic_annot::set_points(doc, *page, *index, points, &cx.meta())?,
+        Edit::ResizeAnnotation { page, index, rect } => pagic_annot::set_rect(doc, *page, *index, *rect, &cx.meta())?,
         Edit::StyleAnnotation { page, index, color, opacity, width, endings } => {
-            recto_annot::set_style(
+            pagic_annot::set_style(
                 doc,
                 *page,
                 *index,
-                recto_annot::StyleChange { color: *color, opacity: *opacity, width: *width, endings: endings.clone() },
+                pagic_annot::StyleChange { color: *color, opacity: *opacity, width: *width, endings: endings.clone() },
                 &cx.meta(),
             )?;
         }
-        Edit::FillAnnotation { page, index, fill } => recto_annot::set_fill(doc, *page, *index, *fill, &cx.meta())?,
-        Edit::FontSizeAnnotation { page, index, size } => recto_annot::set_font_size(doc, *page, *index, *size, &cx.meta())?,
+        Edit::FillAnnotation { page, index, fill } => pagic_annot::set_fill(doc, *page, *index, *fill, &cx.meta())?,
+        Edit::FontSizeAnnotation { page, index, size } => pagic_annot::set_font_size(doc, *page, *index, *size, &cx.meta())?,
         Edit::SetAnnotationInfo { page, index, author, subject, icon } => {
-            recto_annot::set_info(doc, *page, *index, author.as_deref(), subject.as_deref(), *icon, &cx.meta())?;
+            pagic_annot::set_info(doc, *page, *index, author.as_deref(), subject.as_deref(), *icon, &cx.meta())?;
         }
         Edit::SetFieldValue { name, value } => {
-            let mut set = |doc: &mut recto_cos::Document, value: &FieldValue| match cx.js.as_mut() {
-                Some(js) => recto_forms::set_value_with(doc, name, value, js),
-                None => recto_forms::set_value(doc, name, value),
+            let mut set = |doc: &mut pagic_cos::Document, value: &FieldValue| match cx.js.as_mut() {
+                Some(js) => pagic_forms::set_value_with(doc, name, value, js),
+                None => pagic_forms::set_value(doc, name, value),
             };
             match set(doc, value) {
                 Ok(()) => {}
                 // A date the field's format doesn't read may be typed by another of an XFA date
                 // field's patterns: it is kept in the first. Only a format refusal is tried
                 // again: it comes before any of the field's scripts run, so they run once.
-                Err(refused @ recto_forms::FormError::Format(_)) => match xfa::typed_date(doc, cx.xfa.as_deref(), name, value) {
+                Err(refused @ pagic_forms::FormError::Format(_)) => match xfa::typed_date(doc, cx.xfa.as_deref(), name, value) {
                     Some(typed) => set(doc, &typed)?,
                     None => return Err(refused.into()),
                 },
@@ -384,8 +384,8 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
             }
         }
         Edit::ApplyScriptChanges { changes } => match cx.js.as_mut() {
-            Some(js) => recto_forms::apply_script_changes(doc, changes, js)?,
-            None => recto_forms::apply_script_changes(doc, changes, &mut recto_forms::NoScripts)?,
+            Some(js) => pagic_forms::apply_script_changes(doc, changes, js)?,
+            None => pagic_forms::apply_script_changes(doc, changes, &mut pagic_forms::NoScripts)?,
         },
         Edit::XfaEvent { som, activity } => {
             let tpl = cx.xfa.clone().ok_or_else(|| EditError::Invalid("this is not a laid-out XFA form, or JavaScript is off".into()))?;
@@ -399,28 +399,27 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
         Edit::SetFieldImage { name, image } => {
             let (img, _) = embed_image(doc, name, image)?;
             let px = match &*doc.get(img) {
-                recto_cos::Object::Stream(s) => (s.dict.int(b"Width").unwrap_or(1) as u32, s.dict.int(b"Height").unwrap_or(1) as u32),
+                pagic_cos::Object::Stream(s) => (s.dict.int(b"Width").unwrap_or(1) as u32, s.dict.int(b"Height").unwrap_or(1) as u32),
                 _ => (1, 1),
             };
             // An XFA image field keeps the picture in the data too (as Designer saves it), and a
             // laid-out form shows it from there: so only pictures the layout can show, and only
             // for image fields (a laid-out one carries its SOM path; a static form's field name
             // is its path).
-            let is_xfa = recto_xfa::read_packets(doc).ok().flatten().is_some();
-            let image_field = is_xfa
-                && recto_forms::fields(doc).iter().any(|f| f.name == *name && f.button == Some(recto_forms::af::ButtonAction::ImportIcon));
+            let is_xfa = pagic_xfa::read_packets(doc).ok().flatten().is_some();
+            let image_field =
+                is_xfa && pagic_forms::fields(doc).iter().any(|f| f.name == *name && f.button == Some(pagic_forms::af::ButtonAction::ImportIcon));
             if image_field {
                 let Some(content_type) = image_content_type(image) else {
                     return Err(EditError::Invalid(format!("{name}: an XFA form keeps a PNG, JPEG, GIF, BMP or TIFF picture; choose one of those")));
                 };
-                recto_forms::set_button_icon(doc, name, img, px)?;
-                let som = recto_xfa::fields_by_som(doc).into_iter().find(|(_, n)| n == name).map(|(s, _)| s).unwrap_or_else(|| name.clone());
+                pagic_forms::set_button_icon(doc, name, img, px)?;
+                let som = pagic_xfa::fields_by_som(doc).into_iter().find(|(_, n)| n == name).map(|(s, _)| s).unwrap_or_else(|| name.clone());
                 let path = match cx.xfa.as_deref() {
-                    Some(tpl) => recto_xfa::data_path(tpl, &som),
-                    None => recto_xfa::som_to_path(&som),
+                    Some(tpl) => pagic_xfa::data_path(tpl, &som),
+                    None => pagic_xfa::som_to_path(&som),
                 };
-                let r =
-                    recto_xfa::write_data_image(doc, &path, content_type, image, cx.xfa_datasets).map_err(|e| EditError::Write(e.to_string()))?;
+                let r = pagic_xfa::write_data_image(doc, &path, content_type, image, cx.xfa_datasets).map_err(|e| EditError::Write(e.to_string()))?;
                 if !r.written && r.warnings.is_empty() {
                     return Err(EditError::Write(format!("{name}: the picture could not be written into the form's data")));
                 }
@@ -428,40 +427,40 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
                 cx.xfa_out.errors.extend(r.warnings);
                 xfa_after_data_change(doc, cx, false)?;
             } else {
-                recto_forms::set_button_icon(doc, name, img, px)?;
+                pagic_forms::set_button_icon(doc, name, img, px)?;
             }
         }
         Edit::ResetForm { names } => {
-            recto_forms::reset(doc, names.as_deref())?;
+            pagic_forms::reset(doc, names.as_deref())?;
         }
         Edit::AddField { page, rect, kind, name } => {
-            recto_forms::add_field(doc, *page, *rect, kind, name.as_deref())?;
+            pagic_forms::add_field(doc, *page, *rect, kind, name.as_deref())?;
         }
         Edit::SetFieldProps { name, props } => {
-            recto_forms::set_props(doc, name, props)?;
+            pagic_forms::set_props(doc, name, props)?;
         }
         Edit::DuplicateField { name, pages } => {
-            if recto_forms::duplicate_field(doc, name, pages)? == 0 {
-                return Err(EditError::Form(recto_forms::FormError::Invalid(format!("{name} is already on those pages"))));
+            if pagic_forms::duplicate_field(doc, name, pages)? == 0 {
+                return Err(EditError::Form(pagic_forms::FormError::Invalid(format!("{name} is already on those pages"))));
             }
         }
-        Edit::DeleteField { name } => recto_forms::delete_field(doc, name)?,
-        Edit::SetTabOrder { pages, order } => recto_forms::set_tab_order(doc, pages, *order)?,
-        Edit::MoveInTabOrder { name, earlier } => recto_forms::move_in_tab_order(doc, name, *earlier)?,
+        Edit::DeleteField { name } => pagic_forms::delete_field(doc, name)?,
+        Edit::SetTabOrder { pages, order } => pagic_forms::set_tab_order(doc, pages, *order)?,
+        Edit::MoveInTabOrder { name, earlier } => pagic_forms::move_in_tab_order(doc, name, *earlier)?,
         // As after a script edit: the values the new order gives show at once.
         Edit::SetCalculationOrder { names } => {
-            recto_forms::set_calculation_order(doc, names)?;
+            pagic_forms::set_calculation_order(doc, names)?;
             match cx.js.as_mut() {
-                Some(js) => recto_forms::recalculate_with(doc, js)?,
-                None => recto_forms::recalculate(doc)?,
+                Some(js) => pagic_forms::recalculate_with(doc, js)?,
+                None => pagic_forms::recalculate(doc)?,
             };
         }
-        Edit::SetInitialView(v) => recto_organize::set_initial_view(doc, v)?,
+        Edit::SetInitialView(v) => pagic_organize::set_initial_view(doc, v)?,
         Edit::AutoTagText => {
             a11y::autotag_text(doc).map_err(|e| EditError::Accessibility(e.to_string()))?;
         }
         Edit::SetAltText { figure, alt } => {
-            let r = recto_cos::ObjRef::new(*figure, doc.generation(*figure));
+            let r = pagic_cos::ObjRef::new(*figure, doc.generation(*figure));
             a11y::set_alt(doc, r, alt.as_deref()).map_err(|e| EditError::Accessibility(e.to_string()))?;
         }
         Edit::AutoTagFormFields => {
@@ -474,39 +473,39 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
             a11y::move_tag(doc, *object, *anchor, *placement).map_err(|e| EditError::Accessibility(e.to_string()))?;
         }
         Edit::EditTextLine { page, line, text } => {
-            recto_edit::replace_line(doc, *page, *line, text)?;
+            pagic_edit::replace_line(doc, *page, *line, text)?;
         }
         Edit::SetFieldScript { name, event, script } => {
-            recto_forms::set_field_script(doc, name, event, script.as_deref())?;
+            pagic_forms::set_field_script(doc, name, event, script.as_deref())?;
             match cx.js.as_mut() {
-                Some(js) => recto_forms::recalculate_with(doc, js)?,
-                None => recto_forms::recalculate(doc)?,
+                Some(js) => pagic_forms::recalculate_with(doc, js)?,
+                None => pagic_forms::recalculate(doc)?,
             };
         }
         Edit::ConvertPdfA { level } => {
-            recto_preflight::convert(doc, *level).map_err(|e| EditError::Invalid(e.to_string()))?;
+            pagic_preflight::convert(doc, *level).map_err(|e| EditError::Invalid(e.to_string()))?;
         }
-        Edit::RemoveStandardId { standard } => recto_organize::remove_standard_id(doc, *standard)?,
-        Edit::SetDocumentScript { name, script } => recto_forms::set_document_script(doc, name, script.as_deref())?,
+        Edit::RemoveStandardId { standard } => pagic_organize::remove_standard_id(doc, *standard)?,
+        Edit::SetDocumentScript { name, script } => pagic_forms::set_document_script(doc, name, script.as_deref())?,
         Edit::AddOcrText { page, words } => {
-            recto_edit::stamp(doc, *page, "OCR", recto_ocr::text_layer(words))?;
+            pagic_edit::stamp(doc, *page, "OCR", pagic_ocr::text_layer(words))?;
         }
         Edit::EditPageImage { page, index, change } => {
-            let img = recto_edit::page_images(doc, *page)?
+            let img = pagic_edit::page_images(doc, *page)?
                 .into_iter()
                 .nth(*index)
-                .ok_or_else(|| EditError::Edit(recto_edit::EditError::Invalid(format!("page {} has no image {}", page + 1, index + 1))))?;
+                .ok_or_else(|| EditError::Edit(pagic_edit::EditError::Invalid(format!("page {} has no image {}", page + 1, index + 1))))?;
             let c = match change {
-                ImageEdit::Move(to) => recto_edit::ImageChange::Transform(recto_edit::rect_to_rect(img.rect, *to)),
+                ImageEdit::Move(to) => pagic_edit::ImageChange::Transform(pagic_edit::rect_to_rect(img.rect, *to)),
                 ImageEdit::Rotate(q) => {
-                    recto_edit::ImageChange::Transform(recto_edit::turn_about_centre(img.visible_rect.unwrap_or(img.rect), *q, false, false))
+                    pagic_edit::ImageChange::Transform(pagic_edit::turn_about_centre(img.visible_rect.unwrap_or(img.rect), *q, false, false))
                 }
                 ImageEdit::RotateBy(degrees) => {
-                    let t = recto_edit::turn_by_degrees(img.visible_rect.unwrap_or(img.rect), *degrees)
-                        .ok_or_else(|| EditError::Edit(recto_edit::EditError::Invalid("the rotation angle must be a finite number".into())))?;
-                    recto_edit::ImageChange::Transform(t)
+                    let t = pagic_edit::turn_by_degrees(img.visible_rect.unwrap_or(img.rect), *degrees)
+                        .ok_or_else(|| EditError::Edit(pagic_edit::EditError::Invalid("the rotation angle must be a finite number".into())))?;
+                    pagic_edit::ImageChange::Transform(t)
                 }
-                ImageEdit::Flip { horizontal } => recto_edit::ImageChange::Transform(recto_edit::turn_about_centre(
+                ImageEdit::Flip { horizontal } => pagic_edit::ImageChange::Transform(pagic_edit::turn_about_centre(
                     img.visible_rect.unwrap_or(img.rect),
                     0,
                     *horizontal,
@@ -514,26 +513,24 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
                 )),
                 ImageEdit::Replace { name, bytes } => {
                     if img.is_form {
-                        return Err(EditError::Edit(recto_edit::EditError::Invalid(
-                            "grouped Form artwork cannot be replaced with a bitmap".into(),
-                        )));
+                        return Err(EditError::Edit(pagic_edit::EditError::Invalid("grouped Form artwork cannot be replaced with a bitmap".into())));
                     }
-                    recto_edit::ImageChange::Replace(embed_image(doc, name, bytes)?.0)
+                    pagic_edit::ImageChange::Replace(embed_image(doc, name, bytes)?.0)
                 }
-                ImageEdit::Crop(keep) => recto_edit::ImageChange::Crop(*keep),
-                ImageEdit::Delete => recto_edit::ImageChange::Delete,
+                ImageEdit::Crop(keep) => pagic_edit::ImageChange::Crop(*keep),
+                ImageEdit::Delete => pagic_edit::ImageChange::Delete,
             };
-            recto_edit::change_image(doc, *page, *index, &c)?;
+            pagic_edit::change_image(doc, *page, *index, &c)?;
         }
-        Edit::MoveObjects { page, objects, offset } => recto_edit::move_objects(doc, *page, objects, *offset)?,
+        Edit::MoveObjects { page, objects, offset } => pagic_edit::move_objects(doc, *page, objects, *offset)?,
         Edit::EditTextBlock { page, block, text, style } => {
-            recto_edit::rewrite_block(doc, *page, *block, Some(text), style)?;
+            pagic_edit::rewrite_block(doc, *page, *block, Some(text), style)?;
         }
         Edit::RegisterTextFont { page, bytes } => {
-            recto_edit::text::register_text_font(doc, *page, bytes)?;
+            pagic_edit::text::register_text_font(doc, *page, bytes)?;
         }
         Edit::MarkDecorative { figure } => {
-            let r = recto_cos::ObjRef::new(*figure, doc.generation(*figure));
+            let r = pagic_cos::ObjRef::new(*figure, doc.generation(*figure));
             a11y::mark_decorative(doc, r).map_err(|e| EditError::Accessibility(e.to_string()))?;
         }
         Edit::MarkTagArtifact { object } => {
@@ -541,61 +538,61 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
         }
         Edit::AddHeaderFooter { pages, settings, replace } => {
             let date = cx.today;
-            recto_edit::add_header_footer(doc, pages, settings, *replace, &recto_edit::Context { date })?;
+            pagic_edit::add_header_footer(doc, pages, settings, *replace, &pagic_edit::Context { date })?;
         }
         Edit::AddWatermark { pages, settings, replace, file } => {
             let mut s = settings.clone();
             if let Some(f) = file {
                 s.source = Some(mark_source(doc, f)?);
             }
-            recto_edit::add_watermark(doc, pages, &s, *replace)?
+            pagic_edit::add_watermark(doc, pages, &s, *replace)?
         }
         Edit::AddBackground { pages, settings, replace, file } => {
             let mut s = settings.clone();
             if let Some(f) = file {
                 s.source = Some(mark_source(doc, f)?);
             }
-            recto_edit::add_background(doc, pages, &s, *replace)?
+            pagic_edit::add_background(doc, pages, &s, *replace)?
         }
         Edit::RemoveMarks { kind } => {
-            let n = recto_model::pages(doc).len();
-            if recto_edit::remove_marks(doc, &(0..n).collect::<Vec<_>>(), *kind)? == 0 {
-                return Err(EditError::Edit(recto_edit::EditError::Invalid("there is nothing to remove".into())));
+            let n = pagic_model::pages(doc).len();
+            if pagic_edit::remove_marks(doc, &(0..n).collect::<Vec<_>>(), *kind)? == 0 {
+                return Err(EditError::Edit(pagic_edit::EditError::Invalid("there is nothing to remove".into())));
             }
         }
         Edit::AddText { page, text } => {
-            recto_edit::add_content(doc, *page, &AddedContent::Text(text.clone()))?;
+            pagic_edit::add_content(doc, *page, &AddedContent::Text(text.clone()))?;
         }
         Edit::AddImage { page, rect, name, bytes } => {
             let (image, natural) = embed_image(doc, name, bytes)?;
             let rect = match rect {
                 Some(r) => *r,
                 None => {
-                    let p = recto_model::pages(doc).swap_remove(*page);
+                    let p = pagic_model::pages(doc).swap_remove(*page);
                     let (pw, ph) = p.display_size(doc);
                     let k = ((pw * 0.8) / natural.0).min((ph * 0.8) / natural.1).min(1.0);
                     let (w, h) = (natural.0 * k, natural.1 * k);
                     [(pw - w) / 2.0, (ph - h) / 2.0, (pw + w) / 2.0, (ph + h) / 2.0]
                 }
             };
-            recto_edit::add_content(doc, *page, &AddedContent::Image(recto_edit::AddedImage::new(rect, image)))?;
+            pagic_edit::add_content(doc, *page, &AddedContent::Image(pagic_edit::AddedImage::new(rect, image)))?;
         }
-        Edit::UpdateContent { page, index, content } => recto_edit::update_content(doc, *page, *index, content)?,
-        Edit::DeleteContent { page, index } => recto_edit::delete_content(doc, *page, *index)?,
+        Edit::UpdateContent { page, index, content } => pagic_edit::update_content(doc, *page, *index, content)?,
+        Edit::DeleteContent { page, index } => pagic_edit::delete_content(doc, *page, *index)?,
         Edit::ReplaceImage { page, index, name, bytes } => {
-            let item = recto_edit::list_added(doc).into_iter().filter(|a| a.page == *page).nth(*index);
+            let item = pagic_edit::list_added(doc).into_iter().filter(|a| a.page == *page).nth(*index);
             let Some(AddedContent::Image(old)) = item.map(|a| a.content) else {
-                return Err(EditError::Edit(recto_edit::EditError::Invalid("that item is not an image".into())));
+                return Err(EditError::Edit(pagic_edit::EditError::Invalid("that item is not an image".into())));
             };
             let (image, _) = embed_image(doc, name, bytes)?;
-            recto_edit::update_content(doc, *page, *index, &AddedContent::Image(recto_edit::AddedImage { image, ..old }))?;
+            pagic_edit::update_content(doc, *page, *index, &AddedContent::Image(pagic_edit::AddedImage { image, ..old }))?;
         }
         Edit::PasteContent { page, content, file } => {
             let content = match content {
                 AddedContent::Text(_) => content.clone(),
                 AddedContent::Image(img) => {
                     let Some((name, bytes)) = file else {
-                        return Err(EditError::Edit(recto_edit::EditError::Invalid("a pasted image needs its picture".into())));
+                        return Err(EditError::Edit(pagic_edit::EditError::Invalid("a pasted image needs its picture".into())));
                     };
                     // The same picture in this document (copied here, pasted here before, or an
                     // identical file): drawn again from the one image object rather than stored twice.
@@ -607,41 +604,41 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
                             None => embed_image(doc, name, bytes)?.0,
                         }
                     };
-                    AddedContent::Image(recto_edit::AddedImage { image, ..img.clone() })
+                    AddedContent::Image(pagic_edit::AddedImage { image, ..img.clone() })
                 }
             };
-            recto_edit::add_content(doc, *page, &content)?;
+            pagic_edit::add_content(doc, *page, &content)?;
         }
         Edit::ApplyRedactions { pages } => {
-            cx.redaction_overlays = recto_redact::apply(doc, pages.as_deref())?.overlays;
+            cx.redaction_overlays = pagic_redact::apply(doc, pages.as_deref())?.overlays;
         }
         Edit::ClearRedactions => {
-            recto_redact::clear_marks(doc, None)?;
+            pagic_redact::clear_marks(doc, None)?;
         }
         Edit::AddLink { page, rect, action, style } => {
-            recto_annot::links::add(doc, *page, *rect, action, style)?;
+            pagic_annot::links::add(doc, *page, *rect, action, style)?;
         }
-        Edit::SetLink { page, index, rect, action, style } => recto_annot::links::set(doc, *page, *index, *rect, action.as_ref(), style.as_ref())?,
-        Edit::DeleteLink { page, index } => recto_annot::links::delete(doc, *page, *index)?,
+        Edit::SetLink { page, index, rect, action, style } => pagic_annot::links::set(doc, *page, *index, *rect, action.as_ref(), style.as_ref())?,
+        Edit::DeleteLink { page, index } => pagic_annot::links::delete(doc, *page, *index)?,
         Edit::RemoveLinks { pages } => {
-            if recto_annot::links::remove_all(doc, pages.as_deref())? == 0 {
-                return Err(EditError::Edit(recto_edit::EditError::Invalid("there are no links to remove".into())));
+            if pagic_annot::links::remove_all(doc, pages.as_deref())? == 0 {
+                return Err(EditError::Edit(pagic_edit::EditError::Invalid("there are no links to remove".into())));
             }
         }
         Edit::AddLinks { links, style } => {
-            if recto_annot::links::add_many(doc, links, style)? == 0 {
-                return Err(EditError::Edit(recto_edit::EditError::Invalid("no web addresses were found".into())));
+            if pagic_annot::links::add_many(doc, links, style)? == 0 {
+                return Err(EditError::Edit(pagic_edit::EditError::Invalid("no web addresses were found".into())));
             }
         }
         Edit::ImportData { bytes, .. } => {
             // An XFA form takes XFA data files (XDP, datasets, or a data document) as its data;
             // XFDF, FDF, Acrobat's XML and tables go the usual way.
-            let text = (recto_xfa::read_packets(doc).ok().flatten().is_some()).then(|| decode_data_file(bytes)).flatten();
+            let text = (pagic_xfa::read_packets(doc).ok().flatten().is_some()).then(|| decode_data_file(bytes)).flatten();
             match text {
                 Some(Ok(text)) if is_xfa_data_file(&text) => {
                     let expect_root = cx.xfa.as_ref().and_then(|t| t.root.common.name.clone());
-                    let r = recto_xfa::import_data(doc, &text, expect_root.as_deref(), cx.xfa_datasets)
-                        .map_err(|e| EditError::Write(e.to_string()))?;
+                    let r =
+                        pagic_xfa::import_data(doc, &text, expect_root.as_deref(), cx.xfa_datasets).map_err(|e| EditError::Write(e.to_string()))?;
                     cx.xfa_datasets = r.stream.or(cx.xfa_datasets);
                     cx.xfa_out.errors.extend(r.warnings);
                     cx.xfa_out.console.push(format!("Imported XFA data: {} node(s)", r.nodes));
@@ -649,23 +646,23 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
                 }
                 Some(Err(why)) => return Err(EditError::Invalid(why)),
                 _ => {
-                    recto_xfdf::import(doc, bytes)?;
+                    pagic_xfdf::import(doc, bytes)?;
                 }
             }
         }
         Edit::RemoveHidden { which } => {
-            recto_redact::sanitize::remove_hidden(doc, which)?;
+            pagic_redact::sanitize::remove_hidden(doc, which)?;
         }
         Edit::Sanitize => {
-            recto_redact::sanitize::sanitize(doc)?;
+            pagic_redact::sanitize::sanitize(doc)?;
         }
         Edit::Flatten { comments, fields } => {
             // An XFA form's fields baked into the pages: the XFA goes too, or Adobe's viewers
             // would lay the form out again from its template over the baked pages. A dynamic
             // form that was never laid out keeps its XFA: without it only placeholders remain.
-            let shape = (*fields).then(|| recto_xfa::xfa_shape(doc)).flatten();
-            let n = recto_model::pages(doc).len();
-            recto_edit::flatten(doc, &(0..n).collect::<Vec<_>>(), *comments, *fields)?;
+            let shape = (*fields).then(|| pagic_xfa::xfa_shape(doc)).flatten();
+            let n = pagic_model::pages(doc).len();
+            pagic_edit::flatten(doc, &(0..n).collect::<Vec<_>>(), *comments, *fields)?;
             match shape {
                 Some(shape) if shape.strippable() => strip_xfa(doc, cx)?,
                 Some(_) => cx.xfa_removed.push("The XFA was kept: this dynamic form was not laid out, so its fields were not baked in".into()),
@@ -673,7 +670,7 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
             }
         }
         Edit::XfaToStatic => {
-            let Some(shape) = recto_xfa::xfa_shape(doc) else {
+            let Some(shape) = pagic_xfa::xfa_shape(doc) else {
                 return Err(EditError::Invalid("this document is not an XFA form".into()));
             };
             if !shape.strippable() {
@@ -682,8 +679,8 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
             strip_xfa(doc, cx)?;
         }
         Edit::FlattenFillSign => {
-            let n = recto_model::pages(doc).len();
-            recto_edit::flatten_fill_sign(doc, &(0..n).collect::<Vec<_>>())?;
+            let n = pagic_model::pages(doc).len();
+            pagic_edit::flatten_fill_sign(doc, &(0..n).collect::<Vec<_>>())?;
         }
         Edit::Protect(p) => {
             p.validate()?;
@@ -691,7 +688,7 @@ pub(crate) fn run_edit(doc: &mut recto_cos::Document, edit: &Edit, cx: &mut Edit
             // Without a permissions password nothing is restricted, so the owner password is a
             // random one nobody needs.
             let random_owner: String = cx.entropy().iter().map(|b| format!("{b:02x}")).collect();
-            let params = recto_cos::NewEncryption {
+            let params = pagic_cos::NewEncryption {
                 algorithm: p.algorithm,
                 user_password: p.open_password.as_deref().unwrap_or(""),
                 owner_password: p.permissions_password.as_deref().unwrap_or(&random_owner),

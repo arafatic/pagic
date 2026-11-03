@@ -19,7 +19,7 @@ pub enum PrintError {
     #[error("{0}")]
     Spool(String),
     #[error(transparent)]
-    Cos(#[from] recto_cos::CosError),
+    Cos(#[from] pagic_cos::CosError),
 }
 
 /// How an interface says one of our wordings in its own language, holes and all: given the English

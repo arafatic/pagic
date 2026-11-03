@@ -1,5 +1,5 @@
 [package]
-name = "recto-edit"
+name = "pagic-edit"
 description = "Page content editing: headers and footers, watermarks, backgrounds, Bates numbers (ISO 32000-2 §14.8)"
 version.workspace = true
 edition.workspace = true
@@ -9,11 +9,11 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-recto-annot = { workspace = true }
-recto-cos = { workspace = true }
-recto-content = { workspace = true }
-recto-fonts = { workspace = true }
-recto-model = { workspace = true }
+pagic-annot = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-content = { workspace = true }
+pagic-fonts = { workspace = true }
+pagic-model = { workspace = true }
 thiserror = { workspace = true }
 kurbo = { workspace = true }
 # Display order of right-to-left lines in added text, and reading and writing order in Edit text;

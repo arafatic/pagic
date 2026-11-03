@@ -4,9 +4,9 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use egui::Ui;
-use recto_cos::ObjRef;
-use recto_engine::a11y::{TagContentItem, TagInfo, TagPlacement, TagProperty};
-use recto_engine::{DocId, Edit};
+use pagic_cos::ObjRef;
+use pagic_engine::a11y::{TagContentItem, TagInfo, TagPlacement, TagProperty};
+use pagic_engine::{DocId, Edit};
 
 use crate::{icons, theme::Tokens, widgets};
 
@@ -68,7 +68,7 @@ impl Draft {
 
 impl State {
     /// The selected tag's marked content, read again only after an edit or a new selection.
-    pub(crate) fn content(&mut self, doc: &recto_engine::Document) -> Arc<Vec<TagContentItem>> {
+    pub(crate) fn content(&mut self, doc: &pagic_engine::Document) -> Arc<Vec<TagContentItem>> {
         let Some(object) = self.selected else { return Arc::default() };
         let generation = doc.edit_generation();
         if let Some((id, g, o, content)) = &self.content_cache
@@ -83,7 +83,7 @@ impl State {
         content
     }
     /// The document's tags, walked again only after an edit.
-    pub(crate) fn tags(&mut self, doc: &recto_engine::Document) -> Arc<Vec<TagInfo>> {
+    pub(crate) fn tags(&mut self, doc: &pagic_engine::Document) -> Arc<Vec<TagInfo>> {
         let generation = doc.edit_generation();
         if let Some((id, g, tags)) = &self.cache
             && *id == doc.id

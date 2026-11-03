@@ -167,7 +167,7 @@ impl Edit {
             Edit::SetPageBox { pages, which: PageBox::Crop, .. } => plural("Crop page", "Crop pages", pages.len()),
             Edit::SetPageBox { .. } => Label::of("Set page boxes"),
             Edit::SetTransition { .. } => Label::of("Set page transitions"),
-            // The four `/Info` keys Recto itself offers get a wording of their own, so each can
+            // The four `/Info` keys Pagic itself offers get a wording of their own, so each can
             // be said in another language; any other key is the document's and goes in as it stands.
             Edit::SetInfo { key, .. } => match key.as_str() {
                 "Title" => Label::of("Change Title"),
@@ -189,9 +189,9 @@ impl Edit {
             Edit::NumberPages { .. } => Label::of("Number pages"),
             // What was measured is part of the wording too, for the same reason.
             Edit::AddMeasurement(m) => Label::of(match m.kind {
-                recto_measure::Kind::Distance => "Measure distance",
-                recto_measure::Kind::Perimeter => "Measure perimeter",
-                recto_measure::Kind::Area => "Measure area",
+                pagic_measure::Kind::Distance => "Measure distance",
+                pagic_measure::Kind::Perimeter => "Measure perimeter",
+                pagic_measure::Kind::Area => "Measure area",
             }),
             Edit::SetMeasurementScale { .. } => Label::of("Set measurement scale"),
             Edit::AddAnnotation(a) => Label::of(add_annotation(&a.shape)),

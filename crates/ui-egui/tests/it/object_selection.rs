@@ -2,8 +2,8 @@
 use egui::{Key, Modifiers, Pos2};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_engine::{AddedText, Edit, EditableObject};
-use recto_ui_egui::RectoApp;
+use pagic_engine::{AddedText, Edit, EditableObject};
+use pagic_ui_egui::PagicApp;
 
 fn fixture(clipping: bool) -> Vec<u8> {
     fixture_with_background(clipping, false)
@@ -46,18 +46,18 @@ fn fixture_with_background(clipping: bool, background: bool) -> Vec<u8> {
     out
 }
 
-fn harness() -> Harness<'static, RectoApp> {
+fn harness() -> Harness<'static, PagicApp> {
     harness_with(false)
 }
 
-fn harness_with(clipping: bool) -> Harness<'static, RectoApp> {
+fn harness_with(clipping: bool) -> Harness<'static, PagicApp> {
     harness_document(clipping, false)
 }
 
-fn harness_document(clipping: bool, background: bool) -> Harness<'static, RectoApp> {
+fn harness_document(clipping: bool, background: bool) -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
-        app.session = recto_engine::Session::new().with_clock(|| 1_700_000_000);
+        let mut app = PagicApp::new();
+        app.session = pagic_engine::Session::new().with_clock(|| 1_700_000_000);
         app.set_option("language", "en").unwrap();
         app.open_bytes("group.pdf", None, fixture_with_background(clipping, background)).unwrap();
         let id = app.views[0].id;
@@ -77,15 +77,15 @@ fn harness_document(clipping: bool, background: bool) -> Harness<'static, RectoA
     h
 }
 
-fn at(h: &Harness<'static, RectoApp>, x: f32, y: f32) -> Pos2 {
+fn at(h: &Harness<'static, PagicApp>, x: f32, y: f32) -> Pos2 {
     let r = h.state().views[0].page_screen_rect(0).unwrap();
     r.min + egui::vec2(x, y) * (r.width() / 400.0)
 }
-fn objects(h: &Harness<'static, RectoApp>) -> Vec<EditableObject> {
+fn objects(h: &Harness<'static, PagicApp>) -> Vec<EditableObject> {
     let app = h.state();
     app.session.get(app.views[0].id).unwrap().editable_objects(0).unwrap()
 }
-fn click(h: &mut Harness<'static, RectoApp>, p: Pos2, mods: Modifiers) {
+fn click(h: &mut Harness<'static, PagicApp>, p: Pos2, mods: Modifiers) {
     h.hover_at(p);
     h.run_steps(2);
     for pressed in [true, false] {
@@ -93,7 +93,7 @@ fn click(h: &mut Harness<'static, RectoApp>, p: Pos2, mods: Modifiers) {
     }
     h.run_steps(4);
 }
-fn marquee(h: &mut Harness<'static, RectoApp>) {
+fn marquee(h: &mut Harness<'static, PagicApp>) {
     let (a, b) = (at(h, 25.0, 45.0), at(h, 235.0, 175.0));
     h.hover_at(a);
     h.run_steps(2);
@@ -105,7 +105,7 @@ fn marquee(h: &mut Harness<'static, RectoApp>) {
     h.run_steps(4);
     h.get_by_label("3 objects selected");
 }
-fn drag(h: &mut Harness<'static, RectoApp>, a: Pos2, b: Pos2) {
+fn drag(h: &mut Harness<'static, PagicApp>, a: Pos2, b: Pos2) {
     h.hover_at(a);
     h.run_steps(2);
     h.drag_at(a);
@@ -134,7 +134,7 @@ fn marquee_and_mixed_group_drag_move_once_and_undo_together() {
     h.get_by_label("3 objects selected");
     let app = h.state();
     assert_eq!(app.session.get(app.views[0].id).unwrap().can_undo(), Some("Move objects"));
-    if let Ok(path) = std::env::var("RECTO_GROUP_SHOT") {
+    if let Ok(path) = std::env::var("PAGIC_GROUP_SHOT").or_else(|_| std::env::var("RECTO_GROUP_SHOT")) {
         let _gpu = crate::gpu();
         h.render().unwrap().save(path).unwrap();
     }
@@ -294,7 +294,7 @@ fn group_drag_respects_document_rotation_and_view_rotation() {
             let app = h.state();
             let doc = app.session.get(app.views[0].id).unwrap();
             let o = before.iter().find(|o| o.target == *target).unwrap();
-            let p = recto_ui_egui::canvas::PageXform {
+            let p = pagic_ui_egui::canvas::PageXform {
                 rect: app.views[0].page_screen_rect(0).unwrap(),
                 rot: 90,
                 pw: doc.info.pages[0].width,
@@ -307,7 +307,7 @@ fn group_drag_respects_document_rotation_and_view_rotation() {
         h.get_by_label("3 objects selected");
         let app = h.state();
         let doc = app.session.get(app.views[0].id).unwrap();
-        let xf = recto_ui_egui::canvas::PageXform {
+        let xf = pagic_ui_egui::canvas::PageXform {
             rect: app.views[0].page_screen_rect(0).unwrap(),
             rot: 90,
             pw: doc.info.pages[0].width,
@@ -348,8 +348,8 @@ fn group_drags_cancel_on_focus_loss_tab_switch_home_and_modal_dialogs() {
                 h.state_mut().open_bytes("other.pdf", None, fixture(false)).unwrap();
             }
             2 => h.state_mut().active = None,
-            3 => h.state_mut().dialog = Some(recto_ui_egui::Dialog::About),
-            _ => h.state_mut().request_document_url("https://example.invalid/", recto_ui_egui::LinkOrigin::Link),
+            3 => h.state_mut().dialog = Some(pagic_ui_egui::Dialog::About),
+            _ => h.state_mut().request_document_url("https://example.invalid/", pagic_ui_egui::LinkOrigin::Link),
         }
         h.run_steps(2);
         h.drop_at(b);
@@ -380,7 +380,7 @@ fn modifier_selection_picks_foreground_text_and_added_items_over_background_artw
     let after = objects(&h);
     for old in before {
         let new = after.iter().find(|o| o.target == old.target).unwrap();
-        let stationary = old.text.as_deref() == Some("Keep here") || (old.target.kind == recto_engine::ObjectKind::Image && old.target.index == 0);
+        let stationary = old.text.as_deref() == Some("Keep here") || (old.target.kind == pagic_engine::ObjectKind::Image && old.target.index == 0);
         let shift = if stationary { [0.0, 0.0] } else { [25.0, -30.0] };
         assert!(new.rect.iter().enumerate().all(|(i, value)| (value - old.rect[i] - shift[i % 2]).abs() < 0.01), "{old:?} -> {new:?}");
     }

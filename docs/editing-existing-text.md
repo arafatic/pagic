@@ -39,7 +39,7 @@ shares a single copy of it. The Type 3 fonts generated for Japanese or Hebrew ch
 page's fonts lack are made anew by each edit; after an edit, those nothing on the page shows any
 more leave the page's resources, unless some content that could name them can't be read.
 Original subset bytes are
-preserved. Optional matching faces from `RECTO_FONTS_DIR` can also complete source subsets;
+preserved. Optional matching faces from `PAGIC_FONTS_DIR` can also complete source subsets;
 this works only when that build input actually contains the full face. This change does not
 add a font binary or change the release font pin. Fonts shared by releases belong in
 `crates/fonts/assets/fonts/`, with their upstream provenance and complete license notices.
@@ -91,7 +91,7 @@ scanned line kept apart. Applying an edit draws the new text visibly in the scan
 the one chosen) and first covers the old words with the paper colour sampled around them. Each
 word keeps its position and width, and a longer phrase grows rightwards rather than wrapping. The
 cover is one flat colour, and the text uses the layer's Helvetica, not the scanned typeface.
-This applies to any invisible text (rendering mode 3), not just a Recto OCR layer: editing
+This applies to any invisible text (rendering mode 3), not just a Pagic OCR layer: editing
 invisible text, such as another OCR tool's layer, makes the rewritten paragraph visible over a
 painted cover in the sampled paper colour. Edit text also groups invisible text differently: its lines never
 merge into multi-line paragraphs, and words split at gaps of 0.6 em or more.

@@ -25,9 +25,8 @@ pub enum ImageEdit {
 /// Forms ▸ Merge data files into spreadsheet: the field values of each file (FDF, XFDF or a
 /// filled-in PDF form), as CSV with one row per file.
 pub fn merge_data_files(files: &[(String, Vec<u8>)]) -> Result<String, String> {
-    let rows =
-        files.iter().map(|(name, bytes)| recto_xfdf::data_values(bytes).map_err(|e| format!("{name}: {e}"))).collect::<Result<Vec<_>, _>>()?;
-    Ok(recto_xfdf::merge_csv(&rows))
+    let rows = files.iter().map(|(name, bytes)| pagic_xfdf::data_values(bytes).map_err(|e| format!("{name}: {e}"))).collect::<Result<Vec<_>, _>>()?;
+    Ok(pagic_xfdf::merge_csv(&rows))
 }
 
 /// One file produced by a split: (1-based first page, last page, PDF bytes).
@@ -63,7 +62,7 @@ pub struct RecoverySnapshot {
 pub(crate) fn renderer_password(bytes: &[u8]) -> String {
     match std::str::from_utf8(bytes) {
         Ok(text) => text.to_owned(),
-        Err(_) => bytes.iter().map(|b| recto_cos::pdfdoc_char(*b)).collect(),
+        Err(_) => bytes.iter().map(|b| pagic_cos::pdfdoc_char(*b)).collect(),
     }
 }
 
@@ -72,18 +71,18 @@ pub(crate) fn renderer_password(bytes: &[u8]) -> String {
 /// itself when it holds none. ISO 32000-2 §12.7.5.3, Table 231 (a note to the Password flag):
 /// "it is imperative that PDF processors never store the value of the text field in the PDF file
 /// if this flag is set". The open document keeps them in memory.
-pub(crate) fn writable(cos: &recto_cos::Document) -> Result<std::borrow::Cow<'_, recto_cos::Document>, EditError> {
-    let has_form_pw = recto_forms::has_password_values(cos);
-    let has_xfa_pw = recto_xfa::has_password_values(cos);
+pub(crate) fn writable(cos: &pagic_cos::Document) -> Result<std::borrow::Cow<'_, pagic_cos::Document>, EditError> {
+    let has_form_pw = pagic_forms::has_password_values(cos);
+    let has_xfa_pw = pagic_xfa::has_password_values(cos);
     if !has_form_pw && !has_xfa_pw {
         return Ok(std::borrow::Cow::Borrowed(cos));
     }
     let mut copy = cos.clone();
     if has_form_pw {
-        recto_forms::clear_password_values(&mut copy).map_err(|e| EditError::Write(e.to_string()))?;
+        pagic_forms::clear_password_values(&mut copy).map_err(|e| EditError::Write(e.to_string()))?;
     }
     if has_xfa_pw {
-        recto_xfa::clear_password_values(&mut copy).map_err(|e| EditError::Write(e.to_string()))?;
+        pagic_xfa::clear_password_values(&mut copy).map_err(|e| EditError::Write(e.to_string()))?;
     }
     Ok(std::borrow::Cow::Owned(copy))
 }
@@ -98,13 +97,8 @@ pub fn guard<T>(f: impl FnOnce() -> T) -> Result<T, String> {
 }
 
 /// Validate the signature fields of `cos` (written as `bytes`).
-pub(crate) fn signatures_of(
-    cos: &recto_cos::Document,
-    bytes: &[u8],
-    trust: &TrustStore,
-    cache: &recto_sign::DigestCache,
-) -> Vec<SignatureInfo> {
-    recto_sign::pdf::list_cached(cos, bytes, trust, cache)
+pub(crate) fn signatures_of(cos: &pagic_cos::Document, bytes: &[u8], trust: &TrustStore, cache: &pagic_sign::DigestCache) -> Vec<SignatureInfo> {
+    pagic_sign::pdf::list_cached(cos, bytes, trust, cache)
 }
 
 /// What Optimize PDF did.

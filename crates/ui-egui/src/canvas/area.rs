@@ -1,16 +1,16 @@
-use super::{LayerOp, RectoApp, Pos2, Rect};
+use super::{LayerOp, PagicApp, Pos2, Rect};
 
 /// A validation badge drawn over a signature widget: the widget rectangle (user space), the verdict it shows, and its hover text.
 pub(crate) struct SignatureBadge {
     pub rect: [f64; 4],
-    pub status: recto_engine::SignatureStatus,
+    pub status: pagic_engine::SignatureStatus,
     pub summary: &'static str,
 }
 
 /// The validation badges drawn over one page's signature widgets: signed, visible widgets
 /// on this page with coordinates that survive the cast to screen space. Hostile files can
 /// carry NaN, infinite or gigantic rectangles, which must never reach the painter.
-pub(crate) fn signature_badges(signatures: &[recto_engine::SignatureInfo], page: usize) -> Vec<SignatureBadge> {
+pub(crate) fn signature_badges(signatures: &[pagic_engine::SignatureInfo], page: usize) -> Vec<SignatureBadge> {
     signatures
         .iter()
         .filter(|s| s.signed && s.visible && s.page == Some(page))
@@ -26,7 +26,7 @@ pub(crate) fn signature_badges(signatures: &[recto_engine::SignatureInfo], page:
 
 /// The hover popup for an annotation. Replies and Fill & Sign marks (typed text, checks, signatures)
 /// show none: they are page content being edited, not comments.
-pub(super) fn annotation_hover_text(a: &recto_render::Annotation) -> Option<String> {
+pub(super) fn annotation_hover_text(a: &pagic_render::Annotation) -> Option<String> {
     if a.is_reply() || a.fill_sign {
         return None;
     }
@@ -54,8 +54,8 @@ pub(super) fn page_scroll<R>(
 }
 
 /// Run a push button's action (the ones that need no JavaScript engine).
-pub(super) fn run_button(app: &mut RectoApp, index: usize, name: &str, action: recto_engine::form_scripts::ButtonAction) {
-    use recto_engine::form_scripts::ButtonAction as B;
+pub(super) fn run_button(app: &mut PagicApp, index: usize, name: &str, action: pagic_engine::form_scripts::ButtonAction) {
+    use pagic_engine::form_scripts::ButtonAction as B;
     let pages = app.session.get(app.views[index].id).map_or(0, |d| d.info.pages.len());
     match action {
         B::Reset { fields, exclude } => {
@@ -67,11 +67,11 @@ pub(super) fn run_button(app: &mut RectoApp, index: usize, name: &str, action: r
                 (false, true) => Some(all.iter().filter(|n| !listed(n)).cloned().collect()),
             };
             app.views[index].forms.focus = None;
-            app.views[index].pending_edit = Some(recto_engine::Edit::ResetForm { names });
+            app.views[index].pending_edit = Some(pagic_engine::Edit::ResetForm { names });
         }
         B::Named(n) => match n.as_str() {
             "Print" => app.open_print(),
-            // What Recto's XFA buttons use, and what a script's `execMenuItem("Save")`
+            // What Pagic's XFA buttons use, and what a script's `execMenuItem("Save")`
             // does too: the Save As dialog, so a click never overwrites the file unasked.
             "SaveAs" => app.run_command("file.save_as"),
             "NextPage" => app.views[index].step_page(true),
@@ -85,28 +85,22 @@ pub(super) fn run_button(app: &mut RectoApp, index: usize, name: &str, action: r
         B::ShowHide { fields, hide } => {
             let listed = |n: &String| fields.iter().any(|f| n == f || n.starts_with(&format!("{f}.")));
             // `display.hidden` 1, `display.visible` 0, as a script setting `field.display` would.
-            let changes: Vec<recto_engine::FieldChange> = app
+            let changes: Vec<pagic_engine::FieldChange> = app
                 .session
                 .get(app.views[index].id)
                 .map(|d| d.form.iter().filter(|f| listed(&f.name)).map(|f| f.name.clone()).collect::<Vec<_>>())
                 .unwrap_or_default()
                 .into_iter()
-                .map(|name| recto_engine::FieldChange {
-                    name,
-                    value: None,
-                    read_only: None,
-                    required: None,
-                    display: Some(if hide { 1 } else { 0 }),
-                })
+                .map(|name| pagic_engine::FieldChange { name, value: None, read_only: None, required: None, display: Some(if hide { 1 } else { 0 }) })
                 .collect();
             if !changes.is_empty() {
                 let label = if hide { "Hide a field" } else { "Show a field" };
                 app.views[index].pending_edit =
-                    Some(recto_engine::Edit::Batch { label: label.into(), edits: vec![recto_engine::Edit::ApplyScriptChanges { changes }] });
+                    Some(pagic_engine::Edit::Batch { label: label.into(), edits: vec![pagic_engine::Edit::ApplyScriptChanges { changes }] });
             }
         }
         B::SetLayers { changes, preserve_rb } => {
-            use recto_engine::form_scripts::LayerOp as Op;
+            use pagic_engine::form_scripts::LayerOp as Op;
             let changes: Vec<(LayerOp, (u32, u16))> = changes
                 .into_iter()
                 .map(|(op, ocg)| {
@@ -122,7 +116,7 @@ pub(super) fn run_button(app: &mut RectoApp, index: usize, name: &str, action: r
         }
         B::Alert(m) => app.notify(m),
         B::Submit(url) => app.notify_fmt(
-            "{name} submits the form to {url}; Recto doesn't send form data. Save the document to keep your entries.",
+            "{name} submits the form to {url}; Pagic doesn't send form data. Save the document to keep your entries.",
             &[("name", name), ("url", &url)],
         ),
         B::ImportIcon => app.choose_field_image(name),
@@ -135,7 +129,7 @@ pub(super) fn run_button(app: &mut RectoApp, index: usize, name: &str, action: r
 
 /// Run a set-layer-visibility action from a button or link. It changes what is shown, as the
 /// Layers panel does (which follows), not the document.
-pub(super) fn set_layers(app: &mut RectoApp, index: usize, changes: &[(LayerOp, (u32, u16))], preserve_rb: bool) {
+pub(super) fn set_layers(app: &mut PagicApp, index: usize, changes: &[(LayerOp, (u32, u16))], preserve_rb: bool) {
     let id = app.views[index].id;
     if app.session.set_layer_state(id, changes, preserve_rb) {
         app.views[index].invalidate_content();

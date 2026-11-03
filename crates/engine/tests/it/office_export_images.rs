@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use recto_engine::Session;
+use pagic_engine::Session;
 
 fn pdf(objects: &[String]) -> Vec<u8> {
     let mut out = b"%PDF-1.7\n".to_vec();

@@ -2,7 +2,7 @@
 //! entry a full-screen presentation plays, as Acrobat's Organize ▸ Page Transitions sets them.
 //! Reading them back is the renderer's `DocInfo::transitions`.
 
-use recto_cos::{Dict, Document, Object};
+use pagic_cos::{Dict, Document, Object};
 
 use crate::{OrganizeError, check, walk};
 

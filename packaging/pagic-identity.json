@@ -16,5 +16,15 @@
   "updates": {
     "release_api": null,
     "reason": "Private repository; distribution endpoint is not approved."
-  }
+  },
+  "release_packaging_enabled": false,
+  "packaging_blockers": [
+    "Final Pagic artwork is not supplied.",
+    "Native installer/file-association/uninstall ownership validation is pending.",
+    "Required packaging notice/model inputs are unresolved."
+  ],
+  "msix_blockers": [
+    "Actual Partner Center identity is not supplied.",
+    "MSIX manifest, assets, signing/version policy and native certification validation are not implemented."
+  ]
 }

@@ -2,8 +2,8 @@
 
 use std::sync::{Arc, OnceLock};
 
-use recto_cos::{SaveOptions, write_full, write_incremental};
-use recto_render::{LayerOp, OpenError, ReadingColors, RenderConfig, RenderPool, inspect};
+use pagic_cos::{SaveOptions, write_full, write_incremental};
+use pagic_render::{LayerOp, OpenError, ReadingColors, RenderConfig, RenderPool, inspect};
 
 #[cfg(test)]
 use crate::check_refresh_panic;

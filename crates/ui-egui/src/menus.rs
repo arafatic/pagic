@@ -1,27 +1,27 @@
-//! The menus: one definition ([`RectoApp::menu_bar`]) for the native macOS menu bar and the
+//! The menus: one definition ([`PagicApp::menu_bar`]) for the native macOS menu bar and the
 //! in-window bar on Windows, Linux and the web, laid out for each platform by craft-menu.
 //!
-//! Items run registry commands (`recto_engine::commands`) by id, with the registry's label and
+//! Items run registry commands (`pagic_engine::commands`) by id, with the registry's label and
 //! shortcut, so a menu click and its shortcut run the same command. A few items have menu-only
 //! ids: the zoom keys the document view handles itself, the side panel choices, the clipboard
-//! keys, the recent files and the open documents. [`RectoApp::run_menu_command`] runs every
+//! keys, the recent files and the open documents. [`PagicApp::run_menu_command`] runs every
 //! one of them, once per click, whichever bar it came from.
 
 use craft_keymap::{Key, Mods};
 use craft_menu::{
     Builtin, Chord, CommandRef, Document, Gate, Item, ItemRole, ItemState, Labeled, LayoutOptions, Menu, MenuBar, MenuRole, Node, Target,
 };
-use recto_engine::catalog::{Availability, TOOL_GROUPS};
-use recto_engine::commands::{self, Shortcut};
+use pagic_engine::catalog::{Availability, TOOL_GROUPS};
+use pagic_engine::commands::{self, Shortcut};
 
 use crate::canvas::{Fit, PageLayout};
 use crate::theme::ThemePreference;
-use crate::{RectoApp, RightPanel};
+use crate::{PagicApp, RightPanel};
 
 pub(super) mod tab_context;
 
 /// The app's name in the menus the layouts write (About, Hide, Quit).
-pub(crate) const APP_NAME: &str = "Recto";
+pub(crate) const APP_NAME: &str = "Pagic";
 
 /// The top bar's width after the menus: the mode tabs, the search box and the buttons.
 const ROW_AFTER_MENUS: f32 = 720.0;
@@ -261,10 +261,10 @@ pub(crate) fn layout_options() -> LayoutOptions<'static> {
     LayoutOptions { label: &translate, ..LayoutOptions::new(APP_NAME) }
 }
 
-impl RectoApp {
+impl PagicApp {
     /// The app's menus for this frame, before the platform layout: every item's label, shortcut,
     /// enabled and checked state as the app is now. A modal dialog doesn't grey anything here;
-    /// that is the [`Gate`]'s job ([`RectoApp::menu_gate`]).
+    /// that is the [`Gate`]'s job ([`PagicApp::menu_gate`]).
     pub fn menu_bar(&self, ctx: &egui::Context) -> MenuBar {
         let mut used: Vec<&str> = Vec::new();
         let list = |ids: &[&'static str], used: &mut Vec<&'static str>| -> Vec<Node> {
@@ -369,7 +369,7 @@ impl RectoApp {
 
     /// One item: a registry command with its live label (Undo names the edit) and shortcut, or a
     /// menu-only one. Radio and check items get their kind here, their state from
-    /// [`RectoApp::menu_state`].
+    /// [`PagicApp::menu_state`].
     fn menu_item(&self, id: &'static str, label: Option<&str>) -> Node {
         let (english, shortcut) = match commands::command(id) {
             Some(spec) => {
@@ -381,7 +381,7 @@ impl RectoApp {
                 None => (id.to_owned(), None),
             },
         };
-        let english = if id == "help.about" { "About Recto".to_owned() } else { english };
+        let english = if id == "help.about" { "About Pagic".to_owned() } else { english };
         let mut item = Item::new(id, label.map_or(english, str::to_owned));
         if let Some(c) = shortcut.and_then(chord) {
             item = item.shortcut(c);
@@ -501,7 +501,7 @@ impl RectoApp {
     }
 
     /// Run a command chosen in either menu bar. Registry commands go through
-    /// [`RectoApp::dispatch_command`], as their shortcuts do; the clipboard items act as
+    /// [`PagicApp::dispatch_command`], as their shortcuts do; the clipboard items act as
     /// their keys would (⌘C is a Copy event, Delete a key press), so every place that handles the
     /// key handles the click. A command that can't run now (a dialog opened since the menu was
     /// drawn) does nothing.
@@ -572,7 +572,7 @@ impl RectoApp {
             .gate(gate)
             .label(&translate)
             .english(&english)
-            .id(egui::Id::unique("recto-menu-bar"))
+            .id(egui::Id::unique("pagic-menu-bar"))
             .shrink_to_fit(fit)
             .show(ui);
         for command in chosen {
@@ -639,8 +639,8 @@ mod tests {
 
     const PDF: &[u8] = include_bytes!("../tests/data/form.pdf");
 
-    fn app(docs: &[&str]) -> (RectoApp, egui::Context) {
-        let mut app = RectoApp::new();
+    fn app(docs: &[&str]) -> (PagicApp, egui::Context) {
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         for name in docs {
             app.open_bytes(name, None, PDF.to_vec()).unwrap();
@@ -648,7 +648,7 @@ mod tests {
         (app, egui::Context::default())
     }
 
-    fn linux(app: &RectoApp, ctx: &egui::Context) -> MenuBar {
+    fn linux(app: &PagicApp, ctx: &egui::Context) -> MenuBar {
         craft_menu::layout(&app.menu_bar(ctx), Target::Linux, &layout_options()).bar
     }
 
@@ -668,7 +668,7 @@ mod tests {
         assert_eq!(keys.len(), count, "no command is listed twice");
         for spec in commands::COMMANDS.iter().filter(|s| s.menu.is_some()) {
             if matches!(spec.id, "file.open_recent" | "help.app_page" | "help.github" | "help.website" | "help.discord") {
-                continue; // Recent files is a submenu; upstream promotion links are omitted in Recto.
+                continue; // Recent files is a submenu; upstream promotion links are omitted in Pagic.
             }
             let it = item(&bar, &CommandRef::new(spec.id));
             let shortcut = spec.shortcut.or((spec.id == "edit.copy").then_some(crate::commands::COPY));
@@ -687,7 +687,7 @@ mod tests {
     #[test]
     fn check_and_radio_items_follow_the_app() {
         let (mut app, ctx) = app(&["a.pdf"]);
-        let kind = |app: &RectoApp, id: &str| item(&linux(app, &ctx), &CommandRef::new(id)).kind;
+        let kind = |app: &PagicApp, id: &str| item(&linux(app, &ctx), &CommandRef::new(id)).kind;
         assert_eq!(kind(&app, "view.layout.single"), ItemKind::Radio(true));
         assert_eq!(kind(&app, "view.layout.two_up"), ItemKind::Radio(false));
         let continuous = app.views[0].continuous();

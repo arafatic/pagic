@@ -1,6 +1,6 @@
-# recto-oracle
+# pagic-oracle
 
-The external programs Recto checks its own output against, and one rule: **a missing oracle is
+The external programs Pagic checks its own output against, and one rule: **a missing oracle is
 either a declared skip or a failure, never a silent pass.**
 
 - **Layer:** test support (`Class::Testkit` in `xtask/src/layers.rs`). A dev-dependency only, never
@@ -24,11 +24,11 @@ does not go through our own code.
 
 ```rust
 // In a test: bind the oracle, or return after saying why it was skipped.
-let qpdf = recto_oracle::or_skip!(recto_oracle::qpdf());
+let qpdf = pagic_oracle::or_skip!(pagic_oracle::qpdf());
 let out = qpdf.command().arg("--check").arg(&path).output()?;
 
 // Elsewhere (xtask), handle the absence yourself.
-match recto_oracle::pdftotext() {
+match pagic_oracle::pdftotext() {
     Ok(tool) => { /* tool.command() */ }
     Err(absent) => bail!("{absent}"),
 }
@@ -45,16 +45,16 @@ Each returns `Result<Oracle, Absent>`. `Oracle::command()` hands back a fresh `C
 
 ## The gate
 
-`RECTO_ORACLES_REQUIRED` (any value, including `0` — the same convention as
-`RECTO_FONTS_REQUIRED`) turns absence from a skip into a failure. CI sets it on the runners that
+`PAGIC_ORACLES_REQUIRED` (any value, including `0` — the same convention as
+`PAGIC_FONTS_REQUIRED`) turns absence from a skip into a failure. CI sets it on the runners that
 install the tools, so a skip notice there becomes a red build.
 
 ```
-$ cargo test -p recto-cos --test it encryption::qpdf_agrees
+$ cargo test -p pagic-cos --test it encryption::qpdf_agrees
 test result: ok. 1 passed            # qpdf absent: skipped, with a notice on stderr
 
-$ RECTO_ORACLES_REQUIRED=1 cargo test -p recto-cos --test it encryption::qpdf_agrees
-oracle `qpdf` is required but is not on PATH (program not found): RECTO_ORACLES_REQUIRED is
+$ PAGIC_ORACLES_REQUIRED=1 cargo test -p pagic-cos --test it encryption::qpdf_agrees
+oracle `qpdf` is required but is not on PATH (program not found): PAGIC_ORACLES_REQUIRED is
 set, so this is a failure rather than a skip (apt install qpdf / brew install qpdf)
 test result: FAILED. 1 failed
 ```
@@ -75,7 +75,7 @@ painted the wrong colour, has no near match and is counted. The test runs in bot
 reports the worse result, so neither argument order flatters the blurrier renderer.
 
 `decode_pgm` reads what `pdftoppm -gray` writes; `decode_pam_gray` reads what
-`recto-cli render --out x.pam` writes, compositing premultiplied alpha over white first so a
+`pagic-cli render --out x.pam` writes, compositing premultiplied alpha over white first so a
 transparent margin is not scored as black.
 
 `cargo xtask render-oracle` drives it over the corpus. It reports; it does not gate.

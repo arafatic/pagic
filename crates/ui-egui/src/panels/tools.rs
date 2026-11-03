@@ -1,12 +1,12 @@
 use super::edit::{actions_menu, edit_panel, stamp_palette};
 use super::{
-    Align2, Availability, Color32, CornerRadius, LeftPanel, RectoApp, Rect, Sense, Stroke, TOOL_GROUPS, Tokens, ToolGroup, catalog, icons, theme,
+    Align2, Availability, Color32, CornerRadius, LeftPanel, PagicApp, Rect, Sense, Stroke, TOOL_GROUPS, Tokens, ToolGroup, catalog, icons, theme,
     vec2, widgets,
 };
 
 const COLLAPSED_TOOLS: usize = 14;
 
-pub fn left_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn left_panel(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     // Organize closed another way (the grid's Close, or a page opened from it) closes the tool too,
     // as its panel's Close does, back to the workspace's own panel.
@@ -56,7 +56,7 @@ pub(crate) fn panel_header(ui: &mut egui::Ui, t: &Tokens, title: &str, lead: Opt
 
 /// The All tools sidebar: Expand (the full view) and Close, then the tool list, the first few
 /// tools until View more shows them all.
-fn all_tools(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
+fn all_tools(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
     // Labels distinct from the Combine grid's Expand and Collapse, which can show beside them.
     let (expand, close) = panel_header(ui, t, "All tools", Some(("maximize-2", tl!("Expand all tools"))));
     if expand {
@@ -149,7 +149,7 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup) -> egui::Response {
 }
 
 /// Draw the detail view for one tool group, dispatching its commands and tool-specific panels.
-fn tool_detail(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens, g: &'static ToolGroup) {
+fn tool_detail(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, g: &'static ToolGroup) {
     if g.id == "edit" {
         edit_panel(app, ui, t, g);
         return;

@@ -1,12 +1,12 @@
-# Releasing Recto
+# Releasing Pagic
 
 Every push to the `release` branch runs `.github/workflows/release.yml`. It builds installers for
 macOS, Windows, Linux, FreeBSD and the web, signs the ones it has certificates for, and creates or
-updates a **draft** GitHub Release named `Recto v<version>`. Nobody sees a draft until a
+updates a **draft** GitHub Release named `Pagic v<version>`. Nobody sees a draft until a
 maintainer publishes it.
 
-User-facing names say **Recto**; files, binaries and
-ids stay lowercase (`recto-<version>-<platform>-<arch>.<ext>`).
+User-facing names say **Pagic**; files, binaries and
+ids stay lowercase (`pagic-<version>-<platform>-<arch>.<ext>`).
 
 ## Cutting a release
 
@@ -18,10 +18,10 @@ ids stay lowercase (`recto-<version>-<platform>-<arch>.<ext>`).
    cargo xtask version set 0.3.0       # or 0.3.0-rc.1; updates Cargo.toml and Cargo.lock
    ```
 
-   Commit the change through the normal review flow (see the `Release: Recto v0.2.1` PR).
+   Commit the change through the normal review flow (see the `Release: Pagic v0.2.1` PR).
 2. **Merge `main` into `release`** (or fast-forward it) and push. The workflow starts by itself.
 3. **Wait for the draft.** When every job has finished (notarization is the slow part), the
-   Releases page has a draft `Recto v0.3.0` targeting the pushed commit, with every artifact
+   Releases page has a draft `Pagic v0.3.0` targeting the pushed commit, with every artifact
    and `SHA256SUMS.txt`. The notes are generated from the merged PRs.
 4. **Check it.** Download an installer or two and read the job summaries. A `::warning::` there
    means a signing secret was missing and that artifact is unsigned.
@@ -44,27 +44,27 @@ published (`gh workflow run release.yml --ref <branch>`).
 
 | Platform | Artifacts | Built on |
 |---|---|---|
-| macOS 11+ (universal: Apple silicon + Intel) | `recto-<v>-macos-universal.dmg`, `recto-cli-<v>-macos-universal.zip` | `macos-15` |
-| Windows 10+ x64 | `recto-<v>-windows-x64.msi`, `recto-<v>-windows-x64-portable.zip` | `windows-latest` |
-| Windows 10+ x86 (32-bit) | `recto-<v>-windows-x86.msi`, `recto-<v>-windows-x86-portable.zip` | `windows-latest` |
-| Windows 11 on ARM64 | `recto-<v>-windows-arm64.msi`, `recto-<v>-windows-arm64-portable.zip` | `windows-latest` (cross-compiled) |
-| Linux x86_64 | `recto-<v>-linux-x86_64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}`, `recto-cli-<v>-linux-x86_64.tar.gz` | `ubuntu-22.04` |
-| Linux aarch64 | `recto-<v>-linux-aarch64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}`, `recto-cli-<v>-linux-aarch64.tar.gz` | `ubuntu-22.04-arm` |
-| Linux riscv64 | `recto-<v>-linux-riscv64.tar.gz`, `recto-cli-<v>-linux-riscv64.tar.gz` (glibc 2.39+) | `ubuntu-24.04` (cross-compiled; CLI smoke-tested under QEMU) |
-| Flatpak x86_64 | `recto-<v>-linux-x86_64.flatpak` | `ubuntu-24.04` (repackages the Linux tarball) |
-| Flatpak aarch64 | `recto-<v>-linux-aarch64.flatpak` | `ubuntu-24.04-arm` (repackages the Linux tarball) |
-| FreeBSD 14 x86_64 | `recto-<v>-freebsd-x86_64.tar.gz` | FreeBSD VM on `ubuntu-latest` |
-| Web | `recto-web-<v>.zip` (a static site; see [`packaging/web/README.md`](../packaging/web/README.md)) | `ubuntu-latest` |
+| macOS 11+ (universal: Apple silicon + Intel) | `pagic-<v>-macos-universal.dmg`, `pagic-cli-<v>-macos-universal.zip` | `macos-15` |
+| Windows 10+ x64 | `pagic-<v>-windows-x64.msi`, `pagic-<v>-windows-x64-portable.zip` | `windows-latest` |
+| Windows 10+ x86 (32-bit) | `pagic-<v>-windows-x86.msi`, `pagic-<v>-windows-x86-portable.zip` | `windows-latest` |
+| Windows 11 on ARM64 | `pagic-<v>-windows-arm64.msi`, `pagic-<v>-windows-arm64-portable.zip` | `windows-latest` (cross-compiled) |
+| Linux x86_64 | `pagic-<v>-linux-x86_64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}`, `pagic-cli-<v>-linux-x86_64.tar.gz` | `ubuntu-22.04` |
+| Linux aarch64 | `pagic-<v>-linux-aarch64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}`, `pagic-cli-<v>-linux-aarch64.tar.gz` | `ubuntu-22.04-arm` |
+| Linux riscv64 | `pagic-<v>-linux-riscv64.tar.gz`, `pagic-cli-<v>-linux-riscv64.tar.gz` (glibc 2.39+) | `ubuntu-24.04` (cross-compiled; CLI smoke-tested under QEMU) |
+| Flatpak x86_64 | `pagic-<v>-linux-x86_64.flatpak` | `ubuntu-24.04` (repackages the Linux tarball) |
+| Flatpak aarch64 | `pagic-<v>-linux-aarch64.flatpak` | `ubuntu-24.04-arm` (repackages the Linux tarball) |
+| FreeBSD 14 x86_64 | `pagic-<v>-freebsd-x86_64.tar.gz` | FreeBSD VM on `ubuntu-latest` |
+| Web | `pagic-web-<v>.zip` (a static site; see [`packaging/web/README.md`](../packaging/web/README.md)) | `ubuntu-latest` |
 
 The ARM64 Windows build is cross-compiled on the x64 runner, so signing and WiX work as for the
 other Windows builds; `.github/workflows/windows-arm64.yml` installs and runs it on ARM64 hardware.
 
-Every binary reports its version (`recto --version`, `recto-cli --version`, *Help ▸ About*).
-The workflow sets `RECTO_BUILD_SHA` and `RECTO_BUILD_DATE` (`packaging/env.sh` fills them in
-for local builds): the commit is recorded in the macOS `Info.plist` (`RectoBuildCommit`) and the
+Every binary reports its version (`pagic --version`, `pagic-cli --version`, *Help ▸ About*).
+The workflow sets `PAGIC_BUILD_SHA` and `PAGIC_BUILD_DATE` (`packaging/env.sh` fills them in
+for local builds): the commit is recorded in the macOS `Info.plist` (`PagicBuildCommit`) and the
 date in the AppStream metadata. The binaries don't embed the commit yet.
 
-**Fonts:** builds embed font assets from `crates/fonts/assets/fonts/` (or from `RECTO_FONTS_DIR` when overridden), embedding Japanese and other international fallback fonts directly. Packaging stages the OFL notices of embedded font families.
+**Fonts:** builds embed font assets from `crates/fonts/assets/fonts/` (or from `PAGIC_FONTS_DIR` when overridden), embedding Japanese and other international fallback fonts directly. Packaging stages the OFL notices of embedded font families.
 
 **OCR models:** desktop packaging stages the Scan & OCR models (#103).
 The packaging scripts call `stage_models` (`packaging/env.sh`; `package.ps1` on Windows), which runs `cargo xtask models` to fetch every `kind = "model"` file in `ATTRIBUTION.toml` and verify its SHA-256.
@@ -75,19 +75,19 @@ Upstream announced the legacy RTEN download URLs' brownout in [ocrs #282](https:
 Runtime discovery prefers a complete ONNX detection/recognition pair within each directory, then a complete legacy `text-detection.rten` / `text-recognition.rten` pair.
 An incomplete ONNX update can therefore use an intact RTEN pair in the same directory.
 Discovery never combines model formats or files from different directories.
-Directory precedence stays the same: `$RECTO_MODELS`, the release-package locations beside the executable, then the source tree's `assets/models/`.
+Directory precedence stays the same: `$PAGIC_MODELS`, the release-package locations beside the executable, then the source tree's `assets/models/`.
 The first directory with a complete supported pair wins, even if an earlier legacy pair precedes a later ONNX pair.
 
-The release-package locations are `models\` beside `recto.exe` (MSI, portable zip), `Recto.app/Contents/Resources/models` (macOS), and `share/recto/models` beside `bin/` (deb, rpm, tar.gz, AppImage, Flatpak, FreeBSD).
+The release-package locations are `models\` beside `pagic.exe` (MSI, portable zip), `Pagic.app/Contents/Resources/models` (macOS), and `share/pagic/models` beside `bin/` (deb, rpm, tar.gz, AppImage, Flatpak, FreeBSD).
 The web build does not include these models, and OCR remains limited to the Latin alphabet without accents.
 
 ### macOS
 
 `packaging/macos/package.sh` builds both architectures, joins them with `lipo`, and assembles
-`Recto.app` from `Info.plist.in` (bundle id `local.recto.desktop`, macOS 11+, PDF declared
-as a document type with rank Alternate, so Recto is offered under Open With without taking over
+`Pagic.app` from `Info.plist.in` (bundle id `local.pagic.desktop`, macOS 11+, PDF declared
+as a document type with rank Alternate, so Pagic is offered under Open With without taking over
 from Preview). Files opened from Finder arrive as Apple events, which
-`apps/recto/src/apple_events.rs` receives.
+`apps/pagic/src/apple_events.rs` receives.
 
 - **Signing** uses the hardened runtime and a secure timestamp, executable first, then the bundle.
   `packaging/macos/import-cert.sh` puts the certificate in a temporary keychain, deleted at the end
@@ -95,9 +95,9 @@ from Preview). Files opened from Finder arrive as Apple events, which
 - **Notarization:** the app is zipped and sent with `xcrun notarytool submit --wait`, the ticket is
   stapled, and the result is checked with `codesign --verify`, `stapler validate` and `spctl`. The
   app ships on a drag-to-Applications DMG, which is signed and notarized too.
-  It uses a standard Finder window and a volume named `Recto`; the DMG file name keeps
+  It uses a standard Finder window and a volume named `Pagic`; the DMG file name keeps
   the version.
-- **CLI:** `recto-cli` is signed and notarized as a zip. A bare executable can't hold a stapled
+- **CLI:** `pagic-cli` is signed and notarized as a zip. A bare executable can't hold a stapled
   ticket, so Gatekeeper looks it up online the first time a downloaded copy runs.
 
 Without certificates (locally) the script signs ad-hoc and skips notarization:
@@ -112,55 +112,55 @@ packaging/macos/package.sh --arch aarch64     # quicker, host-only; --arch unive
 neither the MSI nor the portable zip needs the Visual C++ redistributable.
 
 - Before packaging, it reads both executables' PE headers: the machine type must match `-Arch`, and
-  `recto.exe` must be a GUI-subsystem program (no console window, #57) while `recto-cli.exe`
+  `pagic.exe` must be a GUI-subsystem program (no console window, #57) while `pagic-cli.exe`
   stays a console program.
-- `recto.wxs` (WiX v5) is a dual-scope package (per-user by default into
-  `%LOCALAPPDATA%\Programs\Recto`, per-machine into `Program Files\Recto` (`Program Files (x86)` for the 32-bit build),
+- `pagic.wxs` (WiX v5) is a dual-scope package (per-user by default into
+  `%LOCALAPPDATA%\Programs\Pagic`, per-machine into `Program Files\Pagic` (`Program Files (x86)` for the 32-bit build),
   see `packaging/windows/INSTALLATION.md`) with a Start Menu shortcut, a
   desktop shortcut (on by default) and an App Paths entry. Both shortcuts are plain links to
-  `recto.exe`, not advertised MSI shortcuts (#107, #143). The MSI version is the numeric `X.Y.Z`
+  `pagic.exe`, not advertised MSI shortcuts (#107, #143). The MSI version is the numeric `X.Y.Z`
   (MSI has no pre-release field), and same-version upgrades are allowed so release candidates replace
   each other. Icon ids end in `.ico` or `.exe` (Windows Installer requires it); packaging-lint checks
   this.
 - `installer-ui.wxs` supplies native welcome, maintenance, progress, files-in-use and outcome
   dialogs. Full UI confirms success with Finish; failures and cancellations have distinct messages.
-  The welcome dialog has a "Create a desktop shortcut" checkbox and an "Edit with Recto"
+  The welcome dialog has a "Create a desktop shortcut" checkbox and an "Edit with Pagic"
   right-click menu checkbox, both ticked by default. `/qn` and `/qb` stay unattended and create
   both unless `INSTALLDESKTOPSHORTCUT=0` or `INSTALLPDFCONTEXTMENU=0` is passed;
   `INSTALLIMAGECONTEXTMENU=0` (no checkbox) leaves out the image menu. An update (the launcher runs
-  `msiexec /passive` with no properties) keeps the desktop shortcut only if `Recto.lnk` is still
+  `msiexec /passive` with no properties) keeps the desktop shortcut only if `Pagic.lnk` is still
   on the all-users desktop, so deleting it once keeps it away (#1058), and keeps each menu only if
   its key path is still in HKLM (#305). Both are AppSearch results read before the old version is
   removed. An update from a release that didn't have a menu yet (before 0.7.1 for the PDF menu,
   before 0.4.0 for the image menu, found by `OnlyDetect` Upgrade rows) adds it like a first install.
   A value given on the command line wins.
 - The PDF right-click entry (#682) is a classic verb under
-  `HKLM\Software\Classes\SystemFileAssociations\.pdf\shell\Recto.Edit`, so it shows whichever app
+  `HKLM\Software\Classes\SystemFileAssociations\.pdf\shell\Pagic.Edit`, so it shows whichever app
   is the default for `.pdf` and never changes that default. Several selected PDFs (up to 15, the
-  limit for a `Document` verb) start one `recto.exe "<file>"` each, and the single-instance
+  limit for a `Document` verb) start one `pagic.exe "<file>"` each, and the single-instance
   hand-off opens them as tabs. On Windows 11 it is under "Show more options"; a first-level entry
   needs an `IExplorerCommand` handler and package identity (a sparse MSIX package), which the MSI
   doesn't have.
-- The image right-click entry (#190) is the same kind of verb, `Recto.CreatePdf`, for ten image
-  types, in its own component (`RectoImageContextMenu`) since it became optional. Its rows moved
-  out of `RectoApp`; that's safe because `MajorUpgrade` removes the old version before installing
+- The image right-click entry (#190) is the same kind of verb, `Pagic.CreatePdf`, for ten image
+  types, in its own component (`PagicImageContextMenu`) since it became optional. Its rows moved
+  out of `PagicApp`; that's safe because `MajorUpgrade` removes the old version before installing
   the new one (`afterInstallValidate`), which `test-msi.ps1` checks.
 - `test-msi.ps1 <file.msi>` checks the compiled shortcut, context-menu and dialog tables, and
   evaluates the first-install and update conditions of the desktop shortcut and both menus. Packaging
   runs it in a child process before signing, so the MSI isn't held open when signtool runs. The ARM64 install
-  smoke test checks that both all-users shortcuts point at the installed `recto.exe` and are
+  smoke test checks that both all-users shortcuts point at the installed `pagic.exe` and are
   removed on uninstall, and that `INSTALLDESKTOPSHORTCUT=0` skips the desktop one.
 - The portable zip holds both executables, the README, the licences, the OFL licence of each
-  embedded font family, and `portable.txt`. That marker beside `recto.exe` keeps the
-  settings, logs, crash recovery and new digital IDs in `RectoData\` next to the exe instead of
+  embedded font family, and `portable.txt`. That marker beside `pagic.exe` keeps the
+  settings, logs, crash recovery and new digital IDs in `PagicData\` next to the exe instead of
   `%APPDATA%` and `%LOCALAPPDATA%` (`crates/ui-egui/src/platform/portable.rs`). The MSI carries the same
   OFL notices; `-SkipBuild` stages notices from the local assets by default, or from the same
-  `RECTO_FONTS_DIR` override used to build the existing binaries. `-BuiltWithoutCraftFonts` is
+  `PAGIC_FONTS_DIR` override used to build the existing binaries. `-BuiltWithoutCraftFonts` is
   deprecated and never suppresses notices. `test-msi.ps1` checks that the compiled MSI includes
   every staged font notice.
   Before either package is created, `font-notices.ps1` validates every declared OFL notice in
   `crates/fonts/assets/fonts/manifest.txt` and the native `crates/fonts/assets/fonts/simplified-chinese-manifest.txt` when present
-  (required when `RECTO_FONTS_REQUIRED` is set). Missing or empty family notices fail packaging;
+  (required when `PAGIC_FONTS_REQUIRED` is set). Missing or empty family notices fail packaging;
   one family's notice cannot cover another. The check conservatively includes declared faces
   omitted by build-time size caps. `test-font-notices.ps1` exercises these failures in CI.
   The selected font assets directory must match the existing binaries when using `-SkipBuild`.
@@ -178,7 +178,7 @@ Locally: `dotnet tool install -g wix --version 5.0.2`, then `pwsh packaging/wind
 AppStream metainfo) and makes every format from it: an **AppImage** (any distribution, nothing to
 install), a **.deb** and an **.rpm** (built with [nfpm](https://nfpm.goreleaser.com) from
 `nfpm.yaml`; they integrate with the menu, MIME and icon caches), a **.tar.gz**, and a CLI-only
-**`recto-cli-<v>-linux-<arch>.tar.gz`** (the stripped `recto-cli` plus the licences and
+**`pagic-cli-<v>-linux-<arch>.tar.gz`** (the stripped `pagic-cli` plus the licences and
 README, for servers, CI and agent sandboxes). `--formats` picks a subset (`appimage deb rpm tar cli`).
 
 The binaries are built on Ubuntu 22.04, the oldest GitHub-hosted image, so they need only
@@ -187,19 +187,19 @@ xkbcommon) and the GPU (Vulkan, EGL) are loaded at runtime from the system; the 
 them as dependencies (see `nfpm.yaml`).
 
 Each AppImage embeds update information
-(`gh-releases-zsync|arafatic|recto|latest|recto-*-linux-<arch>.AppImage.zsync`), and its
+(`gh-releases-zsync|arafatic|pagic|latest|pagic-*-linux-<arch>.AppImage.zsync`), and its
 `.zsync` is published beside it, so AppImageUpdate and AppImageLauncher can update it in place,
 downloading only the changed blocks. `latest` is the newest published, non-pre-release version.
 `package.sh` writes the `.zsync` when `zsyncmake` (the `zsync` package) is installed and warns
 otherwise; the release job checks both.
 
 **Flatpak:** the `flatpak` job turns each arch's tarball into a single-file bundle with
-`packaging/linux/flatpak-bundle.sh` and `flatpak/local.recto.desktop.bundle.yml` (no Rust build;
-the same binaries), then installs it and runs `recto-cli --version` in the sandbox.
-`flatpak/local.recto.desktop.yml` is the from-source manifest for a later Flathub submission;
+`packaging/linux/flatpak-bundle.sh` and `flatpak/local.pagic.desktop.bundle.yml` (no Rust build;
+the same binaries), then installs it and runs `pagic-cli --version` in the sandbox.
+`flatpak/local.pagic.desktop.yml` is the from-source manifest for a later Flathub submission;
 packaging-lint keeps the runtime and sandbox permissions (`finish-args`) of the two identical.
 Printing is not available in the Flatpak yet: it runs `lp`, which the freedesktop runtime lacks
-(the job logs a note); it needs the print portal. Users install the bundle with `flatpak install --user recto-<v>-linux-<arch>.flatpak`; the
+(the job logs a note); it needs the print portal. Users install the bundle with `flatpak install --user pagic-<v>-linux-<arch>.flatpak`; the
 freedesktop runtime comes from Flathub.
 
 Locally (on Linux, with nfpm): `packaging/linux/package.sh` or `--formats "deb tar"`; then
@@ -214,7 +214,7 @@ binaries; check the tarball against `SHA256SUMS.txt`.
 
 ### Web
 
-`packaging/web/package.sh` runs `trunk build --release` in `apps/recto-web` and zips the site
+`packaging/web/package.sh` runs `trunk build --release` in `apps/pagic-web` and zips the site
 with sample `_headers` and `.htaccess` files. Hosting (MIME types, compression, caching, iframes) is
 covered in [`packaging/web/README.md`](../packaging/web/README.md).
 
@@ -257,14 +257,14 @@ code or answer publicly. For example, a false positive match of the `CobaltStrik
    - `NotTrusted` or `UnknownError`: a signature exists but did not validate on this machine. Compare
      the signer and the hash with the release.
 3. **Extract the payloads without running them.** Scan the executables inside the MSI and the
-   portable zip, not only the outer installer. `7z x -oDIR recto-<version>-windows-x64.msi`
+   portable zip, not only the outer installer. `7z x -oDIR pagic-<version>-windows-x64.msi`
    extracts them. The payload names are WiX-internal, so tell the executables apart by their file
    type. Don't install or run the MSI or the extracted files.
-4. **Scan with YARA and keep every match.** Use your own copies of YARA and the rule. Recto
+4. **Scan with YARA and keep every match.** Use your own copies of YARA and the rule. Pagic
    bundles neither, and the helper never runs in the app, the installer or CI:
 
    ```powershell
-   pwsh packaging/windows/security-audit.ps1 -Path .\recto.exe, .\recto-cli.exe -YaraExe C:\tools\yara64.exe -YaraRule C:\rules\CobaltStrikeBeacon.yar
+   pwsh packaging/windows/security-audit.ps1 -Path .\pagic.exe, .\pagic-cli.exe -YaraExe C:\tools\yara64.exe -YaraRule C:\rules\CobaltStrikeBeacon.yar
    ```
 
    The output lists each matched identifier with its offset, and the SHA-256 of the rule file.
@@ -277,8 +277,8 @@ code or answer publicly. For example, a false positive match of the `CobaltStrik
    distinctive code or strings, and it does not show that the software belongs to the family. Rules
    change too: CAPEv2 commit `9b599185` (2024-12-05) lengthened this rule's two repeated-byte patterns
    from 4 to 16 bytes to reduce false positives, so an older rule revision can match files that the
-   current one does not. Don't alter Recto's binaries to change a scanner's result. That changes
+   current one does not. Don't alter Pagic's binaries to change a scanner's result. That changes
    nothing about the software.
 7. **Report.** To the scanner, send the file's SHA-256, the release URL, the rule name and revision,
    and the matched identifiers and offsets. Report problems at
-   <https://github.com/arafatic/recto/issues> with the same facts.
+   <https://github.com/arafatic/pagic/issues> with the same facts.

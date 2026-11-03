@@ -3,7 +3,7 @@
 copy_font_licences() {
   local dest="$1" root font_root manifest line family style file scripts licence notice rest count=0
   root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-  font_root="${RECTO_FONTS_DIR-$root/crates/fonts/assets}"
+  font_root="${PAGIC_FONTS_DIR-${RECTO_FONTS_DIR-$root/crates/fonts/assets}}"
   font_root="${font_root:-.}"
   mkdir -p "$dest" || return 1
   # These faces are embedded independently of the supplemental manifest.
@@ -13,7 +13,7 @@ copy_font_licences() {
   done
   for manifest in manifest.txt simplified-chinese-manifest.txt; do
     if [[ ! -f "$font_root/fonts/$manifest" ]]; then
-      if [[ "$manifest" == manifest.txt || "${RECTO_FONTS_REQUIRED+x}" == x ]]; then
+      if [[ "$manifest" == manifest.txt || "${PAGIC_FONTS_REQUIRED+x}" == x || "${RECTO_FONTS_REQUIRED+x}" == x ]]; then
         echo "Missing font manifest: $font_root/fonts/$manifest" >&2; return 1
       fi
       continue

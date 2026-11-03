@@ -1,8 +1,8 @@
-//! recto-cos — the PDF object layer (L1, standalone with `recto-filters`).
+//! pagic-cos — the PDF object layer (L1, standalone with `pagic-filters`).
 //!
 //! Parses the COS object graph lazily and tolerantly, keeps edits in a copy-on-write overlay
 //! (cheap snapshots for undo), and writes documents back either incrementally (original bytes
-//! untouched) or as a full, garbage-collected rewrite. The PDF object graph *is* Recto's
+//! untouched) or as a full, garbage-collected rewrite. The PDF object graph *is* Pagic's
 //! document model (plan/architecture.md §5, ADR-0010).
 //!
 //! Done: every cross-reference form (tables, streams, hybrid `/XRefStm`), object streams, repair
@@ -26,10 +26,10 @@ pub use budget::{DecodeBudget, MAX_PAGE_DECODED, MAX_PAGE_FORMS};
 pub use bytes::Bytes;
 pub use document::{Document, ReadState, Revision, SourceIdentity, XrefEntry};
 pub use object::{Dict, MAX_DECODED, Name, ObjRef, Object, PdfString, Stream};
-pub use parser::{Lexer, is_whitespace, parse_indirect};
-pub use recto_crypt::{
+pub use pagic_crypt::{
     Algorithm, Auth, Method as CryptMethod, NewEncryption, Permissions, SecurityHandler, effective_password, pdfdoc_byte, pdfdoc_char,
 };
+pub use parser::{Lexer, is_whitespace, parse_indirect};
 pub use writer::{SaveOptions, pdf_date, serialize, write_full, write_incremental};
 
 #[derive(Debug, thiserror::Error, Clone, PartialEq)]

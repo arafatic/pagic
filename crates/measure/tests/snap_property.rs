@@ -3,8 +3,8 @@
 
 use std::sync::Arc;
 
-use recto_cos::Document;
-use recto_measure::snap::{self, Geometry, SnapOptions};
+use pagic_cos::Document;
+use pagic_measure::snap::{self, Geometry, SnapOptions};
 
 const CASES: usize = 1_000;
 const SEED: u64 = 1;

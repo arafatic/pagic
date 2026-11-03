@@ -3,8 +3,8 @@
 //! The BER reader itself is `der::Tlv::parse_ber`; these tests go through `SignedData::parse`,
 //! the way a PDF's signature reaches it.
 
-use recto_sign::cms::SignedData;
-use recto_sign::der::{self, tag};
+use pagic_sign::cms::SignedData;
+use pagic_sign::der::{self, tag};
 
 /// `levels` constructed OCTET STRINGs inside one another, each with a definite length, around one
 /// empty primitive OCTET STRING. Built from the inside out in linear time.

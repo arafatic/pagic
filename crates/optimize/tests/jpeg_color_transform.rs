@@ -3,13 +3,13 @@
 //! A JPEG with three or four components can store its samples as they are or converted to YCbCr
 //! (YCCK). An Adobe APP14 marker in the JPEG says which; without one, the filter's
 //! `/ColorTransform` does (ISO 32000-2 §7.4.8, default 1 for three components). Each image here
-//! is drawn by Recto's own renderer before and after Optimize, and the two must show the same
+//! is drawn by Pagic's own renderer before and after Optimize, and the two must show the same
 //! colours, up to what a JPEG re-encode loses.
 
 use std::sync::Arc;
 
-use recto_cos::{Dict, Document, ObjRef, Object, SaveOptions, Stream, write_full};
-use recto_optimize::{OptimizeError, Settings, Stage, optimize, optimize_with_progress};
+use pagic_cos::{Dict, Document, ObjRef, Object, SaveOptions, Stream, write_full};
+use pagic_optimize::{OptimizeError, Settings, Stage, optimize, optimize_with_progress};
 
 /// A photo-like RGB picture: colourful gradients with a little texture, so the colour transform
 /// matters everywhere and a medium-quality JPEG is smaller than a maximum-quality one.
@@ -213,11 +213,11 @@ fn stream(doc: &Document, r: ObjRef) -> Stream {
     }
 }
 
-/// The page as Recto's renderer draws it, `scale` device pixels per point: RGB rows.
+/// The page as Pagic's renderer draws it, `scale` device pixels per point: RGB rows.
 fn render(doc: &Document, scale: f32) -> (u32, u32, Vec<u8>) {
     let bytes = write_full(doc, &SaveOptions::default()).unwrap();
-    let mut r = recto_render::PageRenderer::new(Arc::new(bytes), recto_render::RenderConfig::default());
-    let out = r.render(recto_render::RenderRequest { page: 0, scale, ..Default::default() });
+    let mut r = pagic_render::PageRenderer::new(Arc::new(bytes), pagic_render::RenderConfig::default());
+    let out = r.render(pagic_render::RenderRequest { page: 0, scale, ..Default::default() });
     assert!(out.error.is_none(), "{:?}", out.error);
     (out.width, out.height, out.rgba.chunks(4).flat_map(|p| [p[0], p[1], p[2]]).collect())
 }
@@ -274,7 +274,7 @@ fn optimize_keeps_the_colours_of_an_rgb_jpeg_whatever_its_colour_transform() {
         ("Adobe YCbCr marker, /ColorTransform 1", Some(1), false, Parms::Dict(1), Reencoded),
         ("Adobe untransformed marker", Some(0), false, Parms::None, Reencoded),
         ("Adobe untransformed marker, /ColorTransform 0", Some(0), false, Parms::Dict(0), Reencoded),
-        // The marker overrides /ColorTransform in the standard, but readers differ (Recto's
+        // The marker overrides /ColorTransform in the standard, but readers differ (Pagic's
         // renderer lets /ColorTransform 0 win): the image is left as it is.
         ("Adobe YCbCr marker, /ColorTransform 0", Some(1), false, Parms::Dict(0), Untouched),
         ("Adobe untransformed marker, /ColorTransform 1", Some(0), false, Parms::Dict(1), Untouched),

@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 use egui::FontId;
 use egui::epaint::text::{Fonts, TextOptions};
 use egui_kittest::Harness;
-use recto_ui_egui::{RectoApp, i18n, theme};
+use pagic_ui_egui::{PagicApp, i18n, theme};
 
 pub mod input;
 
@@ -15,7 +15,7 @@ pub mod input;
 /// not a time, and a busy runner may not have finished the work within one. Sleeps briefly between
 /// frames so the worker threads get the CPU.
 #[must_use]
-pub fn step_until(h: &mut Harness<'static, RectoApp>, mut ready: impl FnMut(&mut Harness<'static, RectoApp>) -> bool) -> bool {
+pub fn step_until(h: &mut Harness<'static, PagicApp>, mut ready: impl FnMut(&mut Harness<'static, PagicApp>) -> bool) -> bool {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
     loop {
         h.step();
@@ -31,7 +31,7 @@ pub fn step_until(h: &mut Harness<'static, RectoApp>, mut ready: impl FnMut(&mut
 
 /// Step frames until nothing is waiting to be rendered, and fail the test if that takes over 30
 /// seconds: what a test checks next is on the rendered page.
-pub fn settle(h: &mut Harness<'static, RectoApp>) {
+pub fn settle(h: &mut Harness<'static, PagicApp>) {
     let settled = step_until(h, |h| {
         h.run_steps(1);
         !h.state().render_pending()
@@ -39,7 +39,7 @@ pub fn settle(h: &mut Harness<'static, RectoApp>) {
     assert!(settled, "pages rendered");
 }
 
-pub fn wait_until(h: &mut Harness<'static, RectoApp>, what: &str, ready: impl Fn(&RectoApp) -> bool) {
+pub fn wait_until(h: &mut Harness<'static, PagicApp>, what: &str, ready: impl Fn(&PagicApp) -> bool) {
     let held = step_until(h, |h| ready(h.state()));
     assert!(
         held,
@@ -52,21 +52,21 @@ pub fn wait_until(h: &mut Harness<'static, RectoApp>, what: &str, ready: impl Fn
 }
 
 /// Open the in-window menu bar's `title` menu (File, Edit, View…).
-pub fn open_menu(h: &mut Harness<'static, RectoApp>, title: &str) {
+pub fn open_menu(h: &mut Harness<'static, PagicApp>, title: &str) {
     use egui_kittest::kittest::Queryable;
     h.get_by(|n| n.role() == egui::accesskit::Role::MenuItem && n.label().as_deref() == Some(title)).click();
     h.run_steps(2);
 }
 
 /// The menu row labelled `label` in an open menu.
-pub fn menu_row<'h>(h: &'h Harness<'static, RectoApp>, label: &str) -> egui_kittest::Node<'h> {
+pub fn menu_row<'h>(h: &'h Harness<'static, PagicApp>, label: &str) -> egui_kittest::Node<'h> {
     use egui_kittest::kittest::Queryable;
     let label = label.to_owned();
     h.get_by(move |n| n.role() == egui::accesskit::Role::MenuItem && n.label().as_deref() == Some(label.as_str()))
 }
 
 /// The widget labelled `label` outside the menu bar, whose titles (File, Edit, Sign…) may share it.
-pub fn outside_menus<'h>(h: &'h Harness<'static, RectoApp>, label: &str) -> egui_kittest::Node<'h> {
+pub fn outside_menus<'h>(h: &'h Harness<'static, PagicApp>, label: &str) -> egui_kittest::Node<'h> {
     use egui_kittest::kittest::Queryable;
     let label = label.to_owned();
     h.get_by(move |n| n.role() != egui::accesskit::Role::MenuItem && n.label().as_deref() == Some(label.as_str()))
@@ -84,7 +84,7 @@ pub fn outside_menus<'h>(h: &'h Harness<'static, RectoApp>, label: &str) -> egui
 /// A build that requires bundled fonts (`RECTO_FONTS_REQUIRED=1`, when strict font validation is requested) never skips:
 /// a missing glyph there is a failure.
 pub fn skip_without_glyphs(name: &str, language: &str, text: &str) -> bool {
-    if std::env::var("RECTO_FONTS_REQUIRED").as_deref() == Ok("1") {
+    if std::env::var("PAGIC_FONTS_REQUIRED").or_else(|_| std::env::var("RECTO_FONTS_REQUIRED")).as_deref() == Ok("1") {
         return false;
     }
     let catalog = i18n::LANGUAGES.iter().find(|l| l.code == language).map_or("", |l| l.source);
@@ -100,6 +100,6 @@ pub fn skip_without_glyphs(name: &str, language: &str, text: &str) -> bool {
     let Some(missing) = missing else {
         return false;
     };
-    eprintln!("skipping {name}: no interface font draws {missing:?} (set RECTO_FONTS_DIR to font assets directory with a face for it)");
+    eprintln!("skipping {name}: no interface font draws {missing:?} (set PAGIC_FONTS_DIR to font assets directory with a face for it)");
     true
 }

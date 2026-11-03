@@ -55,9 +55,9 @@ try {
     if ($properties['UpgradeCode'].Trim('{}') -ne $policy.upgradeCode) { throw 'Launcher upgrade identity changed.' }
     $dirs = @{}
     foreach ($row in (Read-Rows $database 'SELECT `Directory`, `Directory_Parent`, `DefaultDir` FROM `Directory`' 3)) { $dirs[$row[0]] = @($row[1],$row[2]) }
-    if ($dirs['INSTALLFOLDER'][0] -ne 'CraftSuiteFolder' -or $dirs['CraftSuiteFolder'][1] -ne 'Recto' -or
+    if ($dirs['INSTALLFOLDER'][0] -ne 'CraftSuiteFolder' -or $dirs['CraftSuiteFolder'][1] -ne 'Pagic' -or
         $dirs['CraftSuiteFolder'][0] -ne 'LocalProgramsFolder' -or $dirs['LocalProgramsFolder'][0] -ne 'LocalAppDataFolder') {
-      throw 'Launcher new-install folder must be under the per-user Recto root.'
+      throw 'Launcher new-install folder must be under the per-user Pagic root.'
     }
     foreach ($explicit in @('', 'F:\Chosen exact launcher')) {
       Set-SessionProperty $session 'PREVIOUSINSTALLFOLDER' 'E:\Existing exact launcher'
@@ -76,7 +76,7 @@ try {
         throw 'Launcher registration or shortcut preference changed unexpectedly.'
       }
     }
-    Write-Output 'PASS Recto Launcher: per-user scope, suite folder, remembered/custom paths and existing registration. No installation performed.'
+    Write-Output 'PASS Pagic Launcher: per-user scope, suite folder, remembered/custom paths and existing registration. No installation performed.'
     return
   }
   if ($properties['ALLUSERS'] -ne '2' -or $properties['MSIINSTALLPERUSER'] -ne '1') {
@@ -87,14 +87,14 @@ try {
   foreach ($row in (Read-Rows $database 'SELECT `Directory`, `Directory_Parent`, `DefaultDir` FROM `Directory`' 3)) {
     $directories[$row[0]] = @($row[1], $row[2])
   }
-  if ($directories['INSTALLFOLDER'][1] -ne 'Recto') { throw 'Expected the Recto application folder.' }
+  if ($directories['INSTALLFOLDER'][1] -ne 'Pagic') { throw 'Expected the Pagic application folder.' }
   $programs = $directories['INSTALLFOLDER'][0]
   if ($programs -eq 'ProgramFiles6432Folder') { $programs = $directories[$programs][0] }
   if ($programs -notin 'ProgramFilesFolder', 'ProgramFiles64Folder') {
     throw 'Use Windows Installer native folder redirection, not a hard-coded profile path.'
   }
   $guards = @(Read-Rows $database 'SELECT `Condition`, `Description` FROM `LaunchCondition`' 2 |
-    Where-Object { $_[0] -match 'RECTO_(USER|MACHINE)_DIR' })
+    Where-Object { $_[0] -match 'PAGIC_(USER|MACHINE)_DIR' })
   if ($guards.Count -ne 2) { throw 'Expected both duplicate-installation guards.' }
   $cases = 0
   foreach ($scope in @('', '2', '1')) {
@@ -103,8 +103,8 @@ try {
         foreach ($installed in @('', '1')) {
           Set-SessionProperty $session 'ALLUSERS' $scope
           Set-SessionProperty $session 'Installed' $installed
-          Set-SessionProperty $session 'RECTO_USER_DIR' $user
-          Set-SessionProperty $session 'RECTO_MACHINE_DIR' $machine
+          Set-SessionProperty $session 'PAGIC_USER_DIR' $user
+          Set-SessionProperty $session 'PAGIC_MACHINE_DIR' $machine
           $allowed = $true
           foreach ($guard in $guards) {
             $value = $session.EvaluateCondition($guard[0])
@@ -124,9 +124,9 @@ try {
     foreach ($explicit in @('', 'F:\Chosen exact app')) {
       Set-SessionProperty $session 'ALLUSERS' $scope
       Set-SessionProperty $session 'INSTALLFOLDER' $explicit
-      Set-SessionProperty $session 'RECTO_USER_DIR' 'D:\Existing user app'
-      Set-SessionProperty $session 'RECTO_MACHINE_DIR' 'E:\Existing machine app'
-      $action = if ($scope -eq '1') { 'RectoRestoreMachineFolder' } else { 'RectoRestoreUserFolder' }
+      Set-SessionProperty $session 'PAGIC_USER_DIR' 'D:\Existing user app'
+      Set-SessionProperty $session 'PAGIC_MACHINE_DIR' 'E:\Existing machine app'
+      $action = if ($scope -eq '1') { 'PagicRestoreMachineFolder' } else { 'PagicRestoreUserFolder' }
       # Evaluate the compiled condition, so the test exercises it instead of calling the action directly.
       $restore = @(Read-Rows $database ('SELECT `Condition` FROM `InstallExecuteSequence` WHERE `Action` = ''{0}''' -f $action) 1)[0]
       $selected = $session.EvaluateCondition($restore[0]) -eq 1
@@ -138,21 +138,21 @@ try {
   }
   $ui = @{}
   foreach ($row in (Read-Rows $database 'SELECT `Action`, `Sequence` FROM `InstallUISequence`' 2)) { $ui[$row[0]] = [int]$row[1] }
-  if (-not ($ui['AppSearch'] -lt $ui['RectoPreferMachineScope'] -and
-      $ui['RectoPreferMachineScope'] -lt $ui['RectoScopeDlg'] -and
-      $ui['RectoScopeDlg'] -lt $ui['FindRelatedProducts'] -and
+  if (-not ($ui['AppSearch'] -lt $ui['PagicPreferMachineScope'] -and
+      $ui['PagicPreferMachineScope'] -lt $ui['PagicScopeDlg'] -and
+      $ui['PagicScopeDlg'] -lt $ui['FindRelatedProducts'] -and
       $ui['FindRelatedProducts'] -lt $ui['LaunchConditions'] -and
-      $ui['RectoScopeDlg'] -lt $ui['RectoRestoreUserFolder'] -and $ui['RectoRestoreUserFolder'] -lt $ui['CostInitialize'])) {
+      $ui['PagicScopeDlg'] -lt $ui['PagicRestoreUserFolder'] -and $ui['PagicRestoreUserFolder'] -lt $ui['CostInitialize'])) {
     throw 'Scope must be chosen after AppSearch and before FindRelatedProducts, launch checks and costing.'
   }
   # Windows Installer resolves Program Files for the context it started in, before the wizard's scope choice.
   # The wizard therefore sets the new-install folder itself, and only in the wizard.
-  $defaults = @(Read-Rows $database 'SELECT `Action`, `Sequence`, `Condition` FROM `InstallUISequence`' 3 | Where-Object { $_[0] -like 'RectoDefault*' })
+  $defaults = @(Read-Rows $database 'SELECT `Action`, `Sequence`, `Condition` FROM `InstallUISequence`' 3 | Where-Object { $_[0] -like 'PagicDefault*' })
   if ($defaults.Count -lt 2) { throw 'The wizard must set the new-install folder after the scope page; Program Files is resolved before the choice.' }
   foreach ($row in $defaults) {
-    if (-not ($ui['RectoScopeDlg'] -lt [int]$row[1] -and [int]$row[1] -lt $ui['CostInitialize'])) { throw "$($row[0]) must run after the scope page and before costing." }
+    if (-not ($ui['PagicScopeDlg'] -lt [int]$row[1] -and [int]$row[1] -lt $ui['CostInitialize'])) { throw "$($row[0]) must run after the scope page and before costing." }
   }
-  if (@(Read-Rows $database 'SELECT `Action` FROM `InstallExecuteSequence`' 1 | Where-Object { $_[0] -like 'RectoDefault*' }).Count) {
+  if (@(Read-Rows $database 'SELECT `Action` FROM `InstallExecuteSequence`' 1 | Where-Object { $_[0] -like 'PagicDefault*' }).Count) {
     throw 'Silent installs must not use the wizard-only default folder actions.'
   }
   # The machine default comes from the environment of the package architecture, not from a folder name.
@@ -164,8 +164,8 @@ try {
   foreach ($scope in @('1', '')) {
     Set-SessionProperty $session 'ALLUSERS' $scope
     Set-SessionProperty $session 'INSTALLFOLDER' ''
-    Set-SessionProperty $session 'RECTO_MACHINE_DIR' ''
-    Set-SessionProperty $session 'RECTO_USER_DIR' ''
+    Set-SessionProperty $session 'PAGIC_MACHINE_DIR' ''
+    Set-SessionProperty $session 'PAGIC_USER_DIR' ''
     foreach ($row in @($defaults | Sort-Object { [int]$_[1] })) {
       if ($session.EvaluateCondition($row[2]) -eq 1 -and $session.DoAction($row[0]) -ne 1) { throw "$($row[0]) failed." }
     }
@@ -175,31 +175,31 @@ try {
   }
   $execute = @{}
   foreach ($row in (Read-Rows $database 'SELECT `Action`, `Sequence` FROM `InstallExecuteSequence`' 2)) { $execute[$row[0]] = [int]$row[1] }
-  foreach ($action in @('RectoRestoreUserFolder','RectoRestoreMachineFolder')) {
+  foreach ($action in @('PagicRestoreUserFolder','PagicRestoreMachineFolder')) {
     if (-not ($execute['AppSearch'] -lt $execute[$action] -and $execute[$action] -lt $execute['CostInitialize'])) {
       throw 'Silent updates must restore the folder before directory costing.'
     }
   }
-  foreach ($resolver in @('RectoUFromLegacyExe','RectoMFromLegacyExe')) {
+  foreach ($resolver in @('PagicUFromLegacyExe','PagicMFromLegacyExe')) {
     if (-not ($execute['AppSearch'] -lt $execute[$resolver] -and $execute[$resolver] -lt $execute['LaunchConditions'])) {
       throw 'Both legacy folder resolvers must run after AppSearch and before the launch checks.'
     }
   }
   # Switching the first-page choice must reset BOTH properties, including a back-and-forth change.
-  $events = @(Read-Rows $database 'SELECT `Event`, `Argument`, `Condition`, `Ordering` FROM `ControlEvent` WHERE `Dialog_` = ''RectoScopeDlg'' AND `Control_` = ''Next'' ORDER BY `Ordering`' 4)
+  $events = @(Read-Rows $database 'SELECT `Event`, `Argument`, `Condition`, `Ordering` FROM `ControlEvent` WHERE `Dialog_` = ''PagicScopeDlg'' AND `Control_` = ''Next'' ORDER BY `Ordering`' 4)
   # Model the full-UI upgrade entry with an existing machine-wide copy. Run
   # the actual preference action, then the compiled Next events before discovery.
   Set-SessionProperty $session 'ALLUSERS' '2'
-  Set-SessionProperty $session 'RECTO_SCOPE' 'user'
-  Set-SessionProperty $session 'RECTO_USER_DIR' ''
-  Set-SessionProperty $session 'RECTO_MACHINE_DIR' 'E:\Existing machine app'
-  $preference = @(Read-Rows $database 'SELECT `Condition` FROM `InstallUISequence` WHERE `Action` = ''RectoPreferMachineScope''' 1)[0]
-  if ($session.EvaluateCondition($preference[0]) -ne 1 -or $session.DoAction('RectoPreferMachineScope') -ne 1 -or
-      (Get-SessionProperty $session 'RECTO_SCOPE') -ne 'machine') {
+  Set-SessionProperty $session 'PAGIC_SCOPE' 'user'
+  Set-SessionProperty $session 'PAGIC_USER_DIR' ''
+  Set-SessionProperty $session 'PAGIC_MACHINE_DIR' 'E:\Existing machine app'
+  $preference = @(Read-Rows $database 'SELECT `Condition` FROM `InstallUISequence` WHERE `Action` = ''PagicPreferMachineScope''' 1)[0]
+  if ($session.EvaluateCondition($preference[0]) -ne 1 -or $session.DoAction('PagicPreferMachineScope') -ne 1 -or
+      (Get-SessionProperty $session 'PAGIC_SCOPE') -ne 'machine') {
     throw 'Full-UI machine upgrades must initially select the existing machine context.'
   }
   foreach ($choice in @('machine','user','machine','user')) {
-    Set-SessionProperty $session 'RECTO_SCOPE' $choice
+    Set-SessionProperty $session 'PAGIC_SCOPE' $choice
     foreach ($event in $events) {
       if ($event[0] -notmatch '^\[([^\]]+)\]$') { continue }
       $property = $Matches[1]
@@ -215,16 +215,16 @@ try {
     }
   }
   $actions = @(Read-Rows $database 'SELECT `Action`, `Source`, `Target`, `Type` FROM `CustomAction`' 4)
-  $savedOptions = @($actions | Where-Object { $_[0] -match '^RectoLoadOption[0-9]+M$' })
+  $savedOptions = @($actions | Where-Object { $_[0] -match '^PagicLoadOption[0-9]+M$' })
   foreach ($option in $savedOptions) {
     if ([int]$option[3] -ne 51) { throw 'Saved-option test may run only property-setting actions.' }
     $number = [regex]::Match($option[0], '[0-9]+').Value
     foreach ($scope in @('2','1')) {
       Set-SessionProperty $session 'ALLUSERS' $scope
-      Set-SessionProperty $session "RECTO_OPTION_${number}_M" 'saved-machine-choice'
-      Set-SessionProperty $session "RECTO_OPTION_${number}_U" 'saved-user-choice'
+      Set-SessionProperty $session "PAGIC_OPTION_${number}_M" 'saved-machine-choice'
+      Set-SessionProperty $session "PAGIC_OPTION_${number}_U" 'saved-user-choice'
       Set-SessionProperty $session $option[1] ''
-      $action = "RectoLoadOption$number" + $(if ($scope -eq '1') { 'M' } else { 'U' })
+      $action = "PagicLoadOption$number" + $(if ($scope -eq '1') { 'M' } else { 'U' })
       if ($session.DoAction($action) -ne 1) { throw 'Saved-option property action failed.' }
       $expected = if ($scope -eq '1') { 'saved-machine-choice' } else { 'saved-user-choice' }
       if ((Get-SessionProperty $session $option[1]) -ne $expected) { throw 'Saved installer choices leaked across contexts.' }

@@ -2,8 +2,8 @@
 
 use std::sync::Arc;
 
-use recto_cos::{SaveOptions, write_incremental};
-use recto_render::{PageRenderer, RenderConfig, RenderPool, RenderRequest, RenderedPage};
+use pagic_cos::{SaveOptions, write_incremental};
+use pagic_render::{PageRenderer, RenderConfig, RenderPool, RenderRequest, RenderedPage};
 
 use crate::{Document, guard};
 
@@ -69,14 +69,14 @@ impl Document {
                 return Ok(None);
             }
             let mut stamp = editor.cos.clone();
-            if !recto_annot::isolate_annotation(&mut stamp, page, index).map_err(|e| e.to_string())? {
+            if !pagic_annot::isolate_annotation(&mut stamp, page, index).map_err(|e| e.to_string())? {
                 return Ok(None);
             }
             let mut background = editor.cos.clone();
-            recto_annot::delete_annotation(&mut background, page, index).map_err(|e| e.to_string())?;
+            pagic_annot::delete_annotation(&mut background, page, index).map_err(|e| e.to_string())?;
             // The page beneath as it is displayed: comments without an appearance get theirs.
-            let background = recto_annot::with_missing_appearances(&background).unwrap_or(background);
-            let write = |cos: &recto_cos::Document| write_incremental(cos, &SaveOptions::default()).map(Arc::new).map_err(|e| e.to_string());
+            let background = pagic_annot::with_missing_appearances(&background).unwrap_or(background);
+            let write = |cos: &pagic_cos::Document| write_incremental(cos, &SaveOptions::default()).map(Arc::new).map_err(|e| e.to_string());
             Ok(Some(StampPreview { page, background: write(&background)?, stamp: write(&stamp)?, config: self.config.clone() }))
         })?
     }

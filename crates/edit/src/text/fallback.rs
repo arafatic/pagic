@@ -8,7 +8,7 @@ use super::{
 pub(super) type Encoder = Box<dyn Fn(&str) -> Option<Vec<(String, Vec<u8>)>>>;
 
 fn is_win_ansi_char(c: char) -> bool {
-    c == '\t' || recto_fonts::win_ansi_byte(c).is_some()
+    c == '\t' || pagic_fonts::win_ansi_byte(c).is_some()
 }
 
 pub(crate) fn needs_type3(text: &str) -> bool {
@@ -250,7 +250,7 @@ const SIDE_BEARING: f64 = 0.05;
 /// (one em each, as in JIS X 0208) and have no proportional (`palt`) metrics for them, so a
 /// word set that way reads as letter-spaced. Those letters get their ink width plus a side
 /// bearing instead; everything else keeps the face's own advance.
-fn proportional(ch: char, glyph: &recto_fonts::GlyphOutline) -> (f64, f64) {
+fn proportional(ch: char, glyph: &pagic_fonts::GlyphOutline) -> (f64, f64) {
     let respace = matches!(ch, '\u{0370}'..='\u{03FF}' | '\u{0400}'..='\u{052F}' | '\u{1F00}'..='\u{1FFF}');
     let ink = glyph.bbox[2] - glyph.bbox[0];
     if !respace || glyph.contours.is_empty() || !(ink > 0.0 && ink < glyph.width) {
@@ -284,7 +284,7 @@ pub(crate) fn no_fallback_font(text: &str) -> EditError {
     EditError::Invalid(format!(
         "the paragraph's font has no glyph for {ch} (U+{:04X}) and this build has no fallback font for it; \
          choose a font that has it (Load font… or Installed fonts…), or use an official release, which includes \
-         Recto's fallback fonts (to build them in, set RECTO_FONTS_DIR to font assets directory)",
+         Pagic's fallback fonts (to build them in, set PAGIC_FONTS_DIR to font assets directory)",
         u32::from(ch)
     ))
 }
@@ -299,13 +299,13 @@ fn needs_japanese(ch: char) -> bool {
 /// what the writer can do about it. A CJK character without a Japanese face in the build is about
 /// that build input, which is the one answer that changes it.
 pub(crate) fn no_glyph_for(face: &EmbeddedFont, ch: char) -> EditError {
-    if needs_japanese(ch) && recto_fonts::document_japanese_font().is_none() {
+    if needs_japanese(ch) && pagic_fonts::document_japanese_font().is_none() {
         return no_japanese_font();
     }
     EditError::Invalid(format!(
         "the {} fallback font has no glyph for {ch} (U+{:04X}), and no fallback face covers the text; \
          choose a font that has it (Load font… or Installed fonts…), or use an official release, which includes \
-         Recto's fallback fonts (to build them in, set RECTO_FONTS_DIR to font assets directory)",
+         Pagic's fallback fonts (to build them in, set PAGIC_FONTS_DIR to font assets directory)",
         face.family,
         u32::from(ch)
     ))
@@ -314,22 +314,26 @@ pub(crate) fn no_glyph_for(face: &EmbeddedFont, ch: char) -> EditError {
 /// This build has no Japanese face to draw replacement text with.
 pub(super) fn no_japanese_font() -> EditError {
     EditError::Invalid(
-        "this text needs Recto's Japanese fallback font, which this build doesn't include \
-         (official releases do; to build it in, set RECTO_FONTS_DIR to font assets directory)"
+        "this text needs Pagic's Japanese fallback font, which this build doesn't include \
+         (official releases do; to build it in, set PAGIC_FONTS_DIR to font assets directory)"
             .into(),
     )
 }
 
 /// The first of `faces` (best match first) that has a glyph for every one of `chars`, else the first.
-pub(crate) fn fallback_face<'a>(faces: &[&'a EmbeddedFont], chars: &[char], has_glyph: impl Fn(&EmbeddedFont, char) -> bool) -> Option<&'a EmbeddedFont> {
+pub(crate) fn fallback_face<'a>(
+    faces: &[&'a EmbeddedFont],
+    chars: &[char],
+    has_glyph: impl Fn(&EmbeddedFont, char) -> bool,
+) -> Option<&'a EmbeddedFont> {
     faces.iter().copied().find(|face| chars.iter().all(|ch| has_glyph(face, *ch))).or_else(|| faces.first().copied())
 }
 
 /// This build has no Hebrew face to draw replacement text with.
 fn no_hebrew_font() -> EditError {
     EditError::Invalid(
-        "this text needs Recto's Hebrew fallback font (Noto Sans Hebrew), which this build doesn't include \
-         (to build it in, set RECTO_FONTS_DIR to font assets directory that has it)"
+        "this text needs Pagic's Hebrew fallback font (Noto Sans Hebrew), which this build doesn't include \
+         (to build it in, set PAGIC_FONTS_DIR to font assets directory that has it)"
             .into(),
     )
 }
@@ -340,8 +344,8 @@ fn no_hebrew_font() -> EditError {
 /// bundled Latin face behind them, which covers the Latin, Greek and Cyrillic letters they lack
 /// (#2593: the Japanese faces have no қ, ғ, ҳ, ә, ө, ү, ұ or һ).
 pub(crate) fn type3_faces(text: &str, family: crate::added::Family, bold: bool) -> Result<(Vec<&'static EmbeddedFont>, bool), EditError> {
-    let japanese = recto_fonts::document_japanese_fonts_for_style(family == crate::added::Family::Times, bold);
-    let latin = recto_fonts::document_latin_fonts(bold);
+    let japanese = pagic_fonts::document_japanese_fonts_for_style(family == crate::added::Family::Times, bold);
+    let latin = pagic_fonts::document_latin_fonts(bold);
     if !text.chars().any(crate::bidi::is_hebrew) {
         return Ok((japanese.into_iter().chain(latin).collect(), false));
     }
@@ -350,7 +354,7 @@ pub(crate) fn type3_faces(text: &str, family: crate::added::Family, bold: bool) 
     if text.chars().any(crate::bidi::is_hebrew_mark) {
         return Err(EditError::Invalid("Hebrew points (niqqud) can't be written into a PDF yet; type the text without them".into()));
     }
-    let hebrew = recto_fonts::document_hebrew_font(bold).ok_or_else(no_hebrew_font)?;
+    let hebrew = pagic_fonts::document_hebrew_font(bold).ok_or_else(no_hebrew_font)?;
     Ok((std::iter::once(hebrew).chain(japanese).chain(latin).collect(), true))
 }
 
@@ -516,8 +520,8 @@ pub(crate) fn source_program(doc: &Document, fonts: &Dict, name: &str) -> Option
     if base.split_once('+').is_some_and(|(tag, _)| tag.len() == 6 && tag.bytes().all(|b| b.is_ascii_uppercase())) {
         return None;
     }
-    let bytes = recto_fonts::pdf::embedded_sfnt(doc, &font)?;
-    recto_fonts::embedding::validate(&bytes).is_ok().then_some(bytes)
+    let bytes = pagic_fonts::pdf::embedded_sfnt(doc, &font)?;
+    pagic_fonts::embedding::validate(&bytes).is_ok().then_some(bytes)
 }
 
 /// Whether `text` has characters `line`'s font can't encode that its own program can draw.
@@ -526,7 +530,7 @@ pub(super) fn source_program_completes(doc: &Document, fonts: &Dict, line: &Text
         return false;
     };
     let missing: String = text.chars().filter(|c| !c.is_whitespace() && !source_encodes(&metrics, &c.to_string())).collect();
-    !missing.is_empty() && source_program(doc, fonts, &line.font).is_some_and(|bytes| recto_fonts::embedding::covers(&bytes, &missing))
+    !missing.is_empty() && source_program(doc, fonts, &line.font).is_some_and(|bytes| pagic_fonts::embedding::covers(&bytes, &missing))
 }
 
 /// A subset may contain all the letters but no space glyph: producers use another subset
@@ -590,7 +594,7 @@ pub(crate) fn source_show(metrics: &Metrics, text: &str, size: f64, space: f64, 
     let mut out = Vec::new();
     for (i, word) in text.split(' ').enumerate() {
         if i > 0 {
-            out.push(Op::new("TJ", vec![Object::Array(vec![recto_content::num(adjustment)])]));
+            out.push(Op::new("TJ", vec![Object::Array(vec![pagic_content::num(adjustment)])]));
         }
         if !word.is_empty() {
             let bytes = metrics.encode(word).ok_or_else(|| EditError::Invalid("the source font cannot show the replacement text".into()))?;

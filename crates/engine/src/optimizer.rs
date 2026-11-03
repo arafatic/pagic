@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use recto_cos::{SaveOptions, write_full};
+use pagic_cos::{SaveOptions, write_full};
 
 use crate::{DocId, EditError, Hidden, OptimizeReport, Session, guard, optimize};
 
@@ -49,7 +49,7 @@ pub type Optimized = (Arc<Vec<u8>>, OptimizeReport);
 
 /// What an optimization needs, independent of the session.
 pub struct OptimizeJob {
-    cos: recto_cos::Document,
+    cos: pagic_cos::Document,
     settings: optimize::Settings,
     discard: Vec<Hidden>,
     opts: SaveOptions,
@@ -69,7 +69,7 @@ impl Session {
             settings: settings.clone(),
             discard: discard.to_vec(),
             opts: SaveOptions {
-                mod_date: self.now().map(recto_cos::pdf_date),
+                mod_date: self.now().map(pagic_cos::pdf_date),
                 object_streams: settings.effective_object_streams(),
                 ..SaveOptions::default()
             },
@@ -88,11 +88,11 @@ impl OptimizeJob {
     fn work(self, progress: &mut dyn FnMut(OptimizeStage) -> bool) -> Result<Optimized, EditError> {
         let OptimizeJob { mut cos, settings, discard, opts } = self;
         // Like every file written, without the values of Password-flag fields (#3926, #3944).
-        recto_forms::clear_password_values(&mut cos).map_err(|e| EditError::Write(e.to_string()))?;
-        recto_xfa::clear_password_values(&mut cos).map_err(|e| EditError::Write(e.to_string()))?;
+        pagic_forms::clear_password_values(&mut cos).map_err(|e| EditError::Write(e.to_string()))?;
+        pagic_xfa::clear_password_values(&mut cos).map_err(|e| EditError::Write(e.to_string()))?;
         let mut step = |stage| if progress(stage) { Ok(()) } else { Err(EditError::Cancelled) };
         step(OptimizeStage::Discarding)?;
-        let discarded = if discard.is_empty() { Vec::new() } else { recto_redact::sanitize::remove_hidden(&mut cos, &discard)? };
+        let discarded = if discard.is_empty() { Vec::new() } else { pagic_redact::sanitize::remove_hidden(&mut cos, &discard)? };
         let report = optimize::optimize_with_progress(&mut cos, &settings, &mut |s| {
             step(match s {
                 optimize::Stage::Fragments => OptimizeStage::Fragments,
@@ -106,8 +106,8 @@ impl OptimizeJob {
             e => EditError::Optimize(e.to_string()),
         })?;
         step(OptimizeStage::Merging)?;
-        let all: Vec<recto_cos::ObjRef> = cos.object_numbers().into_iter().map(|n| recto_cos::ObjRef::new(n, cos.generation(n))).collect();
-        let merged = recto_organize::dedupe_resources(&mut cos, &all, false);
+        let all: Vec<pagic_cos::ObjRef> = cos.object_numbers().into_iter().map(|n| pagic_cos::ObjRef::new(n, cos.generation(n))).collect();
+        let merged = pagic_organize::dedupe_resources(&mut cos, &all, false);
         step(OptimizeStage::Writing)?;
         let bytes = write_full(&cos, &opts).map_err(|e| EditError::Write(e.to_string()))?;
         Ok((Arc::new(bytes), OptimizeReport { optimize: report, merged, discarded }))

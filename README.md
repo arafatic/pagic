@@ -1,4 +1,4 @@
-# Recto
+# Pagic
 
 A fast, lightweight, and open-source PDF editor built with Rust and egui.
 
@@ -7,15 +7,11 @@ A fast, lightweight, and open-source PDF editor built with Rust and egui.
 - Fast document viewing and editing
 - Open-source and privacy-focused
 
-## Download Recto
+## Distribution status
 
-Download the latest version for your operating system:
-
-| Platform | Download Link |
-| :--- | :--- |
-| **macOS (Apple Silicon)** | [Download .dmg / .zip](https://github.com/arafatic/recto/releases/latest) |
-| **Windows (64-bit)** | [Download .msi / .exe](https://github.com/arafatic/recto/releases/latest) |
-| **Linux** | [Download .AppImage](https://github.com/arafatic/recto/releases/latest) |
+Pagic is an independent continuation of Recto. Original attribution and third-party licenses
+are retained. Release/installer packaging is disabled pending final Pagic artwork and native
+installation, association and uninstall validation. No Microsoft Store package is published.
 
 ## Getting Started
 
@@ -28,10 +24,10 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ### Building & Running
 ```bash
 # Run in development mode
-cargo run -p recto
+cargo run -p pagic
 
 # Or build for release
-cargo build --release -p recto
+cargo build --release -p pagic
 ```
 
 ## License

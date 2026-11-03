@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::fmt::Write as _;
 
-use recto_cos::{Dict, Document, ObjRef, Object, PdfString, Stream};
+use pagic_cos::{Dict, Document, ObjRef, Object, PdfString, Stream};
 use skrifa::{
     FontRef, MetadataProvider,
     instance::{LocationRef, Size},
@@ -19,7 +19,7 @@ pub fn face_key(name: &str) -> String {
 /// Full, approved faces of the source family. This never silently selects another family.
 pub fn matching_faces(name: &str) -> Vec<&'static crate::EmbeddedFont> {
     let key = face_key(name);
-    crate::RECTO_FONTS.iter().filter(|f| face_key(f.family) == key || face_key(&f.name()) == key).collect()
+    crate::PAGIC_FONTS.iter().filter(|f| face_key(f.family) == key || face_key(&f.name()) == key).collect()
 }
 
 /// Whether a complete font program can show every non-newline character.

@@ -16,21 +16,21 @@ pub struct Combined {
 }
 
 /// Parse another PDF to copy pages from.
-pub(crate) fn open_source(name: &str, bytes: &Arc<Vec<u8>>) -> Result<recto_cos::Document, EditError> {
+pub(crate) fn open_source(name: &str, bytes: &Arc<Vec<u8>>) -> Result<pagic_cos::Document, EditError> {
     open_source_with(name, bytes, None)
 }
 
 /// [`open_source`], authenticating with `password` (user or owner) for an encrypted file.
-pub(crate) fn open_source_with(name: &str, bytes: &Arc<Vec<u8>>, password: Option<&str>) -> Result<recto_cos::Document, EditError> {
+pub(crate) fn open_source_with(name: &str, bytes: &Arc<Vec<u8>>, password: Option<&str>) -> Result<pagic_cos::Document, EditError> {
     source_document(bytes, password).map_err(|p| EditError::Source(format!("{name}: {p}")))
 }
 
-fn source_document(bytes: &Arc<Vec<u8>>, password: Option<&str>) -> Result<recto_cos::Document, SourceProblem> {
-    match std::panic::catch_unwind(|| recto_cos::Document::open_with_password(bytes.clone(), password)) {
+fn source_document(bytes: &Arc<Vec<u8>>, password: Option<&str>) -> Result<pagic_cos::Document, SourceProblem> {
+    match std::panic::catch_unwind(|| pagic_cos::Document::open_with_password(bytes.clone(), password)) {
         Ok(Ok(d)) if d.permissions().is_some_and(|p| !p.assemble()) => Err(SourceProblem::NotPermitted),
         Ok(Ok(d)) => Ok(d),
-        Ok(Err(recto_cos::CosError::NeedsPassword)) => Err(SourceProblem::Password),
-        Ok(Err(recto_cos::CosError::WrongPassword)) => Err(SourceProblem::WrongPassword),
+        Ok(Err(pagic_cos::CosError::NeedsPassword)) => Err(SourceProblem::Password),
+        Ok(Err(pagic_cos::CosError::WrongPassword)) => Err(SourceProblem::WrongPassword),
         Ok(Err(e)) => Err(SourceProblem::Unreadable(e.to_string())),
         Err(_) => Err(SourceProblem::Unreadable("the file could not be read".into())),
     }
@@ -46,6 +46,6 @@ pub fn combine_source_check(bytes: &Arc<Vec<u8>>, password: Option<&str>) -> Res
 /// The number of pages of `bytes`, opened with `password` (user or owner) if given, whatever
 /// its permissions allow; `None` when it can't be read.
 pub fn source_page_count(bytes: &Arc<Vec<u8>>, password: Option<&str>) -> Option<usize> {
-    let doc = std::panic::catch_unwind(|| recto_cos::Document::open_with_password(bytes.clone(), password)).ok()?.ok()?;
-    recto_organize::page_count(&doc).ok()
+    let doc = std::panic::catch_unwind(|| pagic_cos::Document::open_with_password(bytes.clone(), password)).ok()?.ok()?;
+    pagic_organize::page_count(&doc).ok()
 }

@@ -1,8 +1,8 @@
 //! Print how a file was opened: revisions, repair notes, trailer, security and the catalog.
-//! `cargo run -p recto-cos --example cosinfo f.pdf [password] [object-number…]`
-fn show(o: &recto_cos::Object) -> String {
+//! `cargo run -p pagic-cos --example cosinfo f.pdf [password] [object-number…]`
+fn show(o: &pagic_cos::Object) -> String {
     let mut t = Vec::new();
-    recto_cos::serialize(o, &mut t);
+    pagic_cos::serialize(o, &mut t);
     let s = String::from_utf8_lossy(&t).into_owned();
     s.chars().take(400).collect()
 }
@@ -13,13 +13,13 @@ fn main() {
     let password = args.next().filter(|p| !p.is_empty());
     let objs: Vec<u32> = args.filter_map(|a| a.parse().ok()).collect();
     let bytes = std::sync::Arc::new(std::fs::read(&path).expect("readable"));
-    match recto_cos::Document::open_with_password(bytes, password.as_deref()) {
+    match pagic_cos::Document::open_with_password(bytes, password.as_deref()) {
         Ok(doc) => {
             println!("version {}  revisions {:?}", doc.version(), doc.revisions());
             for r in doc.repair_log() {
                 println!("repair: {r}");
             }
-            println!("trailer {}", show(&recto_cos::Object::Dict(doc.trailer().clone())));
+            println!("trailer {}", show(&pagic_cos::Object::Dict(doc.trailer().clone())));
             if let Some(s) = doc.security() {
                 println!("security: auth {:?}, key {} bytes, {:?}", s.auth(), s.file_key().len(), s.permissions());
             }

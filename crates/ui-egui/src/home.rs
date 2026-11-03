@@ -1,18 +1,18 @@
-//! Recto workspace: document actions, pinned folders and local recent files.
+//! Pagic workspace: document actions, pinned folders and local recent files.
 
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, vec2};
 
 use crate::theme::{self, Tokens};
-use crate::{RectoApp, icons, panels::human_size, widgets};
+use crate::{PagicApp, icons, panels::human_size, widgets};
 
 pub mod folders_ui;
 
 /// Draw the workspace and recent documents. Actions reuse the existing workflows.
-pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         egui::Frame::NONE.inner_margin(egui::Margin::symmetric(28, 28)).show(ui, |ui| {
-            ui.label(egui::RichText::new(tl!("Welcome to Recto")).font(theme::semibold(30.0)).color(t.text));
+            ui.label(egui::RichText::new(tl!("Welcome to Pagic")).font(theme::semibold(30.0)).color(t.text));
             ui.add_space(6.0);
             ui.label(egui::RichText::new("Your document workspace.").font(theme::regular(14.0)).color(t.text_muted));
             ui.add_space(28.0);

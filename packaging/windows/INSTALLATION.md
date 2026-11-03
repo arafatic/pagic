@@ -1,6 +1,6 @@
 # Windows installation policy checks
 
-New installations default to the current account under `Programs\Recto`.
+New installations default to the current account under `Programs\Pagic`.
 The first setup page offers installation for everyone. Scope is selected before duplicate
 checks and directory costing. An update uses the existing context's remembered exact folder;
 `INSTALLFOLDER` supplied explicitly is never replaced. It is a secure MSI property so the
@@ -23,7 +23,7 @@ On Windows with WiX 5.0.2 and its matching UI/Util extensions:
 The script builds x64, x86 and arm64 packages with deliberately non-executable payloads. It
 uses the actual package source and compiled database. A safe Windows Installer session checks
 24 scope/registration/maintenance cases, remembered and explicit custom folders, sequencing,
-upgrade identity and the Recto registration inventory recorded in `install-policy.json`.
+upgrade identity and the Pagic registration inventory recorded in `install-policy.json`.
 The release packaging script runs the compiled checker before signing. Packaging CI runs the
 small fixture builds without compiling the Rust application.
 

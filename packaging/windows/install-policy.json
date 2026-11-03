@@ -1,12 +1,12 @@
 {
-  "id": "recto",
-  "name": "Recto",
-  "upgradeCode": "FF3C761B-F699-5787-9C4D-13CBDF33A529",
+  "id": "pagic",
+  "name": "Pagic",
+  "upgradeCode": "B32690B0-33F8-5A31-993D-261F6042B8B0",
   "sources": [
-    "recto.wxs",
+    "pagic.wxs",
     "installer-ui.wxs"
   ],
-  "icon": "assets/app-icon/recto.ico",
+  "icon": "assets/app-icon/pagic.ico",
   "localization": [],
   "extensions": [],
   "payloads": [
@@ -14,315 +14,315 @@
     "LICENSE-MIT",
     "LICENSE-document.txt",
     "NOTICE",
-    "recto-cli.exe",
-    "recto.exe"
+    "pagic-cli.exe",
+    "pagic.exe"
   ],
   "registry": [
     [
       "-1",
-      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\recto.exe",
+      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\pagic.exe",
       "",
-      "[#RectoExe]"
+      "[#PagicExe]"
     ],
     [
       "-1",
-      "Software\\Classes\\recto.document",
+      "Software\\Classes\\pagic.document",
       "",
       "PDF Document"
     ],
     [
       "-1",
-      "Software\\Classes\\recto.document\\DefaultIcon",
+      "Software\\Classes\\pagic.document\\DefaultIcon",
       "",
-      "\"[#RectoExe]\",-2"
+      "\"[#PagicExe]\",-2"
     ],
     [
       "-1",
-      "Software\\Classes\\recto.document\\shell\\open\\command",
+      "Software\\Classes\\pagic.document\\shell\\open\\command",
       "",
-      "\"[#RectoExe]\" \"%1\""
+      "\"[#PagicExe]\" \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\recto.document",
+      "Software\\Classes\\pagic.document",
       "TypeOverlay",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.pdf\\OpenWithProgids",
-      "recto.document",
+      "pagic.document",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\recto.exe",
+      "Software\\Classes\\Applications\\pagic.exe",
       "FriendlyAppName",
-      "Recto"
+      "Pagic"
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\recto.exe\\DefaultIcon",
+      "Software\\Classes\\Applications\\pagic.exe\\DefaultIcon",
       "",
-      "\"[#RectoExe]\",-2"
+      "\"[#PagicExe]\",-2"
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\recto.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\pagic.exe\\SupportedTypes",
       ".pdf",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\recto.exe\\shell\\open\\command",
+      "Software\\Classes\\Applications\\pagic.exe\\shell\\open\\command",
       "",
-      "\"[#RectoExe]\" \"%1\""
+      "\"[#PagicExe]\" \"%1\""
     ],
     [
       "-1",
-      "Software\\recto\\Capabilities",
+      "Software\\pagic\\Capabilities",
       "ApplicationName",
-      "Recto"
+      "Pagic"
     ],
     [
       "-1",
-      "Software\\recto\\Capabilities",
+      "Software\\pagic\\Capabilities",
       "ApplicationDescription",
       "Open-source PDF workbench"
     ],
     [
       "-1",
-      "Software\\recto\\Capabilities",
+      "Software\\pagic\\Capabilities",
       "ApplicationIcon",
-      "[#RectoExe],0"
+      "[#PagicExe],0"
     ],
     [
       "-1",
-      "Software\\recto\\Capabilities\\FileAssociations",
+      "Software\\pagic\\Capabilities\\FileAssociations",
       ".pdf",
-      "recto.document"
+      "pagic.document"
     ],
     [
       "-1",
       "Software\\RegisteredApplications",
-      "recto",
-      "Software\\recto\\Capabilities"
+      "pagic",
+      "Software\\pagic\\Capabilities"
     ],
     [
       "-1",
-      "Software\\recto\\Shortcuts",
+      "Software\\pagic\\Shortcuts",
       "StartMenu",
-      "#1"
+      "1"
     ],
     [
       "-1",
-      "Software\\recto\\Shortcuts",
+      "Software\\pagic\\Shortcuts",
       "Desktop",
-      "#1"
+      "1"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\recto.edit",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\pagic.edit",
       "",
-      "Edit with Recto"
+      "Edit with Pagic"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\recto.edit",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\pagic.edit",
       "Icon",
-      "\"[#RectoExe]\",0"
+      "\"[#PagicExe]\",0"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\recto.edit",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\pagic.edit",
       "MultiSelectModel",
       "Document"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\recto.edit\\command",
+      "Software\\Classes\\SystemFileAssociations\\.pdf\\shell\\pagic.edit\\command",
       "",
-      "\"[#RectoExe]\" \"%1\""
+      "\"[#PagicExe]\" \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.png\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.jpg\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.jpeg\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.tif\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.tiff\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.gif\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.bmp\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.jp2\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.j2k\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\pagic.createpdf",
       "",
-      "Create PDF with Recto\u2026"
+      "Create PDF with Pagic\u2026"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\recto.createpdf",
+      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\pagic.createpdf",
       "MultiSelectModel",
       "Single"
     ],
     [
       "-1",
-      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\recto.createpdf\\command",
+      "Software\\Classes\\SystemFileAssociations\\.jpx\\shell\\pagic.createpdf\\command",
       "",
-      "\"[#RectoExe]\" --create-images \"%1\""
+      "\"[#PagicExe]\" --create-images \"%1\""
     ]
   ],
   "mode": "dualScope"

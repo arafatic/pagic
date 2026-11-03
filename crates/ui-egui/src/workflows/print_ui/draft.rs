@@ -74,7 +74,7 @@ pub struct PrintDraft {
     /// Label: turn a further 180°.
     pub label_flip: bool,
     /// Label: each page's printed area and text direction, read when Label is chosen
-    /// ([`RectoApp::read_label_crops`]); empty until then.
+    /// ([`PagicApp::read_label_crops`]); empty until then.
     pub crops: Vec<Option<print::Crop>>,
     /// The pages `crops` were read for, so a changed page selection reads them again.
     pub crop_pages: Option<Vec<usize>>,

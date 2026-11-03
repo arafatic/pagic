@@ -142,7 +142,7 @@ theme	Appearance	Giao diện
 	Accessibility	Trợ năng
 	Help…	Trợ giúp…
 	Check for updates…	Kiểm tra bản cập nhật…
-	About Recto	Giới thiệu Recto
+	About Pagic	Giới thiệu Pagic
 	Automatically	Tự động
 	Never	Không bao giờ
 	Always	Luôn luôn
@@ -558,7 +558,7 @@ theme	Appearance	Giao diện
 	Files are combined from top to bottom. Leave Pages empty to take every page.	Các tệp được kết hợp từ trên xuống dưới. Để trống mục Trang để lấy mọi trang.
 	Files are combined in the order shown. Drag them to change it.	Các tệp được kết hợp theo thứ tự hiển thị. Kéo chúng để thay đổi.
 	Files for {name}	Tệp cho {name}
-	Files you open in Recto appear here. Drop a PDF anywhere to open it.	Các tệp bạn mở trong Recto sẽ xuất hiện ở đây. Thả một PDF vào bất kỳ đâu để mở.
+	Files you open in Pagic appear here. Drop a PDF anywhere to open it.	Các tệp bạn mở trong Pagic sẽ xuất hiện ở đây. Thả một PDF vào bất kỳ đâu để mở.
 	Fill & Sign dates	Ngày của Điền & Ký
 	Fill & Sign signature	Chữ ký của Điền & Ký
 	Fill Color:	Màu tô:
@@ -668,7 +668,7 @@ theme	Appearance	Giao diện
 	JavaScript is turned off (Preferences ▸ JavaScript).	JavaScript đã bị tắt (Tùy chọn > JavaScript).
 	JavaScript, e.g. getField("total").value	JavaScript, ví dụ getField("total").value
 	Join our Discord	Tham gia Discord của chúng tôi
-	Join the Recto community	Tham gia cộng đồng Recto
+	Join the Pagic community	Tham gia cộng đồng Pagic
 	Justify	Căn đều
 	Keep source fonts	Giữ phông chữ nguồn
 	Keep tool selected	Giữ công cụ được chọn
@@ -900,10 +900,10 @@ theme	Appearance	Giao diện
 	Pattern	Họa tiết
 	Patterns	Họa tiết
 	Patterns (graphics objects)	Họa tiết (đối tượng đồ họa)
-	Recto didn't shut down normally. These documents had changes that were autosaved:	Recto không đóng bình thường. Các tài liệu này có thay đổi đã được tự động lưu:
-	Recto works offline. No telemetry, no account, and no cloud processing unless you add a provider.	Recto hoạt động ngoại tuyến. Không thu thập dữ liệu sử dụng, không cần tài khoản, và không xử lý đám mây trừ khi bạn thêm nhà cung cấp.
-	Recto {c} is up to date.	Recto {c} đã là bản mới nhất.
-	Recto {v} is available.	Recto {v} đã có sẵn.
+	Pagic didn't shut down normally. These documents had changes that were autosaved:	Pagic không đóng bình thường. Các tài liệu này có thay đổi đã được tự động lưu:
+	Pagic works offline. No telemetry, no account, and no cloud processing unless you add a provider.	Pagic hoạt động ngoại tuyến. Không thu thập dữ liệu sử dụng, không cần tài khoản, và không xử lý đám mây trừ khi bạn thêm nhà cung cấp.
+	Pagic {c} is up to date.	Pagic {c} đã là bản mới nhất.
+	Pagic {v} is available.	Pagic {v} đã có sẵn.
 	Percentage	Phần trăm
 	Permissions password	Mật khẩu quyền hạn
 	Permitted actions after certifying	Các hành động được phép sau khi chứng nhận
@@ -980,7 +980,7 @@ theme	Appearance	Giao diện
 	Remove {n} files	Gỡ {n} tệp
 	Remove {n} pages	Gỡ {n} trang
 	Reopen Closed Tab	Mở lại thẻ đã đóng
-	Reopen the files that were open when Recto last closed	Mở lại các tệp đã mở khi Recto đóng lần trước
+	Reopen the files that were open when Pagic last closed	Mở lại các tệp đã mở khi Pagic đóng lần trước
 	Repair log	Nhật ký sửa chữa
 	Repeat overlay text	Lặp lại văn bản phủ
 	Replace Image…	Thay thế hình ảnh…
@@ -1169,7 +1169,7 @@ theme	Appearance	Giao diện
 	Text alignment:	Căn chỉnh văn bản:
 	Text in images isn't found; recognise text (OCR) first.	Văn bản trong hình ảnh không được tìm thấy; hãy nhận dạng văn bản (OCR) trước.
 	Text is compared word by word; the differences are shown on the new file.	Văn bản được so sánh từng từ; các khác biệt được hiển thị trên tệp mới.
-	Text recognition isn't installed: its model files are missing. Reinstall Recto, or set RECTO_MODELS to the folder that holds them.	Tính năng nhận dạng văn bản chưa được cài đặt: thiếu các tệp mô hình. Hãy cài đặt lại Recto, hoặc đặt RECTO_MODELS thành thư mục chứa chúng.
+	Text recognition isn't installed: its model files are missing. Reinstall Pagic, or set PAGIC_MODELS to the folder that holds them.	Tính năng nhận dạng văn bản chưa được cài đặt: thiếu các tệp mô hình. Hãy cài đặt lại Pagic, hoặc đặt PAGIC_MODELS thành thư mục chứa chúng.
 	Text to find	Văn bản cần tìm
 	Text to insert	Văn bản cần chèn
 	Text used as a clipping path cannot be moved with this selection.	Văn bản dùng làm đường cắt xén không thể di chuyển cùng vùng chọn này.
@@ -1185,9 +1185,9 @@ theme	Appearance	Giao diện
 	The document's security settings don't allow printing	Cài đặt bảo mật của tài liệu không cho phép in
 	The document's security settings don't allow this change	Cài đặt bảo mật của tài liệu không cho phép thay đổi này
 	The existing action will be preserved.	Hành động hiện có sẽ được giữ nguyên.
-	The fonts Recto writes with can't draw “{c}” ({code}), so it shows as ? in every PDF viewer. The text is saved.	Phông chữ mà Recto dùng để ghi không thể vẽ “{c}” ({code}), nên nó hiển thị là ? trong mọi trình xem PDF. Văn bản vẫn được lưu.
-	The key is in the Windows certificate store, which may ask to allow Recto to use it.	Khóa nằm trong kho chứng chỉ Windows, nơi có thể yêu cầu cho phép Recto sử dụng nó.
-	The key is in the macOS Keychain, which may ask to allow Recto to use it.	Khóa nằm trong macOS Keychain, nơi có thể yêu cầu cho phép Recto sử dụng nó.
+	The fonts Pagic writes with can't draw “{c}” ({code}), so it shows as ? in every PDF viewer. The text is saved.	Phông chữ mà Pagic dùng để ghi không thể vẽ “{c}” ({code}), nên nó hiển thị là ? trong mọi trình xem PDF. Văn bản vẫn được lưu.
+	The key is in the Windows certificate store, which may ask to allow Pagic to use it.	Khóa nằm trong kho chứng chỉ Windows, nơi có thể yêu cầu cho phép Pagic sử dụng nó.
+	The key is in the macOS Keychain, which may ask to allow Pagic to use it.	Khóa nằm trong macOS Keychain, nơi có thể yêu cầu cho phép Pagic sử dụng nó.
 	The newest {n} of {total} PDFs	{n} PDF mới nhất trong tổng số {total}
 	The password is only used to read the file; it isn't saved.	Mật khẩu chỉ được dùng để đọc tệp; nó không được lưu.
 	The printer driver's own settings for this print: paper tray, paper type, finishing and more.	Cài đặt riêng của trình điều khiển máy in cho lần in này: khay giấy, loại giấy, hoàn thiện và nhiều hơn nữa.
@@ -1228,7 +1228,7 @@ theme	Appearance	Giao diện
 	This file was damaged and has been repaired. Saving keeps the repaired version.	Tệp này bị hỏng và đã được sửa chữa. Việc lưu sẽ giữ phiên bản đã sửa.
 	This folder isn't available right now. It may have moved, or its drive or cloud sync is offline.	Thư mục này hiện không khả dụng. Nó có thể đã bị di chuyển, hoặc ổ đĩa hay đồng bộ đám mây của nó đang ngoại tuyến.
 	This form's scripts are turned off because one ran too long. Reopen the document to run them again.	Các script của biểu mẫu này đã bị tắt vì một script chạy quá lâu. Hãy mở lại tài liệu để chạy chúng lại.
-	This is a dynamic XFA form, which Recto can't display yet. What you see is the file's placeholder page.	Đây là biểu mẫu XFA động, mà Recto chưa thể hiển thị. Những gì bạn thấy là trang giữ chỗ của tệp.
+	This is a dynamic XFA form, which Pagic can't display yet. What you see is the file's placeholder page.	Đây là biểu mẫu XFA động, mà Pagic chưa thể hiển thị. Những gì bạn thấy là trang giữ chỗ của tệp.
 	This measurement needs at least {n} points.	Phép đo này cần ít nhất {n} điểm.
 	This page contains objects that cannot be selected together.	Trang này chứa các đối tượng không thể chọn cùng nhau.
 	This page couldn't be displayed.\n{e}	Không thể hiển thị trang này.\n{e}
@@ -1306,7 +1306,7 @@ theme	Appearance	Giao diện
 	Visible Rectangle	Hình chữ nhật hiển thị
 	Visual	Trực quan
 	Warnings	Cảnh báo
-	Welcome to Recto	Chào mừng đến với Recto
+	Welcome to Pagic	Chào mừng đến với Pagic
 	What word or phrase would you like to search for?	Bạn muốn tìm từ hoặc cụm từ nào?
 	Whole words only	Chỉ khớp toàn bộ từ
 	Width:	Chiều rộng:
@@ -1383,7 +1383,7 @@ theme	Appearance	Giao diện
 	Archive documents	Lưu trữ tài liệu
 	Area	Diện tích
 	Arrow	Mũi tên
-	Recto website	Trang web Recto
+	Pagic website	Trang web Pagic
 	Ask about this document	Hỏi về tài liệu này
 	Attach a file	Đính kèm một tệp
 	Attach file	Đính kèm tệp
@@ -1522,7 +1522,7 @@ theme	Appearance	Giao diện
 	Insert text	Chèn văn bản
 	JavaScript	JavaScript
 	JavaScript console…	Bảng điều khiển JavaScript…
-	Join the Recto Discord	Tham gia Discord của Recto
+	Join the Pagic Discord	Tham gia Discord của Pagic
 	Light gray	Xám nhạt
 	Line	Đường thẳng
 	Link	Liên kết
@@ -1553,8 +1553,8 @@ theme	Appearance	Giao diện
 	Page options	Tùy chọn trang
 	Page transitions	Hiệu ứng chuyển trang
 	Paste pages	Dán trang
-	Recto on GitHub	Recto trên GitHub
-	Recto web page	Trang web Recto
+	Pagic on GitHub	Pagic trên GitHub
+	Pagic web page	Trang web Pagic
 	Perimeter	Chu vi
 	Pin folder to Home…	Ghim thư mục vào Trang chủ…
 	PostScript / EPS	PostScript / EPS
@@ -1712,7 +1712,7 @@ theme	Appearance	Giao diện
 	Page {} has additional actions	Trang {} có các hành động bổ sung
 	Panel layout could not be restored: {error}	Không thể khôi phục bố cục bảng: {error}
 	Panel move was not applied: {error}	Việc di chuyển bảng chưa được áp dụng: {error}
-	Recto can't check this signature yet: {}.	Recto chưa thể kiểm tra chữ ký này: {}.
+	Pagic can't check this signature yet: {}.	Pagic chưa thể kiểm tra chữ ký này: {}.
 	Previous (⇧⌘G)	Trước (⇧⌘G)
 	Print (⌘P)	In (⌘P)
 	Producer	Ứng dụng sản xuất
@@ -1738,7 +1738,7 @@ theme	Appearance	Giao diện
 	The RSA signature's DigestInfo has no NULL parameter (older signers write it so); it was read anyway.	DigestInfo của chữ ký RSA không có tham số NULL (các trình ký cũ ghi như vậy); nó vẫn được đọc.
 	The certificate of {} does not allow this many CA certificates below it (path length), so it is not used to vouch for {}.	Chứng chỉ của {} không cho phép có nhiều chứng chỉ CA ở dưới nó như vậy (độ dài đường dẫn), nên nó không được dùng để bảo chứng cho {}.
 	The certificate of {} is not a CA certificate that may issue certificates, so it is not used to vouch for {}.	Chứng chỉ của {} không phải là chứng chỉ CA được phép cấp chứng chỉ, nên nó không được dùng để bảo chứng cho {}.
-	The certificate of {} has critical extensions Recto does not recognize, so it is not used to vouch for {}.	Chứng chỉ của {} có các phần mở rộng quan trọng mà Recto không nhận ra, nên nó không được dùng để bảo chứng cho {}.
+	The certificate of {} has critical extensions Pagic does not recognize, so it is not used to vouch for {}.	Chứng chỉ của {} có các phần mở rộng quan trọng mà Pagic không nhận ra, nên nó không được dùng để bảo chứng cho {}.
 	The certificate of {} was not valid at the time of signing, so it is not used to vouch for {}.	Chứng chỉ của {} không hợp lệ tại thời điểm ký, nên nó không được dùng để bảo chứng cho {}.
 	The checker found problems which may prevent the document from being fully accessible.	Trình kiểm tra tìm thấy các vấn đề có thể khiến tài liệu không thể tiếp cận đầy đủ.
 	The document has been altered or corrupted since the signature was applied.	Tài liệu đã bị thay đổi hoặc hỏng kể từ khi chữ ký được áp dụng.
@@ -1780,7 +1780,7 @@ theme	Appearance	Giao diện
 	The signed content is a constructed (segmented) OCTET STRING, as BER allows; it was read anyway.	Nội dung được ký là một OCTET STRING dạng cấu trúc (phân đoạn), như BER cho phép; nó vẫn được đọc.
 	The signer's certificate does not allow digital signatures (its key usage has neither digital signature nor non-repudiation).	Chứng chỉ của người ký không cho phép chữ ký số (mục đích sử dụng khóa của nó không có chữ ký số cũng không có chống chối bỏ).
 	The signer's certificate has been revoked ({}).	Chứng chỉ của người ký đã bị thu hồi ({}).
-	The signer's certificate has critical extensions Recto does not recognize ({}).	Chứng chỉ của người ký có các phần mở rộng quan trọng mà Recto không nhận ra ({}).
+	The signer's certificate has critical extensions Pagic does not recognize ({}).	Chứng chỉ của người ký có các phần mở rộng quan trọng mà Pagic không nhận ra ({}).
 	The signer's certificate is not in the signature.	Chứng chỉ của người ký không có trong chữ ký.
 	The signer's certificate is not issued for signing documents (its extended key usage has no document-signing purpose).	Chứng chỉ của người ký không được cấp để ký tài liệu (mục đích sử dụng khóa mở rộng của nó không có mục đích ký tài liệu).
 	The signer's certificate was not valid at the time of signing.	Chứng chỉ của người ký không hợp lệ tại thời điểm ký.
@@ -2227,7 +2227,7 @@ comment menu	Edit	Sửa
 	Passed	Đạt
 	Password protection will be applied when you save	Bảo vệ bằng mật khẩu sẽ được áp dụng khi bạn lưu
 	Path	Đường dẫn
-	Recto is drawing without a graphics processor, so it may be slow. Updating the graphics driver may help.	Recto đang vẽ mà không có bộ xử lý đồ họa, nên có thể chậm. Cập nhật trình điều khiển đồ họa có thể giúp ích.
+	Pagic is drawing without a graphics processor, so it may be slow. Updating the graphics driver may help.	Pagic đang vẽ mà không có bộ xử lý đồ họa, nên có thể chậm. Cập nhật trình điều khiển đồ họa có thể giúp ích.
 	People may need more time to respond. Check that nothing has a time limit.	Mọi người có thể cần thêm thời gian để phản hồi. Hãy kiểm tra rằng không có gì bị giới hạn thời gian.
 	Phone Number	Số điện thoại
 	Phone Numbers	Số điện thoại
@@ -2367,7 +2367,7 @@ comment menu	Edit	Sửa
 	Text language is specified	Đã chỉ định ngôn ngữ văn bản
 	Text must contrast enough with its background for people with low vision. Check the colours by eye or with a contrast tool.	Văn bản phải đủ tương phản với nền để người kém thị lực nhìn được. Hãy kiểm tra màu bằng mắt hoặc bằng công cụ đo độ tương phản.
 	Text recognition is already running	Việc nhận dạng văn bản đang chạy
-	Text recognition isn't installed: its models are missing (run `cargo xtask models`, or set RECTO_MODELS).	Tính năng nhận dạng văn bản chưa được cài đặt: thiếu các mô hình (hãy chạy `cargo xtask models`, hoặc đặt RECTO_MODELS).
+	Text recognition isn't installed: its models are missing (run `cargo xtask models`, or set PAGIC_MODELS).	Tính năng nhận dạng văn bản chưa được cài đặt: thiếu các mô hình (hãy chạy `cargo xtask models`, hoặc đặt PAGIC_MODELS).
 	That didn't work: an internal error stopped it ({m}).	Không thành công: một lỗi nội bộ đã dừng nó ({m}).
 	That didn't work: an internal error stopped it ({m}). Your documents are unchanged.	Không thành công: một lỗi nội bộ đã dừng nó ({m}). Các tài liệu của bạn không thay đổi.
 	The Keychain's digital IDs couldn't be listed: {e}	Không thể liệt kê các Digital ID của Keychain: {e}
@@ -2384,7 +2384,7 @@ comment menu	Edit	Sửa
 	The document's security settings don't allow filling in form fields	Cài đặt bảo mật của tài liệu không cho phép điền các trường biểu mẫu
 	The field properties could not be changed.	Không thể thay đổi thuộc tính của trường.
 	The field properties dialog is no longer open.	Hộp thoại thuộc tính trường không còn được mở.
-	The form asks to be submitted to {u}; Recto doesn't send form data. Save the document to keep your entries.	Biểu mẫu yêu cầu được gửi đến {u}; Recto không gửi dữ liệu biểu mẫu. Hãy lưu tài liệu để giữ các mục bạn đã nhập.
+	The form asks to be submitted to {u}; Pagic doesn't send form data. Save the document to keep your entries.	Biểu mẫu yêu cầu được gửi đến {u}; Pagic không gửi dữ liệu biểu mẫu. Hãy lưu tài liệu để giữ các mục bạn đã nhập.
 	The form asks viewers to make appearances (NeedAppearances)	Biểu mẫu yêu cầu trình xem tạo diện mạo (NeedAppearances)
 	The linked PDF opened, but its named destination was not applied.	PDF được liên kết đã mở, nhưng đích đến có tên của nó chưa được áp dụng.
 	The linked PDF opened, but its page destination was out of range.	PDF được liên kết đã mở, nhưng đích đến trang của nó nằm ngoài phạm vi.
@@ -2405,7 +2405,7 @@ comment menu	Edit	Sửa
 	This document has no form fields.	Tài liệu này không có trường biểu mẫu.
 	This document has no layers.	Tài liệu này không có lớp.
 	This file is already as small as it can be made ({size}). No copy was saved.	Tệp này đã nhỏ hết mức có thể ({size}). Không có bản sao nào được lưu.
-	This form also contains XFA data, which Recto doesn't read yet. You can fill its fields, but Acrobat may show the XFA values instead.	Biểu mẫu này còn chứa dữ liệu XFA mà Recto chưa đọc được. Bạn có thể điền các trường của nó, nhưng Acrobat có thể hiển thị giá trị XFA thay thế.
+	This form also contains XFA data, which Pagic doesn't read yet. You can fill its fields, but Acrobat may show the XFA values instead.	Biểu mẫu này còn chứa dữ liệu XFA mà Pagic chưa đọc được. Bạn có thể điền các trường của nó, nhưng Acrobat có thể hiển thị giá trị XFA thay thế.
 	Thumbnails	Hình thu nhỏ
 	Timed responses	Phản hồi có giới hạn thời gian
 	Type Password	Nhập mật khẩu
@@ -2458,7 +2458,7 @@ comment menu	Edit	Sửa
 	the document is protected by a password	tài liệu được bảo vệ bằng mật khẩu
 	the image is empty	hình ảnh trống
 	the password is incorrect	mật khẩu không đúng
-	the text recognition models are not installed (reinstall Recto, or set RECTO_MODELS to the folder that holds them)	các mô hình nhận dạng văn bản chưa được cài đặt (hãy cài đặt lại Recto, hoặc đặt RECTO_MODELS thành thư mục chứa chúng)
+	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	các mô hình nhận dạng văn bản chưa được cài đặt (hãy cài đặt lại Pagic, hoặc đặt PAGIC_MODELS thành thư mục chứa chúng)
 	the title must not be empty	tiêu đề không được để trống
 	there are no pages to print	không có trang nào để in
 	there are no redaction marks to apply	không có dấu đánh dấu xóa nào để áp dụng
@@ -2471,19 +2471,19 @@ comment menu	Edit	Sửa
 	{label} failed: {e}	{label} thất bại: {e}
 	{name} has no action	{name} không có hành động
 	{name} is too large for a word list (at most 1 MB).	{name} quá lớn để làm danh sách từ (tối đa 1 MB).
-	{name} submits the form to {url}; Recto doesn't send form data. Save the document to keep your entries.	{name} gửi biểu mẫu đến {url}; Recto không gửi dữ liệu biểu mẫu. Hãy lưu tài liệu để giữ các mục bạn đã nhập.
+	{name} submits the form to {url}; Pagic doesn't send form data. Save the document to keep your entries.	{name} gửi biểu mẫu đến {url}; Pagic không gửi dữ liệu biểu mẫu. Hãy lưu tài liệu để giữ các mục bạn đã nhập.
 	{name}: choosing images arrives on the web with file pickers for images	{name}: việc chọn hình ảnh sẽ có trên web cùng với bộ chọn tệp hình ảnh
 	{name}: the {other} action isn't supported yet	{name}: hành động {other} chưa được hỗ trợ
-	{who} in this document tried to open an address Recto won't open: {e}.	{who} trong tài liệu này đã cố mở một địa chỉ mà Recto sẽ không mở: {e}.
-	{who} in this document tried to open an address Recto won't open: {e}. Only web (http, https) and email (mailto) links open from documents.	{who} trong tài liệu này đã cố mở một địa chỉ mà Recto sẽ không mở: {e}. Chỉ các liên kết web (http, https) và email (mailto) mới được mở từ tài liệu.
+	{who} in this document tried to open an address Pagic won't open: {e}.	{who} trong tài liệu này đã cố mở một địa chỉ mà Pagic sẽ không mở: {e}.
+	{who} in this document tried to open an address Pagic won't open: {e}. Only web (http, https) and email (mailto) links open from documents.	{who} trong tài liệu này đã cố mở một địa chỉ mà Pagic sẽ không mở: {e}. Chỉ các liên kết web (http, https) và email (mailto) mới được mở từ tài liệu.
 animation effects	Off	Tắt
 animation effects	On	Bật
 	View more	Xem thêm
 	View less	Xem ít hơn
 	Only continue if you trust this document. An address can carry information from the document, such as what you typed into its form.	Chỉ tiếp tục nếu bạn tin cậy tài liệu này. Một địa chỉ có thể mang thông tin từ tài liệu, chẳng hạn những gì bạn đã nhập vào biểu mẫu của nó.
 	Print single-sided. Keep the sheets in order, cut at the marks, then stack the piles left to right, top to bottom.	In một mặt. Giữ các tờ theo thứ tự, cắt theo các dấu, rồi xếp các chồng từ trái sang phải, từ trên xuống dưới.
-	Sign a sheet of white paper and take a photo of it in bright, even light (use the flash). Choose the photo or drop it here: Recto finds the signature and removes the paper.	Hãy ký lên một tờ giấy trắng và chụp ảnh dưới ánh sáng sáng, đều (dùng đèn flash). Chọn ảnh hoặc thả vào đây: Recto sẽ tìm chữ ký và loại bỏ phần giấy.
-	This field's font can't draw “{c}” ({code}), so Recto shows ? in its place. The value is saved, and other PDF viewers redraw the field from it.	Phông chữ của trường này không thể vẽ “{c}” ({code}), nên Recto hiển thị ? thay thế. Giá trị vẫn được lưu, và các trình xem PDF khác vẽ lại trường từ giá trị đó.
+	Sign a sheet of white paper and take a photo of it in bright, even light (use the flash). Choose the photo or drop it here: Pagic finds the signature and removes the paper.	Hãy ký lên một tờ giấy trắng và chụp ảnh dưới ánh sáng sáng, đều (dùng đèn flash). Chọn ảnh hoặc thả vào đây: Pagic sẽ tìm chữ ký và loại bỏ phần giấy.
+	This field's font can't draw “{c}” ({code}), so Pagic shows ? in its place. The value is saved, and other PDF viewers redraw the field from it.	Phông chữ của trường này không thể vẽ “{c}” ({code}), nên Pagic hiển thị ? thay thế. Giá trị vẫn được lưu, và các trình xem PDF khác vẽ lại trường từ giá trị đó.
 	{chars} can't be written into the PDF yet: Fill & Sign text is Western European only. Pick a numeric format such as dd.mm.yyyy.	Chưa thể ghi {chars} vào PDF: văn bản của Điền & Ký chỉ hỗ trợ ký tự Tây Âu. Hãy chọn định dạng số như dd.mm.yyyy.
 	January	Tháng 1
 	February	Tháng 2

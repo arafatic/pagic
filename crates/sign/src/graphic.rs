@@ -5,8 +5,8 @@
 
 use std::sync::Arc;
 
-use recto_annot::appearance::smooth_segments;
-use recto_cos::{Dict, Document, ObjRef, Object, Stream};
+use pagic_annot::appearance::smooth_segments;
+use pagic_cos::{Dict, Document, ObjRef, Object, Stream};
 
 use crate::SignError;
 

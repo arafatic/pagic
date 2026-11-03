@@ -5,8 +5,8 @@
 //! [`detect`] is a pure function over the page's words and drawn shapes; [`page_shapes`] reads
 //! the shapes from a page's content, [`raster::shapes`] from a picture of the page (a scan).
 
-use recto_content::{Matrix, Pieces};
-use recto_cos::{Document, Object};
+use pagic_content::{Matrix, Pieces};
+use pagic_cos::{Document, Object};
 
 pub mod raster;
 
@@ -127,7 +127,7 @@ impl DetectionPath {
 
 pub fn page_shapes(doc: &Document, page: usize) -> Shapes {
     let mut out = Shapes::default();
-    let Some(p) = recto_model::pages(doc).into_iter().nth(page) else { return out };
+    let Some(p) = pagic_model::pages(doc).into_iter().nth(page) else { return out };
     let list: Vec<Object> = match p.dict.get(b"Contents").map(|c| doc.resolve(c)) {
         Some(c) => match &*c {
             Object::Array(a) => a.clone(),

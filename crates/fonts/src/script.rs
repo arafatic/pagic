@@ -318,7 +318,7 @@ mod tests {
     #[test]
     fn japanese_glyphs_come_from_craft_fonts() {
         if crate::document_japanese_font().is_none() {
-            eprintln!("skipping the glyph checks: built without bundled fonts (set RECTO_FONTS_DIR)");
+            eprintln!("skipping the glyph checks: built without bundled fonts (set PAGIC_FONTS_DIR)");
             assert_eq!(super::japanese_glyph('こ'), Err(super::GlyphError::NoFont));
             return;
         }

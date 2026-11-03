@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use recto_filters::FilterError;
+use pagic_filters::FilterError;
 
 use crate::{CosError, Document, ObjRef, Object, Stream};
 

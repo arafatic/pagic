@@ -35,7 +35,7 @@ pub(super) fn combinable_in(dir: &std::path::Path, recursive: bool) -> (Vec<std:
 /// Whether a file with extension `ext` can join the list: a PDF, or an image or text file that
 /// becomes one.
 fn combinable(ext: &str) -> bool {
-    std::iter::once("pdf").chain(recto_engine::CONVERTIBLE).any(|c| ext.eq_ignore_ascii_case(c))
+    std::iter::once("pdf").chain(pagic_engine::CONVERTIBLE).any(|c| ext.eq_ignore_ascii_case(c))
 }
 
 /// A file's bookmark in the combined PDF: its name without ".pdf", or without the extension of

@@ -4158,6 +4158,528 @@ dependencies = [
 ]
 
 [[package]]
+name = "pagic"
+version = "0.14.0"
+dependencies = [
+ "chrono",
+ "craft-update",
+ "eframe",
+ "egui",
+ "fmv-macos-events",
+ "log",
+ "pagic-engine",
+ "pagic-ui-egui",
+ "pollster 1.0.1",
+ "raw-window-handle",
+ "serde_json",
+ "uds_windows",
+ "wayland-client",
+ "wayland-protocols",
+ "windows",
+ "winit",
+ "winresource",
+ "winsafe",
+]
+
+[[package]]
+name = "pagic-a11y"
+version = "0.14.0"
+dependencies = [
+ "pagic-content",
+ "pagic-cos",
+ "pagic-filters",
+ "pagic-fonts",
+ "pagic-model",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-annot"
+version = "0.14.0"
+dependencies = [
+ "hayro-syntax",
+ "pagic-cos",
+ "pagic-fonts",
+ "pagic-model",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-audit"
+version = "0.14.0"
+dependencies = [
+ "pagic-content",
+ "pagic-cos",
+ "pagic-edit",
+ "pagic-model",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-automation"
+version = "0.14.0"
+dependencies = [
+ "base64 0.23.1",
+ "flate2",
+ "image",
+ "pagic-cos",
+ "pagic-engine",
+ "pagic-fonts",
+ "pagic-model",
+ "pagic-organize",
+ "pagic-platform",
+ "pagic-render",
+ "pagic-xfa",
+ "png 0.18.1",
+ "rustix 1.1.6",
+ "serde_json",
+ "sha2 0.11.1",
+ "tempfile",
+]
+
+[[package]]
+name = "pagic-cli"
+version = "0.14.0"
+dependencies = [
+ "base64 0.23.1",
+ "pagic-audit",
+ "pagic-automation",
+ "pagic-cos",
+ "pagic-engine",
+ "pagic-platform",
+ "pagic-preflight",
+ "pagic-render",
+ "png 0.18.1",
+ "rustix 1.1.6",
+ "serde_json",
+ "winresource",
+]
+
+[[package]]
+name = "pagic-compare"
+version = "0.14.0"
+
+[[package]]
+name = "pagic-content"
+version = "0.14.0"
+dependencies = [
+ "hayro-syntax",
+ "pagic-cos",
+]
+
+[[package]]
+name = "pagic-cos"
+version = "0.14.0"
+dependencies = [
+ "chrono",
+ "hayro-syntax",
+ "pagic-crypt",
+ "pagic-filters",
+ "pagic-oracle",
+ "pagic-testkit",
+ "proptest",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-create"
+version = "0.14.0"
+dependencies = [
+ "encoding_rs",
+ "hayro-syntax",
+ "image",
+ "pagic-cos",
+ "pagic-fonts",
+ "pagic-model",
+ "png 0.18.1",
+ "thiserror 2.0.21",
+ "tiff",
+ "zune-jpeg",
+]
+
+[[package]]
+name = "pagic-crypt"
+version = "0.14.0"
+dependencies = [
+ "aes",
+ "md-5",
+ "proptest",
+ "sha2 0.11.1",
+ "stringprep",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-edit"
+version = "0.14.0"
+dependencies = [
+ "hayro-syntax",
+ "kurbo 0.13.1",
+ "pagic-annot",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-fonts",
+ "pagic-model",
+ "thiserror 2.0.21",
+ "unicode-bidi",
+]
+
+[[package]]
+name = "pagic-engine"
+version = "0.14.0"
+dependencies = [
+ "chrono",
+ "craft-docpath",
+ "icu_properties",
+ "idna",
+ "image",
+ "pagic-a11y",
+ "pagic-annot",
+ "pagic-audit",
+ "pagic-compare",
+ "pagic-cos",
+ "pagic-create",
+ "pagic-edit",
+ "pagic-export",
+ "pagic-fonts",
+ "pagic-forms",
+ "pagic-geom",
+ "pagic-js",
+ "pagic-measure",
+ "pagic-model",
+ "pagic-ocr",
+ "pagic-optimize",
+ "pagic-organize",
+ "pagic-preflight",
+ "pagic-print",
+ "pagic-redact",
+ "pagic-render",
+ "pagic-sign",
+ "pagic-testkit",
+ "pagic-xfa",
+ "pagic-xfdf",
+ "png 0.18.1",
+ "thiserror 2.0.21",
+ "tiff",
+ "unicode-segmentation",
+ "url",
+]
+
+[[package]]
+name = "pagic-export"
+version = "0.14.0"
+dependencies = [
+ "flate2",
+]
+
+[[package]]
+name = "pagic-filters"
+version = "0.14.0"
+dependencies = [
+ "flate2",
+ "proptest",
+ "thiserror 2.0.21",
+ "weezl 0.2.1",
+]
+
+[[package]]
+name = "pagic-fonts"
+version = "0.14.0"
+dependencies = [
+ "harfrust",
+ "pagic-cos",
+ "skrifa 0.44.0",
+ "unicode-bidi",
+]
+
+[[package]]
+name = "pagic-forms"
+version = "0.14.0"
+dependencies = [
+ "hayro-syntax",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-fonts",
+ "pagic-model",
+ "proptest",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-geom"
+version = "0.14.0"
+
+[[package]]
+name = "pagic-js"
+version = "0.14.0"
+dependencies = [
+ "boa_engine",
+ "chrono",
+]
+
+[[package]]
+name = "pagic-measure"
+version = "0.14.0"
+dependencies = [
+ "pagic-annot",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-model",
+ "pagic-testkit",
+ "serde",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-model"
+version = "0.14.0"
+dependencies = [
+ "pagic-cos",
+]
+
+[[package]]
+name = "pagic-ocr"
+version = "0.14.0"
+dependencies = [
+ "ocrs",
+ "pagic-fonts",
+ "rten",
+ "tempfile",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-optimize"
+version = "0.14.0"
+dependencies = [
+ "image",
+ "pagic-annot",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-filters",
+ "pagic-model",
+ "pagic-render",
+ "thiserror 2.0.21",
+ "zune-jpeg",
+]
+
+[[package]]
+name = "pagic-oracle"
+version = "0.14.0"
+
+[[package]]
+name = "pagic-organize"
+version = "0.14.0"
+dependencies = [
+ "hayro-syntax",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-oracle",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-platform"
+version = "0.14.0"
+dependencies = [
+ "async-channel",
+ "futures-lite",
+ "rustix 1.1.6",
+ "zbus",
+]
+
+[[package]]
+name = "pagic-preflight"
+version = "0.14.0"
+dependencies = [
+ "flate2",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-model",
+ "roxmltree 0.20.0",
+]
+
+[[package]]
+name = "pagic-print"
+version = "0.14.0"
+dependencies = [
+ "craft-print",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-model",
+ "pagic-render",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-redact"
+version = "0.14.0"
+dependencies = [
+ "pagic-annot",
+ "pagic-content",
+ "pagic-cos",
+ "pagic-edit",
+ "pagic-fonts",
+ "pagic-forms",
+ "pagic-model",
+ "pagic-testkit",
+ "pagic-xfa",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-render"
+version = "0.14.0"
+dependencies = [
+ "bytemuck",
+ "flate2",
+ "getrandom 0.4.3",
+ "hayro",
+ "hayro-syntax",
+ "kurbo 0.13.1",
+ "log",
+ "lopdf",
+ "pagic-cos",
+ "pagic-fonts",
+ "serde",
+ "skrifa 0.44.0",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-sign"
+version = "0.14.0"
+dependencies = [
+ "aes",
+ "aws-lc-rs",
+ "base64 0.23.1",
+ "bp256",
+ "bp384",
+ "cbc",
+ "chrono",
+ "crypto-bigint",
+ "des",
+ "ecdsa",
+ "ed25519-dalek",
+ "getrandom 0.4.3",
+ "hmac",
+ "p256",
+ "p384",
+ "p521",
+ "pagic-annot",
+ "pagic-cos",
+ "pagic-fonts",
+ "pagic-model",
+ "pbkdf2",
+ "rc2",
+ "ripemd",
+ "rsa",
+ "rustls-cng",
+ "security-framework",
+ "sha1 0.11.0",
+ "sha2 0.11.1",
+ "sha3",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-testkit"
+version = "0.14.0"
+
+[[package]]
+name = "pagic-ui-egui"
+version = "0.14.0"
+dependencies = [
+ "arboard",
+ "base64 0.23.1",
+ "block2 0.6.2",
+ "bytemuck",
+ "chrono",
+ "craft-keymap",
+ "craft-menu",
+ "craft-quit",
+ "craft-ui",
+ "craft-update",
+ "eframe",
+ "egui",
+ "egui_extras",
+ "egui_kittest",
+ "fontconfig-parser",
+ "getrandom 0.4.3",
+ "image",
+ "js-sys",
+ "log",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "pagic-cos",
+ "pagic-engine",
+ "pagic-fonts",
+ "pagic-model",
+ "pagic-platform",
+ "pagic-render",
+ "pagic-xfa",
+ "plist",
+ "png 0.18.1",
+ "pollster 1.0.1",
+ "rfd",
+ "rustix 1.1.6",
+ "semver",
+ "serde",
+ "serde_json",
+ "skrifa 0.44.0",
+ "sys-locale",
+ "toml",
+ "unicode-bidi",
+ "ureq",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
+ "winsafe",
+ "xattr",
+]
+
+[[package]]
+name = "pagic-web"
+version = "0.14.0"
+dependencies = [
+ "eframe",
+ "egui",
+ "js-sys",
+ "pagic-ui-egui",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "pagic-xfa"
+version = "0.14.0"
+dependencies = [
+ "base64 0.23.1",
+ "image",
+ "pagic-cos",
+ "pagic-fonts",
+ "png 0.18.1",
+ "roxmltree 0.20.0",
+ "sha2 0.11.1",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "pagic-xfdf"
+version = "0.14.0"
+dependencies = [
+ "pagic-annot",
+ "pagic-cos",
+ "pagic-forms",
+ "pagic-model",
+ "roxmltree 0.20.0",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4891,528 +5413,6 @@ dependencies = [
  "bytemuck",
  "font-types 0.12.7",
  "once_cell",
-]
-
-[[package]]
-name = "recto"
-version = "0.14.0"
-dependencies = [
- "chrono",
- "craft-update",
- "eframe",
- "egui",
- "fmv-macos-events",
- "log",
- "pollster 1.0.1",
- "raw-window-handle",
- "recto-engine",
- "recto-ui-egui",
- "serde_json",
- "uds_windows",
- "wayland-client",
- "wayland-protocols",
- "windows",
- "winit",
- "winresource",
- "winsafe",
-]
-
-[[package]]
-name = "recto-a11y"
-version = "0.14.0"
-dependencies = [
- "recto-content",
- "recto-cos",
- "recto-filters",
- "recto-fonts",
- "recto-model",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-annot"
-version = "0.14.0"
-dependencies = [
- "hayro-syntax",
- "recto-cos",
- "recto-fonts",
- "recto-model",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-audit"
-version = "0.14.0"
-dependencies = [
- "recto-content",
- "recto-cos",
- "recto-edit",
- "recto-model",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-automation"
-version = "0.14.0"
-dependencies = [
- "base64 0.23.1",
- "flate2",
- "image",
- "png 0.18.1",
- "recto-cos",
- "recto-engine",
- "recto-fonts",
- "recto-model",
- "recto-organize",
- "recto-platform",
- "recto-render",
- "recto-xfa",
- "rustix 1.1.6",
- "serde_json",
- "sha2 0.11.1",
- "tempfile",
-]
-
-[[package]]
-name = "recto-cli"
-version = "0.14.0"
-dependencies = [
- "base64 0.23.1",
- "png 0.18.1",
- "recto-audit",
- "recto-automation",
- "recto-cos",
- "recto-engine",
- "recto-platform",
- "recto-preflight",
- "recto-render",
- "rustix 1.1.6",
- "serde_json",
- "winresource",
-]
-
-[[package]]
-name = "recto-compare"
-version = "0.14.0"
-
-[[package]]
-name = "recto-content"
-version = "0.14.0"
-dependencies = [
- "hayro-syntax",
- "recto-cos",
-]
-
-[[package]]
-name = "recto-cos"
-version = "0.14.0"
-dependencies = [
- "chrono",
- "hayro-syntax",
- "proptest",
- "recto-crypt",
- "recto-filters",
- "recto-oracle",
- "recto-testkit",
- "serde_json",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-create"
-version = "0.14.0"
-dependencies = [
- "encoding_rs",
- "hayro-syntax",
- "image",
- "png 0.18.1",
- "recto-cos",
- "recto-fonts",
- "recto-model",
- "thiserror 2.0.21",
- "tiff",
- "zune-jpeg",
-]
-
-[[package]]
-name = "recto-crypt"
-version = "0.14.0"
-dependencies = [
- "aes",
- "md-5",
- "proptest",
- "sha2 0.11.1",
- "stringprep",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-edit"
-version = "0.14.0"
-dependencies = [
- "hayro-syntax",
- "kurbo 0.13.1",
- "recto-annot",
- "recto-content",
- "recto-cos",
- "recto-fonts",
- "recto-model",
- "thiserror 2.0.21",
- "unicode-bidi",
-]
-
-[[package]]
-name = "recto-engine"
-version = "0.14.0"
-dependencies = [
- "chrono",
- "craft-docpath",
- "icu_properties",
- "idna",
- "image",
- "png 0.18.1",
- "recto-a11y",
- "recto-annot",
- "recto-audit",
- "recto-compare",
- "recto-cos",
- "recto-create",
- "recto-edit",
- "recto-export",
- "recto-fonts",
- "recto-forms",
- "recto-geom",
- "recto-js",
- "recto-measure",
- "recto-model",
- "recto-ocr",
- "recto-optimize",
- "recto-organize",
- "recto-preflight",
- "recto-print",
- "recto-redact",
- "recto-render",
- "recto-sign",
- "recto-testkit",
- "recto-xfa",
- "recto-xfdf",
- "thiserror 2.0.21",
- "tiff",
- "unicode-segmentation",
- "url",
-]
-
-[[package]]
-name = "recto-export"
-version = "0.14.0"
-dependencies = [
- "flate2",
-]
-
-[[package]]
-name = "recto-filters"
-version = "0.14.0"
-dependencies = [
- "flate2",
- "proptest",
- "thiserror 2.0.21",
- "weezl 0.2.1",
-]
-
-[[package]]
-name = "recto-fonts"
-version = "0.14.0"
-dependencies = [
- "harfrust",
- "recto-cos",
- "skrifa 0.44.0",
- "unicode-bidi",
-]
-
-[[package]]
-name = "recto-forms"
-version = "0.14.0"
-dependencies = [
- "hayro-syntax",
- "proptest",
- "recto-content",
- "recto-cos",
- "recto-fonts",
- "recto-model",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-geom"
-version = "0.14.0"
-
-[[package]]
-name = "recto-js"
-version = "0.14.0"
-dependencies = [
- "boa_engine",
- "chrono",
-]
-
-[[package]]
-name = "recto-measure"
-version = "0.14.0"
-dependencies = [
- "recto-annot",
- "recto-content",
- "recto-cos",
- "recto-model",
- "recto-testkit",
- "serde",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-model"
-version = "0.14.0"
-dependencies = [
- "recto-cos",
-]
-
-[[package]]
-name = "recto-ocr"
-version = "0.14.0"
-dependencies = [
- "ocrs",
- "recto-fonts",
- "rten",
- "tempfile",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-optimize"
-version = "0.14.0"
-dependencies = [
- "image",
- "recto-annot",
- "recto-content",
- "recto-cos",
- "recto-filters",
- "recto-model",
- "recto-render",
- "thiserror 2.0.21",
- "zune-jpeg",
-]
-
-[[package]]
-name = "recto-oracle"
-version = "0.14.0"
-
-[[package]]
-name = "recto-organize"
-version = "0.14.0"
-dependencies = [
- "hayro-syntax",
- "recto-content",
- "recto-cos",
- "recto-oracle",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-platform"
-version = "0.14.0"
-dependencies = [
- "async-channel",
- "futures-lite",
- "rustix 1.1.6",
- "zbus",
-]
-
-[[package]]
-name = "recto-preflight"
-version = "0.14.0"
-dependencies = [
- "flate2",
- "recto-content",
- "recto-cos",
- "recto-model",
- "roxmltree 0.20.0",
-]
-
-[[package]]
-name = "recto-print"
-version = "0.14.0"
-dependencies = [
- "craft-print",
- "recto-content",
- "recto-cos",
- "recto-model",
- "recto-render",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-redact"
-version = "0.14.0"
-dependencies = [
- "recto-annot",
- "recto-content",
- "recto-cos",
- "recto-edit",
- "recto-fonts",
- "recto-forms",
- "recto-model",
- "recto-testkit",
- "recto-xfa",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-render"
-version = "0.14.0"
-dependencies = [
- "bytemuck",
- "flate2",
- "getrandom 0.4.3",
- "hayro",
- "hayro-syntax",
- "kurbo 0.13.1",
- "log",
- "lopdf",
- "recto-cos",
- "recto-fonts",
- "serde",
- "skrifa 0.44.0",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-sign"
-version = "0.14.0"
-dependencies = [
- "aes",
- "aws-lc-rs",
- "base64 0.23.1",
- "bp256",
- "bp384",
- "cbc",
- "chrono",
- "crypto-bigint",
- "des",
- "ecdsa",
- "ed25519-dalek",
- "getrandom 0.4.3",
- "hmac",
- "p256",
- "p384",
- "p521",
- "pbkdf2",
- "rc2",
- "recto-annot",
- "recto-cos",
- "recto-fonts",
- "recto-model",
- "ripemd",
- "rsa",
- "rustls-cng",
- "security-framework",
- "sha1 0.11.0",
- "sha2 0.11.1",
- "sha3",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-testkit"
-version = "0.14.0"
-
-[[package]]
-name = "recto-ui-egui"
-version = "0.14.0"
-dependencies = [
- "arboard",
- "base64 0.23.1",
- "block2 0.6.2",
- "bytemuck",
- "chrono",
- "craft-keymap",
- "craft-menu",
- "craft-quit",
- "craft-ui",
- "craft-update",
- "eframe",
- "egui",
- "egui_extras",
- "egui_kittest",
- "fontconfig-parser",
- "getrandom 0.4.3",
- "image",
- "js-sys",
- "log",
- "objc2 0.6.5",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "plist",
- "png 0.18.1",
- "pollster 1.0.1",
- "recto-cos",
- "recto-engine",
- "recto-fonts",
- "recto-model",
- "recto-platform",
- "recto-render",
- "recto-xfa",
- "rfd",
- "rustix 1.1.6",
- "semver",
- "serde",
- "serde_json",
- "skrifa 0.44.0",
- "sys-locale",
- "toml",
- "unicode-bidi",
- "ureq",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "web-time",
- "winsafe",
- "xattr",
-]
-
-[[package]]
-name = "recto-web"
-version = "0.14.0"
-dependencies = [
- "eframe",
- "egui",
- "js-sys",
- "recto-ui-egui",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
-name = "recto-xfa"
-version = "0.14.0"
-dependencies = [
- "base64 0.23.1",
- "image",
- "png 0.18.1",
- "recto-cos",
- "recto-fonts",
- "roxmltree 0.20.0",
- "sha2 0.11.1",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "recto-xfdf"
-version = "0.14.0"
-dependencies = [
- "recto-annot",
- "recto-cos",
- "recto-forms",
- "recto-model",
- "roxmltree 0.20.0",
- "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -8368,9 +8368,9 @@ dependencies = [
  "anyhow",
  "chrono",
  "lopdf",
+ "pagic-cos",
+ "pagic-oracle",
  "png 0.18.1",
- "recto-cos",
- "recto-oracle",
  "serde",
  "serde_json",
  "sha2 0.11.1",

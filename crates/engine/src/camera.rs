@@ -4,8 +4,8 @@
 
 use std::sync::Arc;
 
-use recto_geom::perspective::{Homography, Point, order_quad};
-use recto_render::{RenderConfig, RenderRequest};
+use pagic_geom::perspective::{Homography, Point, order_quad};
+use pagic_render::{RenderConfig, RenderRequest};
 
 use crate::{DocId, Edit, EditError, ImageResolution, Session};
 
@@ -99,7 +99,7 @@ impl Session {
         let info = doc.info.pages.get(page)?;
         let scale = (DETECT_SIDE / info.width.max(info.height).max(1.0)).clamp(0.05, MAX_SCALE);
         let config = RenderConfig { password: doc.password.as_deref().map(Arc::from), ..Default::default() };
-        let shot = recto_render::PageRenderer::new(doc.bytes.clone(), config).render(RenderRequest { page, scale, ..Default::default() });
+        let shot = pagic_render::PageRenderer::new(doc.bytes.clone(), config).render(RenderRequest { page, scale, ..Default::default() });
         if shot.error.is_some() {
             return None;
         }
@@ -150,7 +150,7 @@ impl Session {
         let scale = native.unwrap_or(DEFAULT_SCALE).clamp(1.0, MAX_SCALE).min(cap).max(0.01);
 
         let config = RenderConfig { password: doc.password.as_deref().map(Arc::from), ..Default::default() };
-        let mut r = recto_render::PageRenderer::new(doc.bytes.clone(), config);
+        let mut r = pagic_render::PageRenderer::new(doc.bytes.clone(), config);
         let shot = r.render(RenderRequest { page, scale, ..Default::default() });
         if let Some(e) = shot.error {
             return Err(EditError::Invalid(format!("page {} could not be rendered: {e}", page + 1)));

@@ -1,11 +1,11 @@
 //! Prepare a form ▸ Text field table: one undoable edit adding a [`FieldTable`]'s cells as text
-//! fields. The table is laid out and named in `recto_forms::table`; this maps its cells from
+//! fields. The table is laid out and named in `pagic_forms::table`; this maps its cells from
 //! view space onto the page and refuses, before anything is added, what `add_field` would refuse.
 
-pub use recto_forms::table::*;
+pub use pagic_forms::table::*;
 
-use recto_forms::MIN_FIELD_SIDE;
-use recto_render::PageInfo;
+use pagic_forms::MIN_FIELD_SIDE;
+use pagic_render::PageInfo;
 
 use crate::{Edit, FormField, NewField};
 

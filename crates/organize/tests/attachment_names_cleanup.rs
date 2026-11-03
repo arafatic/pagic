@@ -3,8 +3,8 @@
 
 use std::sync::Arc;
 
-use recto_cos::{Document, Object};
-use recto_organize::{add_attachment, attachment_keys, delete_attachment};
+use pagic_cos::{Document, Object};
+use pagic_organize::{add_attachment, attachment_keys, delete_attachment};
 
 /// One page, and a catalog whose `/Names` is the indirect (empty) dictionary 4 0 R.
 fn indirect_names_pdf() -> Vec<u8> {

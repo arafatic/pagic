@@ -1,6 +1,6 @@
 [package]
-name = "recto-engine"
-description = "Recto engine façade: session, documents, command/tool catalogue"
+name = "pagic-engine"
+description = "Pagic engine façade: session, documents, command/tool catalogue"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,34 +10,34 @@ workspace = true
 
 [dependencies]
 craft-docpath = { workspace = true }
-recto-measure = { workspace = true }
+pagic-measure = { workspace = true }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "tiff"] }
-recto-render = { workspace = true }
-recto-cos = { workspace = true }
-recto-organize = { workspace = true }
-recto-annot = { workspace = true }
-recto-forms = { workspace = true }
-recto-xfa = { workspace = true }
-recto-edit = { workspace = true }
-recto-audit = { workspace = true }
-recto-redact = { workspace = true }
-recto-print = { workspace = true }
-recto-xfdf = { workspace = true }
-recto-sign = { workspace = true }
-recto-optimize = { workspace = true }
-recto-a11y = { workspace = true }
-recto-ocr = { workspace = true }
-recto-js = { workspace = true }
-recto-compare = { workspace = true }
-recto-preflight = { workspace = true }
-recto-export = { workspace = true }
-recto-fonts = { workspace = true }
-recto-create = { workspace = true }
-recto-model = { workspace = true }
-recto-geom = { workspace = true }
+pagic-render = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-organize = { workspace = true }
+pagic-annot = { workspace = true }
+pagic-forms = { workspace = true }
+pagic-xfa = { workspace = true }
+pagic-edit = { workspace = true }
+pagic-audit = { workspace = true }
+pagic-redact = { workspace = true }
+pagic-print = { workspace = true }
+pagic-xfdf = { workspace = true }
+pagic-sign = { workspace = true }
+pagic-optimize = { workspace = true }
+pagic-a11y = { workspace = true }
+pagic-ocr = { workspace = true }
+pagic-js = { workspace = true }
+pagic-compare = { workspace = true }
+pagic-preflight = { workspace = true }
+pagic-export = { workspace = true }
+pagic-fonts = { workspace = true }
+pagic-create = { workspace = true }
+pagic-model = { workspace = true }
+pagic-geom = { workspace = true }
 thiserror = { workspace = true }
 png = "0.18"
-# Already in the graph (through image and recto-create): image's TiffEncoder can't set the
+# Already in the graph (through image and pagic-create): image's TiffEncoder can't set the
 # resolution or the compression of an exported page.
 tiff = "0.11"
 # Already in the graph (url and idna through webbrowser, icu_properties through boa): they show
@@ -53,4 +53,4 @@ unicode-segmentation = "1.13"
 chrono = { workspace = true, features = ["clock"] }
 
 [dev-dependencies]
-recto-testkit = { workspace = true }
+pagic-testkit = { workspace = true }

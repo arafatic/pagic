@@ -1,4 +1,4 @@
-//! In-app update checker for Recto.
+//! In-app update checker for Pagic.
 //!
 //! Queries the GitHub Release API asynchronously in the background and notifies
 //! the user when a newer version is available.
@@ -55,13 +55,13 @@ pub fn is_newer_version(remote_tag: &str, current_version: &str) -> bool {
 /// Fetches the latest release info from the GitHub API synchronously.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn fetch_latest_release() -> Result<ReleaseResponse, String> {
-    let url = recto_engine::identity::UPDATE_API.ok_or("No application update source is configured for this build")?;
+    let url = pagic_engine::identity::UPDATE_API.ok_or("No application update source is configured for this build")?;
     let tls = ureq::tls::TlsConfig::builder().root_certs(ureq::tls::RootCerts::PlatformVerifier).build();
 
     let mut builder = ureq::Agent::config_builder()
         .tls_config(tls)
         .timeout_global(Some(std::time::Duration::from_secs(10)))
-        .user_agent(concat!("Recto/", env!("CARGO_PKG_VERSION")));
+        .user_agent(concat!("Pagic/", env!("CARGO_PKG_VERSION")));
 
     if let Some(proxy) = ureq::Proxy::try_from_env() {
         builder = builder.proxy(Some(proxy));
@@ -93,7 +93,7 @@ impl UpdateJob {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let _ = std::thread::Builder::new().name("recto-updater".into()).spawn(move || {
+            let _ = std::thread::Builder::new().name("pagic-updater".into()).spawn(move || {
                 let outcome = match fetch_latest_release() {
                     Ok(release) => {
                         let current = env!("CARGO_PKG_VERSION");

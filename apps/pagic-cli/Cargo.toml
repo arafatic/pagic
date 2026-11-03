@@ -1,0 +1,42 @@
+[package]
+name = "pagic-cli"
+description = "Pagic command-line tool: inspect, render and robustness-check PDFs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "pagic-cli"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+pagic-render = { workspace = true }
+serde_json = { workspace = true }
+pagic-engine = { workspace = true }
+pagic-audit = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-preflight = { workspace = true }
+pagic-automation = { workspace = true }
+pagic-platform = { workspace = true }
+base64 = "0.23"
+
+[dev-dependencies]
+# Decodes `render` output in tests/it/owner_password.rs; already a dependency of the engine.
+png = "0.18"
+
+[target.'cfg(unix)'.dependencies]
+# `geteuid` for `ui`'s control-file owner check: safe, so no `unsafe` libc call here.
+# Already in Cargo.lock through the GUI crates.
+rustix = { version = "1", features = ["process"] }
+
+[build-dependencies]
+# VERSIONINFO for pagic-cli.exe; build.rs only uses it when targeting Windows.
+winresource = "0.1"
+
+[features]
+default = ["mcp"]
+# The opt-in MCP server (`pagic-cli mcp`). Build with --no-default-features to leave it out.
+mcp = ["pagic-automation/mcp"]

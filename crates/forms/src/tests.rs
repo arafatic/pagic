@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use recto_cos::{Document, Object, SaveOptions, write_incremental};
+use pagic_cos::{Document, Object, SaveOptions, write_incremental};
 
 use super::*;
 
@@ -184,7 +184,7 @@ fn button_caption_preserves_other_widgets_and_shared_dictionaries() {
         }
         let af = doc.get(doc.root().unwrap()).as_dict().unwrap().reference(b"AcroForm").unwrap();
         doc.update_dict(af, |d| d.set(b"Fields".to_vec(), Object::Array(vec![Object::Ref(parent)]))).unwrap();
-        let original = recto_cos::write_full(&doc, &SaveOptions::default()).unwrap();
+        let original = pagic_cos::write_full(&doc, &SaveOptions::default()).unwrap();
         let original = Document::open(Arc::new(original)).unwrap();
         // Full saves can renumber objects: reacquire references from the reopened model.
         let f = field(&fields(&original), "clear_button").clone();
@@ -199,7 +199,7 @@ fn button_caption_preserves_other_widgets_and_shared_dictionaries() {
             assert_eq!(doc.get(first), untouched, "the other widget and all its appearances are untouched");
             assert_eq!(doc.get(mk), shared_mk, "shared MK is not patched in place");
             let bytes = if full {
-                recto_cos::write_full(&doc, &SaveOptions::default()).unwrap()
+                pagic_cos::write_full(&doc, &SaveOptions::default()).unwrap()
             } else {
                 let bytes = write_incremental(&doc, &SaveOptions::default()).unwrap();
                 assert!(bytes.starts_with(original.bytes().as_slice()));
@@ -228,10 +228,10 @@ fn button_caption_preserves_other_widgets_and_shared_dictionaries() {
 fn button_caption_rejects_wrong_type_and_index_before_mutation() {
     let mut doc = fixture();
     for (name, wi) in [("name", 0), ("agree", 0), ("go", usize::MAX)] {
-        let before = recto_cos::write_full(&doc, &SaveOptions::default()).unwrap();
+        let before = pagic_cos::write_full(&doc, &SaveOptions::default()).unwrap();
         let props = FieldProps { caption: Some((wi, "Clear Form".into())), name: Some("renamed".into()), ..Default::default() };
         assert!(set_props(&mut doc, name, &props).is_err());
-        assert_eq!(recto_cos::write_full(&doc, &SaveOptions::default()).unwrap(), before);
+        assert_eq!(pagic_cos::write_full(&doc, &SaveOptions::default()).unwrap(), before);
     }
     set_props(&mut doc, "go", &FieldProps { caption: Some((0, "提交".into())), ..Default::default() }).unwrap();
     assert_eq!(field(&fields(&doc), "go").widgets[0].caption.as_deref(), Some("提交"));
@@ -251,7 +251,7 @@ fn appearance_text(doc: &Document, w: &Widget, font_name: &[u8]) -> (Object, Vec
     let resources = doc.resolve(stream.dict.get(b"Resources").unwrap());
     let fonts = doc.resolve(resources.as_dict().unwrap().get(b"Font").unwrap());
     let font = doc.resolve(fonts.as_dict().unwrap().get(font_name).unwrap());
-    let shown = recto_content::parse(&stream.decoded().unwrap())
+    let shown = pagic_content::parse(&stream.decoded().unwrap())
         .ops
         .into_iter()
         .filter(|op| op.is("Tj"))
@@ -418,7 +418,7 @@ fn a_text_field_says_what_fits_it_as_its_appearance_draws_it() {
         let f = field(&all, name);
         appearance::text_box(&doc, f, &f.widgets[0])
     };
-    let helv = |s: &str, size: f64| recto_fonts::helvetica_width(s, size);
+    let helv = |s: &str, size: f64| pagic_fonts::helvetica_width(s, size);
     // Single line at 12 pt: as wide as the 96 pt inside, and no wider.
     let fits_12: String = std::iter::repeat_n('W', (96.0 / helv("W", 12.0)) as usize).collect();
     assert!(tb("one").fits(&fits_12) && !tb("one").fits(&format!("{fits_12}W")), "{}", fits_12.len());
@@ -716,7 +716,7 @@ fn existing_field_font_encoding_keeps_italian_punctuation_visible() {
     assert_eq!(f.value, [value], "the stored value and the drawn text must agree");
     let (font, lines) = appearance_text(&doc, &f.widgets[0], b"Helv");
     assert_eq!(font, original_font, "keep the existing field's font and encoding");
-    let metrics = recto_fonts::pdf::Metrics::from_dict(&doc, font.as_dict().unwrap());
+    let metrics = pagic_fonts::pdf::Metrics::from_dict(&doc, font.as_dict().unwrap());
     let shown = lines.concat();
     assert_eq!(metrics.decode(&shown), value, "decode the appearance with its actual font");
     assert_eq!(shown, b"Citt\xe0 Sant\x90Angelo \x84 qualit\xe0");
@@ -747,7 +747,7 @@ fn unavailable_glyph_uses_an_appearance_font_without_changing_the_source_font() 
     let font = font.as_dict().unwrap();
     assert_eq!(font.name(b"BaseFont"), Some(&b"Helvetica"[..]));
     assert_eq!(font.name(b"Encoding"), Some(&b"WinAnsiEncoding"[..]));
-    let metrics = recto_fonts::pdf::Metrics::from_dict(&doc, font);
+    let metrics = pagic_fonts::pdf::Metrics::from_dict(&doc, font);
     let shown = lines.concat();
     assert_eq!(metrics.decode(&shown), value);
     assert_eq!(shown, b"Citt\xe0 Sant\x92Angelo \x97 qualit\xe0");
@@ -776,7 +776,7 @@ fn multiline_wrapping_keeps_encodable_text_without_requiring_ascii_space() {
     let (font, lines) = appearance_text(&doc, &f.widgets[0], b"Helv");
     assert_eq!(font, original_font);
     assert!(lines.len() >= 3 && lines.iter().all(|line| !line.is_empty()));
-    let metrics = recto_fonts::pdf::Metrics::from_dict(&doc, font.as_dict().unwrap());
+    let metrics = pagic_fonts::pdf::Metrics::from_dict(&doc, font.as_dict().unwrap());
     assert_eq!(metrics.decode(&lines.concat()), value.replace('\n', ""));
 }
 
@@ -814,7 +814,7 @@ fn reused_standard_fonts_wrap_and_align_with_their_own_widths() {
         let w = &field(&all, name).widgets[0];
         let n = doc.get(w.obj).as_dict().unwrap().get(b"AP").unwrap().as_dict().unwrap().reference(b"N").unwrap();
         let Object::Stream(s) = &*doc.get(n) else { panic!() };
-        let tm = recto_content::parse(&s.decoded().unwrap()).ops.into_iter().find(|op| op.is("Tm")).unwrap();
+        let tm = pagic_content::parse(&s.decoded().unwrap()).ops.into_iter().find(|op| op.is("Tm")).unwrap();
         tm.operands[4].as_f64().unwrap()
     };
     assert!((start("code") - 174.0).abs() < 1e-3, "Courier: {}", start("code"));
@@ -848,7 +848,7 @@ fn remapped_standard_fonts_are_measured_by_the_glyph_each_code_draws() {
         let w = &field(&all, name).widgets[0];
         let n = doc.get(w.obj).as_dict().unwrap().get(b"AP").unwrap().as_dict().unwrap().reference(b"N").unwrap();
         let Object::Stream(s) = &*doc.get(n) else { panic!() };
-        let tm = recto_content::parse(&s.decoded().unwrap()).ops.into_iter().find(|op| op.is("Tm")).unwrap();
+        let tm = pagic_content::parse(&s.decoded().unwrap()).ops.into_iter().find(|op| op.is("Tm")).unwrap();
         tm.operands[4].as_f64().unwrap()
     };
     // The text ends at 198 (200 pt box, 2 pt padding): 26.68 pt of A's, or 20 pt by /Widths.
@@ -933,7 +933,7 @@ fn text_a_field_font_cannot_hold_is_kept_marked_and_redrawn_elsewhere() {
         let w = &field(&all, name).widgets[0];
         let n = doc.get(w.obj).as_dict().unwrap().get(b"AP").unwrap().as_dict().unwrap().reference(b"N").unwrap();
         let Object::Stream(s) = &*doc.get(n) else { panic!() };
-        let mark = doc.get(w.obj).as_dict().and_then(recto_fonts::undrawn_mark);
+        let mark = doc.get(w.obj).as_dict().and_then(pagic_fonts::undrawn_mark);
         (String::from_utf8_lossy(&s.decoded().unwrap()).into_owned(), mark)
     };
     // A WinAnsi field: the Chinese value is kept and marked; Helvetica draws `?` for it.
@@ -1025,7 +1025,7 @@ fn check_boxes_and_radios_switch_states() {
     let size = field(&all, "size");
     assert_eq!(size.value, ["L"]);
     assert_eq!(size.widgets.iter().map(|w| w.state.clone().unwrap()).collect::<Vec<_>>(), ["Off", "L"]);
-    // The bare check box got Recto's own appearances and kept its other keys.
+    // The bare check box got Pagic's own appearances and kept its other keys.
     let bare = field(&all, "bare");
     assert_eq!(bare.value, ["Yes"]);
     assert_eq!(bare.widgets[0].on_state.as_deref(), Some("Yes"));
@@ -1225,7 +1225,7 @@ fn every_field_type_can_be_added_named_and_drawn() {
     {
         // One page.
         let pages = doc.get(doc.root().unwrap()).as_dict().unwrap().reference(b"Pages").unwrap();
-        let mut p = recto_cos::Dict::new();
+        let mut p = pagic_cos::Dict::new();
         p.set(b"Type".to_vec(), Object::name("Page"));
         p.set(b"Parent".to_vec(), Object::Ref(pages));
         p.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 600.into(), 800.into()]));
@@ -1403,7 +1403,7 @@ fn renaming_a_top_level_field_is_still_checked_against_top_level_names() {
 fn deleting_works_with_a_form_dictionary_inside_the_catalog() {
     let mut doc = fixture();
     let root = doc.root().unwrap();
-    let af = doc.get(recto_cos::ObjRef::new(4, 0)).as_dict().cloned().unwrap();
+    let af = doc.get(pagic_cos::ObjRef::new(4, 0)).as_dict().cloned().unwrap();
     doc.update_dict(root, |d| d.set(b"AcroForm".to_vec(), Object::Dict(af))).unwrap();
     let before = fields(&doc).len();
     delete_field(&mut doc, "name").unwrap();
@@ -1415,7 +1415,7 @@ fn deleting_works_with_a_form_dictionary_inside_the_catalog() {
 fn one_page() -> Document {
     let mut doc = Document::new_empty();
     let pages = doc.get(doc.root().unwrap()).as_dict().unwrap().reference(b"Pages").unwrap();
-    let mut p = recto_cos::Dict::new();
+    let mut p = pagic_cos::Dict::new();
     p.set(b"Type".to_vec(), Object::name("Page"));
     p.set(b"Parent".to_vec(), Object::Ref(pages));
     p.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 600.into(), 800.into()]));
@@ -2027,7 +2027,7 @@ fn ordering_tabs_manually() {
     }
     // A comment between the widgets keeps its place.
     let page = page_refs(&doc)[0];
-    let mut note = recto_cos::Dict::new();
+    let mut note = pagic_cos::Dict::new();
     note.set(b"Type".to_vec(), Object::name("Annot"));
     note.set(b"Subtype".to_vec(), Object::name("Text"));
     note.set(b"Rect".to_vec(), Object::Array(vec![0.into(), 0.into(), 10.into(), 10.into()]));
@@ -2064,7 +2064,7 @@ fn duplicating_a_field_across_pages_shares_its_value() {
     // A second and third page.
     let pages = doc.get(doc.root().unwrap()).as_dict().unwrap().reference(b"Pages").unwrap();
     for _ in 0..2 {
-        let mut p = recto_cos::Dict::new();
+        let mut p = pagic_cos::Dict::new();
         p.set(b"Type".to_vec(), Object::name("Page"));
         p.set(b"Parent".to_vec(), Object::Ref(pages));
         p.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 600.into(), 800.into()]));
@@ -2161,7 +2161,7 @@ fn image_fields_ask_for_a_picture_and_show_it() {
     {
         d.set(k.to_vec(), v);
     }
-    let img = doc.add(Object::Stream(recto_cos::Stream::from_raw(d, vec![0; 24])));
+    let img = doc.add(Object::Stream(pagic_cos::Stream::from_raw(d, vec![0; 24])));
     set_button_icon(&mut doc, &name, img, (4, 2)).unwrap();
     let w = doc.get(f.widgets[0].obj).as_dict().cloned().unwrap();
     let mk = w.get(b"MK").unwrap().as_dict().unwrap().clone();
@@ -2426,12 +2426,12 @@ fn detection_makes_a_row_of_touching_cells_one_comb_field() {
 #[test]
 fn page_shapes_reads_boxes_and_rules() {
     let mut doc = fixture();
-    let page = recto_model::pages(&doc)[0].obj;
-    let s = doc.add(recto_cos::Object::Stream(recto_cos::Stream::flate(
+    let page = pagic_model::pages(&doc)[0].obj;
+    let s = doc.add(pagic_cos::Object::Stream(pagic_cos::Stream::flate(
         Default::default(),
         b"q 2 0 0 2 0 0 cm 10 10 6 6 re S 20 50 m 120 50 l S 0 0 m 5 5 l S 30 300 100 0.5 re f Q",
     )));
-    doc.update_dict(page, |d| d.set(b"Contents".to_vec(), recto_cos::Object::Ref(s))).unwrap();
+    doc.update_dict(page, |d| d.set(b"Contents".to_vec(), pagic_cos::Object::Ref(s))).unwrap();
     let sh = crate::detect::page_shapes(&doc, 0);
     assert_eq!(sh.boxes, [[20.0, 20.0, 32.0, 32.0]]);
     assert_eq!(sh.rules, [[40.0, 100.0, 240.0, 100.0], [60.0, 600.5, 260.0, 600.5]]);
@@ -2442,9 +2442,8 @@ fn page_shapes_preserves_content_piece_boundaries() {
     use crate::detect::{Candidate, Kind, Shapes, detect, page_shapes};
     let read = |pieces: &[&[u8]]| {
         let mut doc = one_page();
-        let page = recto_model::pages(&doc)[0].obj;
-        let contents =
-            pieces.iter().map(|bytes| Object::Ref(doc.add(Object::Stream(recto_cos::Stream::flate(Default::default(), bytes))))).collect();
+        let page = pagic_model::pages(&doc)[0].obj;
+        let contents = pieces.iter().map(|bytes| Object::Ref(doc.add(Object::Stream(pagic_cos::Stream::flate(Default::default(), bytes))))).collect();
         doc.update_dict(page, |d| d.set(b"Contents".to_vec(), Object::Array(contents))).unwrap();
         page_shapes(&doc, 0)
     };
@@ -2599,7 +2598,7 @@ fn filling_and_authoring_keep_shared_appearances_and_drop_stale_alternates() {
                 d.set(b"Type".to_vec(), Object::name("XObject"));
                 d.set(b"Subtype".to_vec(), Object::name("Form"));
                 d.set(b"BBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 20.into(), 10.into()]));
-                let r = doc.add(Object::Stream(recto_cos::Stream::from_raw(d, bytes.to_vec())));
+                let r = doc.add(Object::Stream(pagic_cos::Stream::from_raw(d, bytes.to_vec())));
                 entries.set(key.to_vec(), Object::Ref(r));
             }
             entries.set(b"VendorState".to_vec(), Object::name("Retained"));
@@ -2620,7 +2619,7 @@ fn filling_and_authoring_keep_shared_appearances_and_drop_stale_alternates() {
                 }
                 assert_eq!(doc.resolve(&source), before, "a shared AP must not change");
                 let bytes = if full {
-                    recto_cos::write_full(&doc, &SaveOptions::default()).unwrap()
+                    pagic_cos::write_full(&doc, &SaveOptions::default()).unwrap()
                 } else {
                     assert!(!doc.revisions().is_empty(), "incremental save needs an existing revision");
                     assert!(!doc.encryption_changed() && !doc.full_save_required(), "this edit must not require a full rewrite");
@@ -2674,7 +2673,7 @@ fn filling_and_authoring_keep_shared_appearances_and_drop_stale_alternates() {
 fn pushbutton_redraw_resolves_caption_and_layout_after_save_and_reopen() {
     fn saved(doc: &Document, full: bool) -> Document {
         let bytes = if full {
-            recto_cos::write_full(doc, &SaveOptions::default()).unwrap()
+            pagic_cos::write_full(doc, &SaveOptions::default()).unwrap()
         } else {
             assert!(!doc.revisions().is_empty(), "incremental save needs an existing revision");
             assert!(!doc.encryption_changed() && !doc.full_save_required(), "this edit must not require a full rewrite");
@@ -2696,7 +2695,7 @@ fn pushbutton_redraw_resolves_caption_and_layout_after_save_and_reopen() {
                     add_field(&mut doc, 0, [50.0, 600.0, 250.0, 650.0], &NewField::Button { caption: "Original caption".into() }, Some("Picture"))
                         .unwrap();
                 let widget = field(&fields(&doc), &name).widgets[0].obj;
-                let caption = Object::String(recto_cos::PdfString::literal(b"Original caption".to_vec()));
+                let caption = Object::String(pagic_cos::PdfString::literal(b"Original caption".to_vec()));
                 let caption = if indirect_caption { Object::Ref(doc.add(caption)) } else { caption };
                 let layout = Object::Int(i64::from(icon_only));
                 let layout = if indirect_layout { Object::Ref(doc.add(layout)) } else { layout };
@@ -2705,7 +2704,7 @@ fn pushbutton_redraw_resolves_caption_and_layout_after_save_and_reopen() {
                 icon_dict.set(b"Subtype".to_vec(), Object::name("Form"));
                 icon_dict.set(b"BBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 4.into(), 2.into()]));
                 let icon_bytes = b"0 0 4 2 re f\n";
-                let icon = doc.add(Object::Stream(recto_cos::Stream::from_raw(icon_dict, icon_bytes.to_vec())));
+                let icon = doc.add(Object::Stream(pagic_cos::Stream::from_raw(icon_dict, icon_bytes.to_vec())));
                 let mut mk = Dict::new();
                 mk.set(b"CA".to_vec(), caption);
                 mk.set(b"TP".to_vec(), layout);
@@ -2769,7 +2768,7 @@ fn check_box_redraw_keeps_down_states_it_still_draws() {
         let mut d = Dict::new();
         d.set(b"Subtype".to_vec(), Object::name("Form"));
         d.set(b"BBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 20.into(), 20.into()]));
-        let r = doc.add(Object::Stream(recto_cos::Stream::from_raw(d, b"0 0 20 20 re f\n".to_vec())));
+        let r = doc.add(Object::Stream(pagic_cos::Stream::from_raw(d, b"0 0 20 20 re f\n".to_vec())));
         down.set(state.to_vec(), Object::Ref(r));
     }
     ap.set(b"D".to_vec(), Object::Dict(down));
@@ -2837,7 +2836,7 @@ fn partial_appearance_keeps_custom_default_appearance_and_font_resources() {
     dr.set(b"Font".to_vec(), Object::Dict(fonts));
     doc.update_dict(af, |d| d.set(b"DR".to_vec(), Object::Dict(dr))).unwrap();
     let da = "/ProjectFont 13 Tf 0.15 g 2 Tc";
-    doc.update_dict(obj, |d| d.set(b"DA".to_vec(), recto_cos::PdfString::literal(da.as_bytes().to_vec()))).unwrap();
+    doc.update_dict(obj, |d| d.set(b"DA".to_vec(), pagic_cos::PdfString::literal(da.as_bytes().to_vec()))).unwrap();
 
     let patch = LookPatch { border: Some(Some([1.0, 0.0, 0.0])), width: Some(3.0), ..Default::default() };
     set_props(&mut doc, "name", &FieldProps { appearance: Some(patch), ..Default::default() }).unwrap();
@@ -2891,7 +2890,7 @@ fn repeated_partial_appearance_edits_keep_the_default_appearance_one_operator_ea
 fn a_font_only_edit_leaves_the_widget_and_a_shared_indirect_border_untouched() {
     let mut doc = fixture();
     let widgets = field(&fields(&doc), "size").widgets.clone();
-    let mut mk = recto_cos::Dict::new();
+    let mut mk = pagic_cos::Dict::new();
     mk.set(b"BC".to_vec(), Object::Array(vec![0.into(), 0.into(), 1.into()]));
     let shared = doc.add(Object::Dict(mk));
     for w in &widgets {
@@ -2919,14 +2918,14 @@ fn partial_appearance_preserves_each_widgets_indirect_colours_and_border_extensi
     let widgets = field(&fields(&doc), "size").widgets.clone();
     let mut refs = Vec::new();
     for (i, widget) in widgets.iter().enumerate() {
-        let mut mk = recto_cos::Dict::new();
+        let mut mk = pagic_cos::Dict::new();
         mk.set(b"BG".to_vec(), Object::Array(vec![Object::Real(i as f64), 0.into(), 1.into()]));
         mk.set(b"BC".to_vec(), Object::Array(vec![0.into(), Object::Real(i as f64), 0.into()]));
-        mk.set(b"CA".to_vec(), recto_cos::PdfString::text("l"));
+        mk.set(b"CA".to_vec(), pagic_cos::PdfString::text("l"));
         mk.set(b"R".to_vec(), Object::Int(90));
         mk.set(b"VendorKey".to_vec(), Object::Int(71));
         let mk_ref = doc.add(Object::Dict(mk));
-        let mut bs = recto_cos::Dict::new();
+        let mut bs = pagic_cos::Dict::new();
         bs.set(b"S".to_vec(), Object::name("D"));
         bs.set(b"W".to_vec(), Object::Real(1.0));
         bs.set(b"D".to_vec(), Object::Array(vec![4.into(), 2.into()]));
@@ -2936,7 +2935,7 @@ fn partial_appearance_preserves_each_widgets_indirect_colours_and_border_extensi
         doc.update_dict(widget.obj, |d| {
             d.set(b"MK".to_vec(), Object::Ref(mk_ref));
             d.set(b"BS".to_vec(), Object::Ref(bs_ref));
-            d.set(b"DA".to_vec(), recto_cos::PdfString::text(da));
+            d.set(b"DA".to_vec(), pagic_cos::PdfString::text(da));
         })
         .unwrap();
         refs.push(mk_ref);
@@ -2977,8 +2976,8 @@ fn partial_appearance_preserves_each_widgets_indirect_colours_and_border_extensi
 fn a_whole_look_keeps_the_rest_of_an_indirect_mk() {
     let mut doc = fixture();
     let widget = field(&fields(&doc), "agree").widgets[0].obj;
-    let mut mk = recto_cos::Dict::new();
-    mk.set(b"CA".to_vec(), recto_cos::PdfString::text("8"));
+    let mut mk = pagic_cos::Dict::new();
+    mk.set(b"CA".to_vec(), pagic_cos::PdfString::text("8"));
     mk.set(b"R".to_vec(), Object::Int(90));
     mk.set(b"VendorKey".to_vec(), Object::Int(71));
     let mk_ref = doc.add(Object::Dict(mk));
@@ -3036,8 +3035,8 @@ fn invalid_appearance_patches_are_refused_before_anything_is_written() {
 fn page_shapes_preserves_closed_path_rectangle_height() {
     let shapes = |content: &[u8]| {
         let mut doc = fixture();
-        let page = recto_model::pages(&doc)[0].obj;
-        let stream = doc.add(Object::Stream(recto_cos::Stream::flate(Default::default(), content)));
+        let page = pagic_model::pages(&doc)[0].obj;
+        let stream = doc.add(Object::Stream(pagic_cos::Stream::flate(Default::default(), content)));
         doc.update_dict(page, |d| d.set(b"Contents".to_vec(), Object::Ref(stream))).unwrap();
         crate::detect::page_shapes(&doc, 0)
     };
@@ -3051,8 +3050,8 @@ fn page_shapes_preserves_closed_path_rectangle_height() {
 
 fn detection_test_shapes(content: &[u8]) -> crate::detect::Shapes {
     let mut doc = fixture();
-    let page = recto_model::pages(&doc)[0].obj;
-    let stream = doc.add(Object::Stream(recto_cos::Stream::flate(Default::default(), content)));
+    let page = pagic_model::pages(&doc)[0].obj;
+    let stream = doc.add(Object::Stream(pagic_cos::Stream::flate(Default::default(), content)));
     doc.update_dict(page, |d| d.set(b"Contents".to_vec(), Object::Ref(stream))).unwrap();
     crate::detect::page_shapes(&doc, 0)
 }
@@ -3152,7 +3151,7 @@ fn zero_max_len_is_unlimited_and_overrides_inherited_limit() {
 #[test]
 fn auto_text_size_fits_single_and_multiline_text() {
     use crate::appearance::auto_text_size;
-    use recto_fonts::{helvetica_width, wrap_with};
+    use pagic_fonts::{helvetica_width, wrap_with};
     let long = "Weekly progress and diligence: CoBank refi, IL and Redwood Falls";
     // Single line: the height's size for short text, shrunk to the width for long text.
     assert_eq!(auto_text_size("Hi", 94.0, 8.0, false, helvetica_width), 8.0 / 1.15);
@@ -3284,7 +3283,7 @@ fn the_field_appearance_cache_sees_every_input() {
         "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>".into(),
         "<< /BG [1 1 1] >>".into(),
     ]);
-    let r = |n: u32| recto_cos::ObjRef::new(n, 0);
+    let r = |n: u32| pagic_cos::ObjRef::new(n, 0);
     let mut cache = FieldAppearanceCache::default();
     let mut redraw = |doc: &Document| {
         let before = cache.builds();
@@ -3327,7 +3326,7 @@ fn the_field_appearance_cache_sees_indirect_resources() {
         "<< /Helv << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> >>".into(),
         "(/Helv 12 Tf 0 g)".into(),
     ]);
-    let r = |n: u32| recto_cos::ObjRef::new(n, 0);
+    let r = |n: u32| pagic_cos::ObjRef::new(n, 0);
     let mut cache = FieldAppearanceCache::default();
     let mut redraw = |doc: &Document| {
         let before = cache.builds();
@@ -3391,23 +3390,23 @@ fn a_script_reading_many_fields_merges_its_reads_in_one_pass() {
 
 /// 300 fields and 300 document scripts that all name one 1 MiB JavaScript stream.
 fn repeated_script_references() -> Document {
-    use recto_cos::Stream;
+    use pagic_cos::Stream;
     let dict = |entries: Vec<(&[u8], Object)>| -> Object { Object::Dict(entries.into_iter().map(|(k, v)| (k.to_vec(), v)).collect()) };
     let mut doc = Document::new_empty();
-    let js = doc.add(Stream::flate(recto_cos::Dict::new(), &vec![b'x'; 1 << 20]));
+    let js = doc.add(Stream::flate(pagic_cos::Dict::new(), &vec![b'x'; 1 << 20]));
     let action = doc.add(dict(vec![(b"S", Object::Name(b"JavaScript".to_vec())), (b"JS", Object::Ref(js))]));
     let fields: Vec<Object> = (0..300)
         .map(|i| {
             Object::Ref(doc.add(dict(vec![
                 (b"FT", Object::Name(b"Tx".to_vec())),
-                (b"T", Object::String(recto_cos::PdfString::literal(format!("f{i}")))),
+                (b"T", Object::String(pagic_cos::PdfString::literal(format!("f{i}")))),
                 (b"Rect", Object::Array([0, 0, 10, 10].map(Object::from).to_vec())),
                 (b"AA", dict(vec![(b"C", Object::Ref(action))])),
             ])))
         })
         .collect();
     let names: Vec<Object> =
-        (0..300).flat_map(|i| [Object::String(recto_cos::PdfString::literal(format!("s{i:03}"))), Object::Ref(action)]).collect();
+        (0..300).flat_map(|i| [Object::String(pagic_cos::PdfString::literal(format!("s{i:03}"))), Object::Ref(action)]).collect();
     let catalog = doc.add(dict(vec![
         (b"Type", Object::Name(b"Catalog".to_vec())),
         (b"AcroForm", dict(vec![(b"Fields", Object::Array(fields))])),
@@ -3685,7 +3684,7 @@ fn dr_fonts(doc: &Document) -> Dict {
 }
 
 /// #3441: Acrobat shows nothing in a text field it redraws after typing when the field's `/DR`
-/// font is a dictionary written inline. A form Recto makes holds each font as its own object.
+/// font is a dictionary written inline. A form Pagic makes holds each font as its own object.
 #[test]
 fn a_new_form_holds_its_fonts_as_objects() {
     let mut doc = document(&[
@@ -3761,7 +3760,7 @@ fn an_indirect_resource_dictionary_and_a_complete_inline_set_are_handled() {
 
 /// #3441: fonts the form already has are its own, not replaced by the standard ones: an inline
 /// `/Helv` that is Arial becomes an object that is still Arial, a `/TiRo` object stays that
-/// object, and a form needing no change leaves its `/DR` object unwritten. The fonts Recto
+/// object, and a form needing no change leaves its `/DR` object unwritten. The fonts Pagic
 /// adds use WinAnsi, as Acrobat's do.
 #[test]
 fn existing_form_fonts_are_kept_and_an_unchanged_resource_dictionary_is_not_rewritten() {
@@ -3777,7 +3776,7 @@ fn existing_form_fonts_are_kept_and_an_unchanged_resource_dictionary_is_not_rewr
     let fonts = dr_fonts(&doc);
     let font = |name: &str| doc.get(fonts.reference(name.as_bytes()).unwrap()).as_dict().cloned().unwrap();
     assert_eq!(font("Helv").name(b"BaseFont"), Some(&b"Arial"[..]), "the form's own Helv");
-    assert_eq!(fonts.reference(b"TiRo"), Some(recto_cos::ObjRef::new(5, 0)), "the same object");
+    assert_eq!(fonts.reference(b"TiRo"), Some(pagic_cos::ObjRef::new(5, 0)), "the same object");
     assert_eq!(font("Cour").name(b"Encoding"), Some(&b"WinAnsiEncoding"[..]));
 
     // Every font an object already, /DR an object: adding a field leaves /DR as it was.
@@ -3916,27 +3915,27 @@ fn assert_requested_font_shapes(doc: &Document, acro: &Dict, dr: &Object, fonts:
     let base = |name: &[u8]| fonts.reference(name).and_then(|r| doc.get(r).as_dict().and_then(|f| f.name(b"BaseFont").map(<[u8]>::to_vec)));
     match case.helv {
         "inline" => assert_eq!(base(b"Helv").as_deref(), Some(&b"Arial"[..]), "{}", case.description),
-        "object" => assert_eq!(fonts.reference(b"Helv"), Some(recto_cos::ObjRef::new(7, 0)), "{}", case.description),
-        "dangling" => assert_eq!(fonts.reference(b"Helv"), Some(recto_cos::ObjRef::new(99, 0)), "{}", case.description),
+        "object" => assert_eq!(fonts.reference(b"Helv"), Some(pagic_cos::ObjRef::new(7, 0)), "{}", case.description),
+        "dangling" => assert_eq!(fonts.reference(b"Helv"), Some(pagic_cos::ObjRef::new(99, 0)), "{}", case.description),
         "null" => assert_eq!(fonts.get(b"Helv"), Some(&Object::Null), "{}", case.description),
         "number" => assert_eq!(fonts.get(b"Helv"), Some(&Object::Int(3)), "{}", case.description),
         _ => assert_eq!(base(b"Helv").as_deref(), Some(&b"Helvetica"[..]), "{}", case.description),
     }
     match case.mine {
         "inline" => assert_eq!(base(b"Mine").as_deref(), Some(&b"Symbol"[..]), "{}", case.description),
-        "object" => assert_eq!(fonts.reference(b"Mine"), Some(recto_cos::ObjRef::new(8, 0)), "{}", case.description),
+        "object" => assert_eq!(fonts.reference(b"Mine"), Some(pagic_cos::ObjRef::new(8, 0)), "{}", case.description),
         _ => assert!(!fonts.contains(b"Mine"), "{}", case.description),
     }
     if case.dr == "object" {
-        assert_eq!(acro.reference(b"DR"), Some(recto_cos::ObjRef::new(5, 0)), "{}: /DR stays its object", case.description);
+        assert_eq!(acro.reference(b"DR"), Some(pagic_cos::ObjRef::new(5, 0)), "{}: /DR stays its object", case.description);
     }
     if case.fonts == "object" {
-        assert_eq!(dr.as_dict().unwrap().reference(b"Font"), Some(recto_cos::ObjRef::new(6, 0)), "{}: /Font stays its object", case.description);
+        assert_eq!(dr.as_dict().unwrap().reference(b"Font"), Some(pagic_cos::ObjRef::new(6, 0)), "{}: /Font stays its object", case.description);
     }
 }
 
 /// #3441 (review follow-up): filling a field converts the form's inline `/DR` fonts, so a form
-/// an earlier Recto made works in Acrobat once it has been filled here. Nothing is added. A
+/// an earlier Pagic made works in Acrobat once it has been filled here. Nothing is added. A
 /// form a signature covers keeps `/DR` as the signer saw it, and a form whose fonts are objects
 /// already leaves its `/DR` object unwritten.
 #[test]
@@ -3972,7 +3971,7 @@ fn filling_a_field_makes_inline_form_fonts_objects_unless_the_form_is_signed() {
 
     // An empty signature field signs nothing: the form is converted as an unsigned one.
     let mut doc = form(true, &format!("<< /Font << {inline} >> >>"));
-    doc.update_dict(recto_cos::ObjRef::new(6, 0), |d| {
+    doc.update_dict(pagic_cos::ObjRef::new(6, 0), |d| {
         d.remove(b"V");
     })
     .unwrap();
@@ -3998,7 +3997,7 @@ fn a_signature_value_on_a_parent_field_keeps_the_form_fonts_as_signed() {
         "<< /Type /Sig /Filter /Adobe.PPKLite /Contents <00> >>".into(),
         "<< /Type /Annot /Subtype /Widget /T (s1) /Parent 6 0 R /Rect [0 0 0 0] /P 3 0 R >>".into(),
     ]);
-    let kid = recto_cos::ObjRef::new(8, 0);
+    let kid = pagic_cos::ObjRef::new(8, 0);
     assert!(fields(&doc).iter().any(|f| f.obj == kid && f.kind == FieldKind::Signature), "the kid is the signature field");
     set_value(&mut doc, "name", &FieldValue::Text("Ada".into())).unwrap();
     let doc = reopen(&doc);
@@ -4052,7 +4051,7 @@ fn inherited_and_widget_password_values_are_cleared() {
         assert!(value(&doc, n).iter().all(|v| v.is_empty()), "{n} cleared");
     }
     assert_eq!(value(&doc, "grp.plain"), ["shared2"], "the shared value stays for the plain field");
-    let has_v = |doc: &Document, n: u32| doc.get(recto_cos::ObjRef { num: n, generation: 0 }).as_dict().is_some_and(|d| d.get(b"V").is_some());
+    let has_v = |doc: &Document, n: u32| doc.get(pagic_cos::ObjRef { num: n, generation: 0 }).as_dict().is_some_and(|d| d.get(b"V").is_some());
     assert!(!has_v(&doc, 5), "an ancestor only password fields inherit from loses its value");
     assert!(!has_v(&doc, 7), "a widget's value is removed");
     assert!(has_v(&doc, 10), "a shared ancestor keeps its value");
@@ -4314,7 +4313,7 @@ fn state_ap(doc: &Document, w: &Widget, state: &str) -> String {
     String::from_utf8_lossy(&s.decoded().unwrap()).into_owned()
 }
 
-/// The decoded appearance Recto would save for text or choice field `name` of `doc`.
+/// The decoded appearance Pagic would save for text or choice field `name` of `doc`.
 fn saved_look(doc: &Document, name: &str) -> String {
     let all = fields(doc);
     let f = field(&all, name);

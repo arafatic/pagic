@@ -1,8 +1,8 @@
 use super::{Arc, BTreeMap, Color32, FontFamily, FontId, LineEditor, Rect};
 
 /// The look shown for a paragraph: the family and weight guessed from its PDF font name.
-fn source_look(base_font: &str, size: f64, color: [f64; 3], detected_bold: bool, detected_italic: bool) -> recto_engine::AddedText {
-    use recto_engine::FontFamily as F;
+fn source_look(base_font: &str, size: f64, color: [f64; 3], detected_bold: bool, detected_italic: bool) -> pagic_engine::AddedText {
+    use pagic_engine::FontFamily as F;
     let name = base_font.to_ascii_lowercase();
     let family = if ["courier", "mono", "consolas", "menlo", "monaco", "lucida console"].iter().any(|s| name.contains(s)) {
         F::Courier
@@ -11,7 +11,7 @@ fn source_look(base_font: &str, size: f64, color: [f64; 3], detected_bold: bool,
     } else {
         F::Helvetica
     };
-    recto_engine::AddedText {
+    pagic_engine::AddedText {
         family,
         bold: detected_bold || ["bold", "black", "heavy", "semibold", "demi"].iter().any(|s| name.contains(s)),
         italic: detected_italic || ["italic", "oblique", "slanted"].iter().any(|s| name.contains(s)),
@@ -21,13 +21,13 @@ fn source_look(base_font: &str, size: f64, color: [f64; 3], detected_bold: bool,
     }
 }
 
-pub(super) fn look_of(b: &recto_engine::TextBlock) -> recto_engine::AddedText {
+pub(super) fn look_of(b: &pagic_engine::TextBlock) -> pagic_engine::AddedText {
     source_look(&b.base_font, b.size, b.color, b.bold, b.italic)
 }
 
-pub(crate) fn editor_font(look: &recto_engine::AddedText, size: f32) -> FontId {
+pub(crate) fn editor_font(look: &pagic_engine::AddedText, size: f32) -> FontId {
     let family = match (look.family, look.bold) {
-        (recto_engine::FontFamily::Courier, _) => FontFamily::Monospace,
+        (pagic_engine::FontFamily::Courier, _) => FontFamily::Monospace,
         (_, true) => FontFamily::Name("semibold".into()),
         (_, false) => FontFamily::Proportional,
     };
@@ -67,7 +67,7 @@ pub(crate) fn editor_fill(text: Color32) -> Color32 {
 }
 
 /// One TextEdit lays out all source runs; its caret and selection span the whole region.
-pub(crate) fn install_source_fonts(ctx: &egui::Context, doc: &recto_engine::Document, page: usize) -> BTreeMap<String, String> {
+pub(crate) fn install_source_fonts(ctx: &egui::Context, doc: &pagic_engine::Document, page: usize) -> BTreeMap<String, String> {
     let programs = doc.text_editor_fonts(page);
     let mut definitions = ctx.fonts(|f| f.definitions().clone());
     // Only the current editor's document fonts live in the atlas. Never accumulate the
@@ -89,8 +89,7 @@ pub(crate) fn install_source_fonts(ctx: &egui::Context, doc: &recto_engine::Docu
             programs
                 .iter()
                 .filter(|p| {
-                    recto_fonts::embedding::face_key(&p.face) == recto_fonts::embedding::face_key(&program.face)
-                        && p.resource != program.resource
+                    pagic_fonts::embedding::face_key(&p.face) == pagic_fonts::embedding::face_key(&program.face) && p.resource != program.resource
                 })
                 .filter_map(|p| families.get(&p.resource).cloned()),
         );

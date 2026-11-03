@@ -1,6 +1,6 @@
 [alias]
 xtask = "run -p xtask --"
 
-# Keep a lowercase executable while macOS takes the display name from Recto.app.
+# Keep a lowercase executable while macOS takes the display name from Pagic.app.
 [target.'cfg(target_os = "macos")']
 runner = ["packaging/macos/run.sh"]

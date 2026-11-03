@@ -3,12 +3,12 @@
 //! their outlines, a click selects one, a double-click edits it and Delete removes it.
 
 use egui::{Color32, CornerRadius, Pos2, Rect, Stroke};
-use recto_engine::{Edit, LinkAction, LinkHighlight, LinkItem, LinkStyle};
-use recto_render::DocInfo;
+use pagic_engine::{Edit, LinkAction, LinkHighlight, LinkItem, LinkStyle};
+use pagic_render::DocInfo;
 
 use crate::canvas::{DocView, PageToolContext, PageXform};
 use crate::theme::{self, Tokens};
-use crate::{RectoApp, widgets};
+use crate::{PagicApp, widgets};
 
 const LINK_BLUE: Color32 = Color32::from_gray(0x80);
 
@@ -138,7 +138,7 @@ pub(crate) fn keys(ctx: &egui::Context, view: &mut DocView) {
     }
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Open Link Properties for a new link area or an existing link.
     pub(crate) fn open_link_props(&mut self, page: usize, rect: Option<[f64; 4]>, index: Option<usize>) {
         let Some((_, id)) = self.active_ids() else { return };
@@ -334,7 +334,7 @@ pub(crate) fn edit_for(d: &LinkDraft) -> Edit {
 #[cfg(test)]
 mod tests {
     use super::{LinkDraft, edit_for};
-    use recto_engine::{Edit, LinkStyle};
+    use pagic_engine::{Edit, LinkStyle};
 
     #[test]
     fn appearance_edit_preserves_an_existing_unsupported_action() {

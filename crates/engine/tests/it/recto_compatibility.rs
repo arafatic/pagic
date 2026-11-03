@@ -1,13 +1,13 @@
 //! Compatibility boundary frozen before the Pagic rename. Never rename the PDF markers.
-use recto_engine::{Changes, Edit, EditError, MarkKind, Protection, Session};
-use recto_render::{PageRenderer, RenderConfig, RenderRequest, RequestKind};
+use pagic_engine::{Changes, Edit, EditError, MarkKind, Protection, Session};
+use pagic_render::{PageRenderer, RenderConfig, RenderRequest, RequestKind};
 use std::sync::Arc;
 
 const PDF: &[u8] = include_bytes!("fixtures/recto-marks.pdf");
-fn open(session: &mut Session, bytes: Arc<Vec<u8>>, password: Option<&str>) -> recto_engine::DocId {
+fn open(session: &mut Session, bytes: Arc<Vec<u8>>, password: Option<&str>) -> pagic_engine::DocId {
     session.open("legacy.pdf", None, bytes, password).unwrap()
 }
-fn text(session: &Session, id: recto_engine::DocId) -> String {
+fn text(session: &Session, id: pagic_engine::DocId) -> String {
     let doc = session.get(id).unwrap();
     let mut renderer = PageRenderer::new(doc.bytes.clone(), RenderConfig { password: doc.password.as_deref().map(Arc::from), ..Default::default() });
     renderer.render(RenderRequest { page: 0, kind: RequestKind::Text, ..Default::default() }).text.unwrap().plain_text()
@@ -65,10 +65,10 @@ fn legacy_pdf_encryption_and_owner_permissions_remain_enforced() {
     let id = open(&mut owner, saved, Some("owner"));
     owner.apply(id, Edit::RotatePages { pages: vec![0], degrees: 90 }).unwrap();
     let saved = owner.save_bytes(id).unwrap();
-    assert!(recto_cos::Document::open(saved.clone()).is_err());
+    assert!(pagic_cos::Document::open(saved.clone()).is_err());
     let id = open(&mut Session::new(), saved.clone(), Some("reader"));
-    assert_eq!(id, recto_engine::DocId(1));
-    assert!(recto_cos::Document::open_with_password(saved, Some("reader")).is_ok());
+    assert_eq!(id, pagic_engine::DocId(1));
+    assert!(pagic_cos::Document::open_with_password(saved, Some("reader")).is_ok());
 }
 
 #[test]

@@ -3,7 +3,7 @@
 //! keys, signatures, trust and paths are intentionally outside this operation.
 
 use eframe::Storage;
-use recto_engine::identity::STORAGE_KEY;
+use pagic_engine::identity::STORAGE_KEY;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ImportResult {
@@ -24,7 +24,7 @@ pub fn preferences(source: &dyn Storage, destination: &mut dyn Storage) -> Resul
     };
     let mut value: serde_json::Value = serde_json::from_str(&json).map_err(|e| e.to_string())?;
     let values = value.as_object_mut().ok_or("preferences must be a JSON object")?;
-    // Keys are taken from RectoApp::persist/restore, not a new serialization format. Unknown
+    // Keys are taken from PagicApp::persist/restore, not a new serialization format. Unknown
     // future fields stay excluded until reviewed, especially anything carrying file paths.
     values.retain(|key, _| {
         matches!(
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn explicit_import_restores_real_preferences_without_keys_paths_or_recovery() {
         let original = include_str!("../../tests/fixtures/recto-preferences.json");
-        let mut legacy = crate::RectoApp::new();
+        let mut legacy = crate::PagicApp::new();
         legacy.restore(original);
         assert_eq!(legacy.digital_ids.len(), 1, "the fixture uses the real legacy identity-reference schema");
         let source = Memory(BTreeMap::from([("recto".into(), original.into())]));
@@ -106,7 +106,7 @@ mod tests {
         ] {
             assert!(values.get(forbidden).is_none(), "{forbidden}");
         }
-        let mut app = crate::RectoApp::new();
+        let mut app = crate::PagicApp::new();
         app.restore(&imported);
         let restored: serde_json::Value = serde_json::from_str(&app.persist()).unwrap();
         assert_eq!(restored["language"], "ja");

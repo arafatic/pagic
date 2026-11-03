@@ -57,8 +57,8 @@ fn grid_pages_are_centred_and_as_large_as_the_cell_allows() {
     }
 }
 
-fn annotation(fill_sign: bool) -> recto_render::Annotation {
-    recto_render::Annotation {
+fn annotation(fill_sign: bool) -> pagic_render::Annotation {
+    pagic_render::Annotation {
         page: 0,
         subtype: "FreeText".into(),
         author: None,
@@ -87,8 +87,8 @@ fn hover_popup_skips_fill_and_sign_marks() {
     assert_eq!(annotation_hover_text(&annotation(true)), None);
 }
 
-fn signature(signed: bool, visible: bool, page: Option<usize>, rect: Option<[f64; 4]>) -> recto_engine::SignatureInfo {
-    recto_engine::SignatureInfo {
+fn signature(signed: bool, visible: bool, page: Option<usize>, rect: Option<[f64; 4]>) -> pagic_engine::SignatureInfo {
+    pagic_engine::SignatureInfo {
         field: "Signature1".into(),
         signed,
         page,
@@ -111,8 +111,8 @@ fn signature(signed: bool, visible: bool, page: Option<usize>, rect: Option<[f64
         algorithm: None,
         timestamp: false,
         timestamp_time: None,
-        status: recto_engine::SignatureStatus::Valid,
-        modification: recto_engine::sign::Modification::None,
+        status: pagic_engine::SignatureStatus::Valid,
+        modification: pagic_engine::sign::Modification::None,
         details: Vec::new(),
     }
 }
@@ -208,7 +208,7 @@ fn rendered_rasters_become_texture_images_without_a_copy() {
 endstream endobj
 trailer << /Root 1 0 R >>
 %%EOF";
-    let mut r = recto_render::PageRenderer::new(Arc::new(pdf.to_vec()), Default::default());
+    let mut r = pagic_render::PageRenderer::new(Arc::new(pdf.to_vec()), Default::default());
     let out = r.render(RenderRequest { page: 0, kind: RequestKind::Pixels, tile: None, scale: 1.5, tag: 0, preview: false });
     assert!(out.error.is_none(), "{:?}", out.error);
     let size = [out.width as usize, out.height as usize];
@@ -255,9 +255,9 @@ fn grid_zoom_is_clamped_and_sharp_renders_tolerate_a_pinch() {
 }
 
 fn view(pages: usize, layout: PageLayout, continuous: bool) -> DocView {
-    let info = recto_render::DocInfo {
+    let info = pagic_render::DocInfo {
         pages: (0..pages)
-            .map(|_| recto_render::PageInfo { width: 300.0, height: 400.0, label: String::new(), crop: [0.0, 0.0, 300.0, 400.0], rotation: 0 })
+            .map(|_| pagic_render::PageInfo { width: 300.0, height: 400.0, label: String::new(), crop: [0.0, 0.0, 300.0, 400.0], rotation: 0 })
             .collect(),
         ..Default::default()
     };
@@ -268,8 +268,8 @@ fn history_search_view() -> DocView {
     let mut v = view(5, PageLayout::Single, true);
     v.texts.insert(
         3,
-        recto_render::PageText {
-            glyphs: vec![recto_render::TextGlyph {
+        pagic_render::PageText {
+            glyphs: vec![pagic_render::TextGlyph {
                 text: "match".into(),
                 rect: [20.0, 260.0, 60.0, 280.0],
                 quad: [[20.0, 260.0], [60.0, 260.0], [60.0, 280.0], [20.0, 280.0]],
@@ -339,7 +339,7 @@ fn find_test_text(s: &str) -> PageText {
     PageText {
         glyphs: s
             .chars()
-            .map(|c| recto_render::TextGlyph { text: c.into(), rect: [0.0, 0.0, 10.0, 10.0], quad: [[0.0, 0.0]; 4], direction: [1.0, 0.0] })
+            .map(|c| pagic_render::TextGlyph { text: c.into(), rect: [0.0, 0.0, 10.0, 10.0], quad: [[0.0, 0.0]; 4], direction: [1.0, 0.0] })
             .collect(),
         line_of: s.chars().map(|_| 0).collect(),
         space_before: s.chars().map(|_| false).collect(),
@@ -347,8 +347,8 @@ fn find_test_text(s: &str) -> PageText {
 }
 
 /// A text-layer result for `page`, for the search tests below.
-fn find_text_result(page: usize, text: &str) -> recto_render::RenderedPage {
-    recto_render::RenderedPage {
+fn find_text_result(page: usize, text: &str) -> pagic_render::RenderedPage {
+    pagic_render::RenderedPage {
         request: RenderRequest { page, kind: RequestKind::Text, tag: TEXT_TAG, ..Default::default() },
         width: 0,
         height: 0,
@@ -373,7 +373,7 @@ fn automatic_search_match_follows_the_viewed_page_when_text_arrives_out_of_order
 
     let ctx = egui::Context::default();
     let request = |page| RenderRequest { page, kind: RequestKind::Text, tag: TEXT_TAG, ..Default::default() };
-    let result = |page, text: &str| recto_render::RenderedPage {
+    let result = |page, text: &str| pagic_render::RenderedPage {
         request: request(page),
         width: 0,
         height: 0,
@@ -522,7 +522,7 @@ fn a_failed_text_layer_keeps_the_automatic_anchor_without_jitter() {
     v.last_queue = vec![request];
     v.receive_result(
         &ctx,
-        recto_render::RenderedPage {
+        pagic_render::RenderedPage {
             request,
             width: 0,
             height: 0,
@@ -566,7 +566,7 @@ fn a_failed_text_layer_after_navigation_does_not_reveal_a_late_match() {
     v.last_queue = vec![failed];
     v.receive_result(
         &ctx,
-        recto_render::RenderedPage {
+        pagic_render::RenderedPage {
             request: failed,
             width: 0,
             height: 0,
@@ -707,9 +707,9 @@ fn a_page_count_shrink_ends_following_before_a_late_reveal() {
     v.rerun_find();
     assert_eq!((v.current, v.find.as_ref().unwrap().auto_page), (4, Some(4)), "the automatic choice is on the last page");
 
-    let info = recto_render::DocInfo {
+    let info = pagic_render::DocInfo {
         pages: (0..2)
-            .map(|_| recto_render::PageInfo { width: 300.0, height: 400.0, label: String::new(), crop: [0.0, 0.0, 300.0, 400.0], rotation: 0 })
+            .map(|_| pagic_render::PageInfo { width: 300.0, height: 400.0, label: String::new(), crop: [0.0, 0.0, 300.0, 400.0], rotation: 0 })
             .collect(),
         ..Default::default()
     };
@@ -816,7 +816,7 @@ fn text_pages_pdf(lines: &[&str]) -> Vec<u8> {
 /// in page order, reading the pages whose text wasn't read for display.
 #[test]
 fn select_all_copies_the_whole_document_while_scrolling_continuously() {
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.open_bytes("three.pdf", None, text_pages_pdf(&["Alpha one", "Bravo two", "Charlie three"])).unwrap();
     let v = &mut app.views[0];
     assert!(v.continuous, "continuous scrolling is the default");
@@ -865,7 +865,7 @@ fn select_all_copies_the_whole_document_while_scrolling_continuously() {
 /// those that failed before.
 #[test]
 fn a_document_copy_reads_only_the_pages_it_needs() {
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.open_bytes("three.pdf", None, text_pages_pdf(&["Alpha one", "Bravo two", "Charlie three"])).unwrap();
     app.views[0].text_failed.insert(2);
     let job = crate::DocumentCopyJob::of(&app.views[0], app.session.get(app.views[0].id).unwrap());
@@ -878,7 +878,7 @@ fn a_document_copy_reads_only_the_pages_it_needs() {
 /// copied after it started, from the page or anywhere else (a text field, a comment).
 #[test]
 fn a_later_copy_cancels_a_document_copy_still_reading() {
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.open_bytes("three.pdf", None, text_pages_pdf(&["Alpha one", "Bravo two", "Charlie three"])).unwrap();
     let ctx = egui::Context::default();
     // Another copy in the same frame (here a text field's) drops it.
@@ -905,7 +905,7 @@ fn a_later_copy_cancels_a_document_copy_still_reading() {
 #[test]
 fn a_press_on_a_page_ends_select_all_of_the_document() {
     let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.open_bytes("three.pdf", None, text_pages_pdf(&["Alpha one", "Bravo two", "Charlie three"])).unwrap();
         app
     });
@@ -946,11 +946,11 @@ fn a_press_on_a_page_ends_select_all_of_the_document() {
 /// cancelled copy gives nothing (a new copy or a closed document cancels the old one).
 #[test]
 fn a_document_copy_reads_in_page_order_and_stops_when_cancelled() {
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.open_bytes("three.pdf", None, text_pages_pdf(&["Alpha one", "Bravo two", "Charlie three"])).unwrap();
     // The middle page's text read for display already; the others read by the copy.
     let doc = app.session.get(app.views[0].id).unwrap();
-    let mut r = recto_render::PageRenderer::new(doc.bytes.clone(), Default::default());
+    let mut r = pagic_render::PageRenderer::new(doc.bytes.clone(), Default::default());
     let middle = r.render(RenderRequest { page: 1, kind: RequestKind::Text, ..Default::default() }).text.unwrap();
     app.views[0].texts.insert(1, middle);
     let job = || crate::DocumentCopyJob::of(&app.views[0], app.session.get(app.views[0].id).unwrap());
@@ -967,7 +967,7 @@ fn select_all_of_the_document_only_while_scrolling_through_several_pages() {
     let one_line = |s: &str| PageText {
         glyphs: s
             .chars()
-            .map(|c| recto_render::TextGlyph { text: c.into(), rect: [0.0, 0.0, 10.0, 10.0], quad: [[0.0, 0.0]; 4], direction: [1.0, 0.0] })
+            .map(|c| pagic_render::TextGlyph { text: c.into(), rect: [0.0, 0.0, 10.0, 10.0], quad: [[0.0, 0.0]; 4], direction: [1.0, 0.0] })
             .collect(),
         line_of: s.chars().map(|_| 0).collect(),
         space_before: s.chars().map(|_| false).collect(),
@@ -998,7 +998,7 @@ fn text_layers_keep_the_selection_page() {
     let info = thumbnail_info(100);
     let mut v = DocView::new(DocId(1), &info, ViewDefaults::default());
     let text = PageText {
-        glyphs: vec![recto_render::TextGlyph { text: "x".into(), rect: [0.0, 0.0, 10.0, 10.0], quad: [[0.0, 0.0]; 4], direction: [1.0, 0.0] }],
+        glyphs: vec![pagic_render::TextGlyph { text: "x".into(), rect: [0.0, 0.0, 10.0, 10.0], quad: [[0.0, 0.0]; 4], direction: [1.0, 0.0] }],
         line_of: vec![0],
         space_before: vec![false],
     };
@@ -1035,7 +1035,7 @@ fn thumbnail_info(count: usize) -> DocInfo {
                     1 => (200.0, 4000.0),
                     _ => (4000.0, 200.0),
                 };
-                recto_render::PageInfo { width, height, label: (i + 1).to_string(), crop: [0.0, 0.0, width, height], rotation: 0 }
+                pagic_render::PageInfo { width, height, label: (i + 1).to_string(), crop: [0.0, 0.0, width, height], rotation: 0 }
             })
             .collect(),
         ..Default::default()
@@ -1093,12 +1093,12 @@ fn oversized_thumbnail_viewport_scales_all_admitted_cells_to_one_budget() {
     assert!(bytes <= THUMB_BYTES);
 }
 
-fn solid_result(request: RenderRequest, w: u32, h: u32) -> recto_render::RenderedPage {
-    recto_render::RenderedPage {
+fn solid_result(request: RenderRequest, w: u32, h: u32) -> pagic_render::RenderedPage {
+    pagic_render::RenderedPage {
         request,
         width: w,
         height: h,
-        rgba: recto_render::Pixels::from(vec![u32::MAX; rgba_bytes(w as usize, h as usize) / 4]),
+        rgba: pagic_render::Pixels::from(vec![u32::MAX; rgba_bytes(w as usize, h as usize) / 4]),
         text: None,
         error: None,
         warnings: Vec::new(),
@@ -1111,7 +1111,7 @@ fn solid_result(request: RenderRequest, w: u32, h: u32) -> recto_render::Rendere
 fn replacing_a_page_after_layout_never_uploads_an_oversized_texture() {
     let ctx = egui::Context::default();
     ctx.input_mut(|i| i.max_texture_side = 2048);
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     let original = app.session.create_blank(200.0, 300.0, 1).unwrap();
     let replacement = app.session.create_blank(400.0, 500.0, 1).unwrap();
     app.open_bytes("original.pdf", None, original.as_ref().clone()).unwrap();
@@ -1416,7 +1416,7 @@ fn thumbnail_tags_do_not_change_as_a_row_scrolls_in_or_out() {
 #[test]
 fn many_open_documents_share_one_raster_allowance_and_close_releases_handles() {
     let ctx = egui::Context::default();
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     let bytes = app.session.create_blank(612.0, 792.0, 1).unwrap();
     let mut expected = Vec::new();
     for index in 0..6 {
@@ -1476,8 +1476,8 @@ fn suspended_signature_preview_releases_layers_and_rebuilds_without_editing() {
     let ctx = egui::Context::default();
     let mut png = std::io::Cursor::new(Vec::new());
     image::RgbaImage::from_pixel(12, 4, image::Rgba([20, 30, 40, 255])).write_to(&mut png, image::ImageFormat::Png).unwrap();
-    let image = recto_engine::SignatureImage::from_bytes(png.get_ref()).unwrap();
-    let mut session = recto_engine::Session::new();
+    let image = pagic_engine::SignatureImage::from_bytes(png.get_ref()).unwrap();
+    let mut session = pagic_engine::Session::new();
     let blank = session.create_blank(300.0, 400.0, 1).unwrap();
     let id = session.open_new("signature-preview.pdf", blank).unwrap();
     let info = session.get(id).unwrap().info.pages[0].clone();
@@ -1539,7 +1539,7 @@ fn suspending_a_view_releases_owned_raster_textures_and_queue_state() {
 #[test]
 fn edit_text_boxes_stay_drawn_while_page_input_is_blocked() {
     let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         let bytes = app.session.create_blank(300.0, 400.0, 1).unwrap();
         app.open_bytes("blank.pdf", None, bytes.as_ref().clone()).unwrap();
         app.quick_tool = QuickTool::EditText;
@@ -1561,7 +1561,7 @@ fn virtualized_organizer_keeps_insert_gaps_at_document_positions() {
     use egui_kittest::kittest::Queryable;
 
     let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         let bytes = app.session.create_blank(300.0, 400.0, 100).unwrap();
         app.open_bytes("organize-gaps.pdf", None, bytes.as_ref().clone()).unwrap();
         app.views[0].organize = true;
@@ -1592,7 +1592,7 @@ fn virtualized_organizer_keeps_insert_gaps_at_document_positions() {
 #[test]
 fn real_shell_pages_organizer_and_print_only_collect_current_thumbnail_consumers() {
     let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         let bytes = app.session.create_blank(612.0, 792.0, 10_000).unwrap();
         app.open_bytes("synthetic-ten-thousand.pdf", None, bytes.as_ref().clone()).unwrap();
         app.right = Some(RightPanel::Pages);
@@ -1697,8 +1697,7 @@ fn reselecting_the_layout_does_not_scroll_to_top() {
 
 #[test]
 fn fit_page_and_height_hold_still_while_mixed_page_sizes_scroll_past() {
-    let page =
-        |width: f32, height: f32| recto_render::PageInfo { width, height, label: String::new(), crop: [0.0, 0.0, width, height], rotation: 0 };
+    let page = |width: f32, height: f32| pagic_render::PageInfo { width, height, label: String::new(), crop: [0.0, 0.0, width, height], rotation: 0 };
     let info = DocInfo { pages: vec![page(300.0, 400.0), page(600.0, 800.0)], ..Default::default() };
     for fit in [Fit::Page, Fit::Height] {
         let mut v = DocView::new(DocId(1), &info, ViewDefaults::default());
@@ -1722,8 +1721,7 @@ fn fit_page_and_height_hold_still_while_mixed_page_sizes_scroll_past() {
 /// on its own included; two-page view in the window keeps one zoom for the document.
 #[test]
 fn full_screen_two_page_view_fits_the_spread_it_shows() {
-    let page =
-        |width: f32, height: f32| recto_render::PageInfo { width, height, label: String::new(), crop: [0.0, 0.0, width, height], rotation: 0 };
+    let page = |width: f32, height: f32| pagic_render::PageInfo { width, height, label: String::new(), crop: [0.0, 0.0, width, height], rotation: 0 };
     // Spreads [0, 1] small, [2, 3] large; with a cover page [0], [1, 2] mixed, [3].
     let info = DocInfo { pages: vec![page(300.0, 400.0), page(300.0, 400.0), page(600.0, 800.0), page(600.0, 800.0)], ..Default::default() };
     let mut v = DocView::new(DocId(1), &info, ViewDefaults::default());
@@ -1769,8 +1767,7 @@ fn full_screen_two_page_view_fits_the_spread_it_shows() {
 
 #[test]
 fn fit_width_fits_the_shown_page_in_single_page_view_only() {
-    let page =
-        |width: f32, height: f32| recto_render::PageInfo { width, height, label: String::new(), crop: [0.0, 0.0, width, height], rotation: 0 };
+    let page = |width: f32, height: f32| pagic_render::PageInfo { width, height, label: String::new(), crop: [0.0, 0.0, width, height], rotation: 0 };
     let info = DocInfo { pages: vec![page(300.0, 400.0), page(600.0, 400.0)], ..Default::default() };
     let mut v = DocView::new(DocId(1), &info, ViewDefaults::default());
     (v.fit, v.viewport_w, v.viewport_h) = (Fit::Width, 1000.0, 800.0);
@@ -1796,7 +1793,7 @@ fn fit_width_fits_the_shown_page_in_single_page_view_only() {
 #[test]
 fn layouts_match_their_commands_and_names() {
     for l in PageLayout::ORDER {
-        let spec = recto_engine::commands::command(l.command()).expect("registered");
+        let spec = pagic_engine::commands::command(l.command()).expect("registered");
         assert_eq!((l.label(), l.icon()), (spec.label, spec.icon), "{l:?}");
         assert_eq!(PageLayout::from_command(l.command()), Some(l));
         assert_eq!(PageLayout::try_parse(l.as_str()), Some(l));
@@ -1809,9 +1806,9 @@ fn layouts_match_their_commands_and_names() {
 fn a_null_xyz_coordinate_keeps_the_readers_place_on_the_new_page() {
     // CAD exports link each cross-reference as `/XYZ null null 0`. Acrobat keeps the
     // point at the window's top-left (and the zoom) when following one to another sheet.
-    let info = recto_render::DocInfo {
+    let info = pagic_render::DocInfo {
         pages: (0..3)
-            .map(|_| recto_render::PageInfo { width: 842.0, height: 595.0, label: String::new(), crop: [0.0, 0.0, 842.0, 595.0], rotation: 0 })
+            .map(|_| pagic_render::PageInfo { width: 842.0, height: 595.0, label: String::new(), crop: [0.0, 0.0, 842.0, 595.0], rotation: 0 })
             .collect(),
         ..Default::default()
     };
@@ -1848,9 +1845,9 @@ fn a_null_xyz_coordinate_keeps_the_readers_place_on_the_new_page() {
 
 #[test]
 fn destinations_set_the_zoom_mode_and_the_point_to_show() {
-    let info = recto_render::DocInfo {
+    let info = pagic_render::DocInfo {
         pages: (0..3)
-            .map(|_| recto_render::PageInfo { width: 300.0, height: 400.0, label: String::new(), crop: [0.0, 0.0, 300.0, 400.0], rotation: 0 })
+            .map(|_| pagic_render::PageInfo { width: 300.0, height: 400.0, label: String::new(), crop: [0.0, 0.0, 300.0, 400.0], rotation: 0 })
             .collect(),
         ..Default::default()
     };
@@ -1884,7 +1881,7 @@ fn destinations_set_the_zoom_mode_and_the_point_to_show() {
     // A page past the end goes to the last page; a page the document info lacks, to its top.
     v.go_to_dest(usize::MAX, DestView::FitH { top: Some(100.0) }, &info);
     assert_eq!((v.current, v.goto_point.map(|g| g.0)), (2, Some(2)));
-    let empty = recto_render::DocInfo::default();
+    let empty = pagic_render::DocInfo::default();
     v.go_to_dest(1, DestView::FitH { top: Some(100.0) }, &empty);
     assert_eq!((v.current, v.goto_point), (1, None));
 }
@@ -1900,7 +1897,7 @@ fn page_text_failure_preserves_valid_search_match_without_jitter() {
     let ctx = egui::Context::default();
     v.receive_result(
         &ctx,
-        recto_render::RenderedPage {
+        pagic_render::RenderedPage {
             request: req,
             width: 0,
             height: 0,
@@ -1950,14 +1947,14 @@ fn a_moved_picture_is_drawn_from_the_fresh_raster_while_a_tile_is_still_stale() 
     }
     bytes.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
     let mut h = egui_kittest::Harness::builder().with_size(vec2(1400.0, 1100.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("picture.pdf", None, bytes.clone()).unwrap();
         app.set_option("zoom", "100").unwrap();
         app.quick_tool = QuickTool::EditText;
         app
     });
-    let settle = |h: &mut egui_kittest::Harness<'static, RectoApp>| {
+    let settle = |h: &mut egui_kittest::Harness<'static, PagicApp>| {
         for _ in 0..400 {
             h.step();
             if !h.state().render_pending() {
@@ -1979,7 +1976,7 @@ fn a_moved_picture_is_drawn_from_the_fresh_raster_while_a_tile_is_still_stale() 
     };
     let (old, new) = (Rect::from_two_pos(at(42.0, 262.0), at(98.0, 318.0)), Rect::from_two_pos(at(182.0, 82.0), at(238.0, 138.0)));
     // Select the picture and drag it, without overlap, from (40, 260) to (180, 80).
-    let drag = |h: &mut egui_kittest::Harness<'static, RectoApp>, from: Pos2, to: Pos2, release: bool| {
+    let drag = |h: &mut egui_kittest::Harness<'static, PagicApp>, from: Pos2, to: Pos2, release: bool| {
         h.hover_at(from);
         h.run_steps(1);
         h.drag_at(from);

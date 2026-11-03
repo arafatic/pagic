@@ -1,7 +1,7 @@
 //! A Model Context Protocol server over the automation tools.
 //!
-//! **Opt-in only.** Nothing in Recto starts this server on its own: it runs when a user
-//! launches `recto-cli mcp` (usually by adding that command to their agent's MCP
+//! **Opt-in only.** Nothing in Pagic starts this server on its own: it runs when a user
+//! launches `pagic-cli mcp` (usually by adding that command to their agent's MCP
 //! configuration), and stops when its input closes. It opens no network port; the transport is
 //! newline-delimited JSON-RPC 2.0 over stdin/stdout.
 //!
@@ -30,7 +30,7 @@ const INTERNAL_ERROR: i64 = -32603;
 /// Longest JSON-RPC request line [`McpServer::serve`] buffers into memory (16 MiB).
 pub const MAX_LINE_BYTES: usize = 16 * 1024 * 1024;
 
-const INSTRUCTIONS: &str = "Recto edits PDFs. Open a file with doc_open to get a document id, then inspect \
+const INSTRUCTIONS: &str = "Pagic edits PDFs. Open a file with doc_open to get a document id, then inspect \
 (doc_info, text_extract, text_find, page_render) or edit it (page_*, doc_set_info). Edits are undoable \
 (edit_undo) and stay in memory until doc_save. Page numbers are 1-based. Open documents are also \
 resources: recto://doc/{doc}/info, /text, /page/{page}/text and /page/{page}/image. \
@@ -153,7 +153,7 @@ impl McpServer {
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false, "subscribe": false } },
-                    "serverInfo": { "name": "recto", "title": "Recto", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": recto_engine::links::APP_PAGE },
+                    "serverInfo": { "name": "pagic", "title": "Pagic", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": pagic_engine::links::APP_PAGE },
                     "instructions": if self.compact { format!("{INSTRUCTIONS}{COMPACT_INSTRUCTIONS}") } else { INSTRUCTIONS.to_string() },
                 }))
             }
@@ -225,8 +225,8 @@ fn meta_tools() -> [Value; 2] {
     [
         json!({
             "name": TOOL_SEARCH,
-            "title": "Find Recto tools",
-            "description": "Search and list all Recto automation tools, including the core tools, with a one-sentence description each. Filter by query \
+            "title": "Find Pagic tools",
+            "description": "Search and list all Pagic automation tools, including the core tools, with a one-sentence description each. Filter by query \
         (words matched against name, title and description) and/or category (the name prefix: doc, page, text, form, …). \
         With name, return that one tool in full, including its input_schema. Run a tool with tool_call.",
             "inputSchema": {
@@ -239,12 +239,12 @@ fn meta_tools() -> [Value; 2] {
                 "required": [],
                 "additionalProperties": false,
             },
-            "annotations": { "title": "Find Recto tools", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false },
+            "annotations": { "title": "Find Pagic tools", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false },
         }),
         json!({
             "name": TOOL_CALL,
-            "title": "Run any Recto tool",
-            "description": "Run any Recto tool by name with its arguments, exactly as if it were called directly. \
+            "title": "Run any Pagic tool",
+            "description": "Run any Pagic tool by name with its arguments, exactly as if it were called directly. \
         Find names and argument schemas with tool_search. The result is the tool's own result.",
             "inputSchema": {
                 "type": "object",
@@ -255,7 +255,7 @@ fn meta_tools() -> [Value; 2] {
                 "required": ["name"],
                 "additionalProperties": false,
             },
-            "annotations": { "title": "Run any Recto tool", "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": false },
+            "annotations": { "title": "Run any Pagic tool", "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": false },
         }),
     ]
 }
@@ -394,7 +394,7 @@ fn drain_line(reader: &mut impl BufRead) -> std::io::Result<()> {
 
 /// Last-resort boundary shared by every tools/call route, including compact dispatch.
 fn guarded_tool(f: impl FnOnce() -> Result<Value, (i64, String)>) -> Result<Value, (i64, String)> {
-    recto_engine::guard(f).unwrap_or_else(|message| Ok(tool_error(&format!("internal error: {message}"))))
+    pagic_engine::guard(f).unwrap_or_else(|message| Ok(tool_error(&format!("internal error: {message}"))))
 }
 
 /// Last-resort boundary for every JSON-RPC method: tool calls report panics in the tool result
@@ -403,7 +403,7 @@ fn guarded_dispatch(method: &str, f: impl FnOnce() -> Result<Value, (i64, String
     if method == "tools/call" {
         return guarded_tool(f);
     }
-    recto_engine::guard(f).unwrap_or_else(|message| Err((INTERNAL_ERROR, format!("internal error: {message}"))))
+    pagic_engine::guard(f).unwrap_or_else(|message| Err((INTERNAL_ERROR, format!("internal error: {message}"))))
 }
 
 fn tool_content(name: &str, content: Vec<Content>) -> Value {
@@ -653,7 +653,7 @@ mod tests {
         assert_eq!(replies[0]["error"]["code"], -32700);
         assert_eq!(replies[1]["error"]["code"], -32600);
         assert_eq!(replies[2]["id"], 1);
-        assert_eq!(replies[2]["result"]["serverInfo"]["name"], "recto");
+        assert_eq!(replies[2]["result"]["serverInfo"]["name"], "pagic");
     }
 
     #[test]

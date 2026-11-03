@@ -1,16 +1,16 @@
-//! Where Recto lives on the web. One table, so the Help menu, the
+//! Where Pagic lives on the web. One table, so the Help menu, the
 //! About dialog, the home screen, the CLI and the README agree.
 
 use icu_properties::props::Script;
 use std::path::{Path, PathBuf};
 
 /// The app's name in URLs.
-pub const APP: &str = "recto";
+pub const APP: &str = "pagic";
 
-pub const DISCORD: &str = "https://github.com/arafatic/recto/discussions";
-pub const WEBSITE: &str = "https://github.com/arafatic/recto";
-pub const APP_PAGE: &str = "https://github.com/arafatic/recto";
-pub const GITHUB: &str = "https://github.com/arafatic/recto";
+pub const DISCORD: &str = "https://github.com/arafatic/pagic/discussions";
+pub const WEBSITE: &str = "https://github.com/arafatic/pagic";
+pub const APP_PAGE: &str = "https://github.com/arafatic/pagic";
+pub const GITHUB: &str = "https://github.com/arafatic/pagic";
 
 /// A link and the registry command that opens it.
 #[derive(Clone, Copy, Debug)]
@@ -24,9 +24,9 @@ pub struct Link {
 
 /// In the order they are shown.
 pub const LINKS: &[Link] = &[
-    Link { command: "help.discord", label: "Recto Discussions", url: DISCORD, icon: "messages-square" },
-    Link { command: "help.app_page", label: "Recto web page", url: APP_PAGE, icon: "globe" },
-    Link { command: "help.github", label: "Recto on GitHub", url: GITHUB, icon: "code-xml" },
+    Link { command: "help.discord", label: "Pagic Discussions", url: DISCORD, icon: "messages-square" },
+    Link { command: "help.app_page", label: "Pagic web page", url: APP_PAGE, icon: "globe" },
+    Link { command: "help.github", label: "Pagic on GitHub", url: GITHUB, icon: "code-xml" },
     Link { command: "help.website", label: "Documentation", url: WEBSITE, icon: "external-link" },
 ];
 
@@ -34,7 +34,7 @@ pub fn for_command(id: &str) -> Option<&'static Link> {
     LINKS.iter().find(|l| l.command == id)
 }
 
-/// The kinds of address a document may ask Recto to open: web pages and email. Anything
+/// The kinds of address a document may ask Pagic to open: web pages and email. Anything
 /// else (`file:`, `javascript:`, `data:`, `smb:`, app handlers such as `ms-settings:`) is refused,
 /// because the operating system would hand it to whichever program claims it (#90, #91).
 pub const DOCUMENT_SCHEMES: &[&str] = &["https", "http", "mailto"];
@@ -88,8 +88,8 @@ fn hides_text(c: char) -> bool {
 }
 
 /// Check an address that came from a document (a link, a button's URI action or a script's
-/// `app.launchURL`) before Recto offers to open it. Returns the address trimmed of
-/// surrounding whitespace. Recto's own links (Help, About, updates) don't come through here.
+/// `app.launchURL`) before Pagic offers to open it. Returns the address trimmed of
+/// surrounding whitespace. Pagic's own links (Help, About, updates) don't come through here.
 pub fn document_url(raw: &str) -> Result<String, BlockedLink> {
     let url = raw.trim();
     if url.is_empty() {
@@ -257,7 +257,7 @@ const MAIL_DECODE_LAYERS: usize = 8;
 /// argument). The check is repeated after each layer of percent-decoding (KMail decodes names, so
 /// `%61ttach` is `attach`). A word without `=` (`Please attach the invoice`) is fine.
 ///
-/// The address is refused, not stripped of the parameter: Recto never rewrites what a document
+/// The address is refused, not stripped of the parameter: Pagic never rewrites what a document
 /// asks to open, and a stripped address could still be read differently by some email app.
 fn check_mail_parameters(rest: &str) -> Result<(), BlockedLink> {
     let mut text = rest.to_string();

@@ -1,6 +1,6 @@
 [package]
-name = "recto-render"
-description = "Page rendering (bootstrap: hayro) and document inspection for Recto"
+name = "pagic-render"
+description = "Page rendering (bootstrap: hayro) and document inspection for Pagic"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,8 +9,8 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-recto-cos = { workspace = true }
-recto-fonts = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-fonts = { workspace = true }
 hayro = { workspace = true }
 hayro-syntax = { workspace = true }
 lopdf = { workspace = true }
@@ -27,7 +27,7 @@ bytemuck = { version = "1" }
 getrandom = { version = "0.4", features = ["wasm_js"] }
 
 [dev-dependencies]
-# Checks the Japanese substitute's character coverage; the version recto-fonts already uses.
+# Checks the Japanese substitute's character coverage; the version pagic-fonts already uses.
 skrifa = "0.44"
 # Builds the decompression-bomb streams in the raster tests.
 flate2 = { workspace = true }

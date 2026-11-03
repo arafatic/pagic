@@ -1,8 +1,8 @@
 use super::marks::{MarkKind, matrix_number, n};
 use super::{Dict, Document, EditError, ObjRef, Object, Stream, literal, win_ansi};
 
-pub(crate) fn page_list(doc: &Document) -> Vec<recto_model::Page> {
-    recto_model::pages(doc)
+pub(crate) fn page_list(doc: &Document) -> Vec<pagic_model::Page> {
+    pagic_model::pages(doc)
 }
 
 pub(crate) fn check(pages: &[usize], count: usize) -> Result<(), EditError> {
@@ -13,7 +13,7 @@ pub(crate) fn check(pages: &[usize], count: usize) -> Result<(), EditError> {
 }
 
 /// The page's `/Contents` as a list of stream references (inline content is promoted).
-pub(crate) fn contents(doc: &mut Document, page: &recto_model::Page) -> Result<Vec<Object>, EditError> {
+pub(crate) fn contents(doc: &mut Document, page: &pagic_model::Page) -> Result<Vec<Object>, EditError> {
     let obj = doc.get(page.obj);
     let d = obj.as_dict().cloned().unwrap_or_default();
     Ok(match d.get(b"Contents").cloned() {
@@ -28,7 +28,7 @@ pub(crate) fn contents(doc: &mut Document, page: &recto_model::Page) -> Result<V
 }
 
 /// Add the font (and an opacity state) to the page's own resources.
-pub(crate) fn add_resources(doc: &mut Document, page: &recto_model::Page, opacity: Option<f64>, content: Option<&[u8]>) -> Result<(), EditError> {
+pub(crate) fn add_resources(doc: &mut Document, page: &pagic_model::Page, opacity: Option<f64>, content: Option<&[u8]>) -> Result<(), EditError> {
     let mut faces: Vec<(Vec<u8>, &str)> = Vec::new();
     for (name, base) in [(&b"PCHelv"[..], "Helvetica"), (b"PCTimes", "Times-Roman"), (b"PCCour", "Courier")] {
         // Helvetica always (marks use it); the others only when the content names them.
@@ -41,7 +41,7 @@ pub(crate) fn add_resources(doc: &mut Document, page: &recto_model::Page, opacit
 }
 
 /// The fonts a page draws with: its own resources' or the ones it inherits.
-pub(crate) fn page_fonts(doc: &Document, page: &recto_model::Page) -> Dict {
+pub(crate) fn page_fonts(doc: &Document, page: &pagic_model::Page) -> Dict {
     let res = page.dict.get(b"Resources").map(|r| doc.resolve(r)).and_then(|r| r.as_dict().cloned()).unwrap_or_default();
     res.get(b"Font").map(|f| doc.resolve(f)).and_then(|f| f.as_dict().cloned()).unwrap_or_default()
 }
@@ -72,7 +72,7 @@ pub(crate) fn free_font_name(doc: &Document, fonts: &Dict, preferred: &str, base
 /// resources.
 pub(crate) fn add_page_resources(
     doc: &mut Document,
-    page: &recto_model::Page,
+    page: &pagic_model::Page,
     opacity: Option<f64>,
     faces: &[(Vec<u8>, &str)],
 ) -> Result<(), EditError> {
@@ -136,7 +136,7 @@ pub(crate) fn wrapper_role(doc: &Document, o: &Object) -> Option<bool> {
         return None;
     }
     let Object::Stream(stream) = &*doc.resolve(o) else { return None };
-    // Wrappers are a few bytes; one that decodes to more isn't Recto's.
+    // Wrappers are a few bytes; one that decodes to more isn't Pagic's.
     let bytes = stream.decoded_within(64 * 1024).ok()?;
     if bytes == WRAP_OPEN { Some(true) } else { is_wrap_close(&bytes).then_some(false) }
 }
@@ -168,7 +168,7 @@ pub(crate) enum Isolation {
     /// The content parses cleanly with balanced `q`/`Q` and closed text objects and paths.
     /// `suffix`: the stream from which the content leaves graphics state set (or a comment open)
     /// that a mark on top must not inherit, so it needs a wrapper from there to the end.
-    /// `wrappers`: Recto wrapper pairs (open, close) as stream indexes.
+    /// `wrappers`: Pagic wrapper pairs (open, close) as stream indexes.
     /// `marked`: unfinished marked-content sequences to close before a new mark.
     Clean { suffix: Option<usize>, wrappers: Vec<(usize, usize)>, marked: usize },
     /// The content could not be read that precisely (it doesn't decode, is too large, or has
@@ -204,7 +204,7 @@ pub(crate) fn isolation(doc: &Document, list: &[Object]) -> Isolation {
         remaining = left;
         data.push(bytes);
     }
-    let pieces = recto_content::Pieces::join(&data);
+    let pieces = pagic_content::Pieces::join(&data);
     let parsed = pieces.parse();
     if parsed.skipped != 0 || parsed.ops.len() > ISOLATION_MAX_OPS {
         return unknown;
@@ -264,7 +264,7 @@ pub(crate) fn isolation(doc: &Document, list: &[Object]) -> Isolation {
             b"q" if op.operands.is_empty() && stack.len() < ISOLATION_MAX_DEPTH => stack.push(first),
             b"Q" if op.operands.is_empty() => match stack.pop() {
                 Some(open) => {
-                    // Only a standalone Recto wrapper pair may later be removed again.
+                    // Only a standalone Pagic wrapper pair may later be removed again.
                     let wrap = |i: usize| list.get(i).is_some_and(|o| stream_tag(doc, o).as_deref() == Some("Wrap"));
                     if wrap(open)
                         && wrap(first)
@@ -293,17 +293,17 @@ pub(crate) fn isolation(doc: &Document, list: &[Object]) -> Isolation {
 
 /// Put a mark's content on a page: behind (with the behind-marks at the start) or on top
 /// (appended, after wrapping the original content in q/Q).
-pub(crate) fn place(doc: &mut Document, page: &recto_model::Page, kind: MarkKind, content: Vec<u8>, behind: bool) -> Result<(), EditError> {
+pub(crate) fn place(doc: &mut Document, page: &pagic_model::Page, kind: MarkKind, content: Vec<u8>, behind: bool) -> Result<(), EditError> {
     place_tagged(doc, page, kind.tag(), content, behind).map(drop)
 }
 
 /// Put content on a page, tagged `tag` (see [`place`]). On top, whatever graphics state the
 /// content before leaves set (a `cm`, a clip, text state…) must not reach the mark, including
-/// content appended after an earlier Recto wrapper by another tool (#3084): the stretch of
+/// content appended after an earlier Pagic wrapper by another tool (#3084): the stretch of
 /// content that leaves state set is wrapped in q/Q, once. Any known unfinished marked-content
 /// sequences are closed at the end too, so hidden optional content cannot hide the new mark; when
 /// their number is unknown, nothing is placed on top. Returns the new content stream.
-pub(crate) fn place_tagged(doc: &mut Document, page: &recto_model::Page, tag: &str, content: Vec<u8>, behind: bool) -> Result<ObjRef, EditError> {
+pub(crate) fn place_tagged(doc: &mut Document, page: &pagic_model::Page, tag: &str, content: Vec<u8>, behind: bool) -> Result<ObjRef, EditError> {
     let mut list = contents(doc, page)?;
     // The behind-marks at the start: backgrounds in the order added, then watermarks.
     let behind_kinds = [MarkKind::Background.tag(), MarkKind::Watermark.tag()];
@@ -352,7 +352,7 @@ fn too_deep_on_top() -> EditError {
 
 /// The refusal [`place_tagged`] gives for a mark on top of `page`, checked before an edit changes
 /// anything (removing old marks, adding resources) so a refused edit leaves the document as it was.
-pub(crate) fn check_on_top(doc: &Document, page: &recto_model::Page) -> Result<(), EditError> {
+pub(crate) fn check_on_top(doc: &Document, page: &pagic_model::Page) -> Result<(), EditError> {
     let obj = doc.get(page.obj);
     let list = match obj.as_dict().and_then(|d| d.get(b"Contents")) {
         None => return Ok(()),
@@ -369,7 +369,7 @@ pub(crate) fn check_on_top(doc: &Document, page: &recto_model::Page) -> Result<(
 /// Put content tagged `tag` first inside the q/Q wrapper, so it applies to the page's original
 /// content and nothing else (a header's shrink). A page without a wrapper has no original content
 /// on it and is left alone.
-pub(crate) fn place_inside_wrapper(doc: &mut Document, page: &recto_model::Page, tag: &str, content: Vec<u8>) -> Result<(), EditError> {
+pub(crate) fn place_inside_wrapper(doc: &mut Document, page: &pagic_model::Page, tag: &str, content: Vec<u8>) -> Result<(), EditError> {
     let mut list = contents(doc, page)?;
     let Some(open) = list.iter().position(|o| stream_tag(doc, o).as_deref() == Some("Wrap")) else { return Ok(()) };
     let stream = Object::Ref(doc.add(Object::Stream(Stream::flate(tagged(tag), &content))));

@@ -1,7 +1,7 @@
 //! Measure objects: page-space clicks, live readings and persistent drawing scales.
-use crate::{LeftPanel, RectoApp, QuickTool, canvas::DocView, theme::Tokens, widgets};
+use crate::{LeftPanel, PagicApp, QuickTool, canvas::DocView, theme::Tokens, widgets};
 use egui::{Color32, Pos2, Stroke};
-use recto_engine::{
+use pagic_engine::{
     Document, Edit, Style,
     measure::{self, Kind, NewMeasurement, PageUnit, Point, Reading, Scale},
 };
@@ -367,11 +367,11 @@ fn finish(state: &mut MeasureView, pending: &mut Option<Edit>, doc: &Document, p
         state.cancel();
     }
 }
-pub(crate) fn panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
+pub(crate) fn panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
     egui::ScrollArea::vertical().id_salt("measure-panel").show(ui, |ui| panel_body(app, ui, t));
 }
 /// Draw the measurement panel: tool selection, scale calibration, snapping and the current reading.
-fn panel_body(app: &mut RectoApp, ui: &mut egui::Ui, _t: &Tokens) {
+fn panel_body(app: &mut PagicApp, ui: &mut egui::Ui, _t: &Tokens) {
     crate::widgets::begin_dialog(ui);
     let Some((index, id)) = app.active_ids() else {
         ui.label(tl!("Open a PDF to measure it."));
@@ -575,7 +575,7 @@ fn panel_body(app: &mut RectoApp, ui: &mut egui::Ui, _t: &Tokens) {
         export_csv(app);
     }
 }
-pub(crate) fn command(app: &mut RectoApp, id: &str) {
+pub(crate) fn command(app: &mut PagicApp, id: &str) {
     app.left = LeftPanel::Tool("measure");
     app.left_open = true;
     if let Some((index, _)) = app.active_ids()
@@ -588,7 +588,7 @@ pub(crate) fn command(app: &mut RectoApp, id: &str) {
         export_csv(app);
     }
 }
-fn export_csv(app: &mut RectoApp) {
+fn export_csv(app: &mut PagicApp) {
     let Some((_, id)) = app.active_ids() else { return };
     let result = app.session.get(id).ok_or_else(|| "no such document".to_string()).and_then(|d| d.measurements());
     match result {
@@ -603,7 +603,7 @@ fn export_csv(app: &mut RectoApp) {
             }
             #[cfg(not(target_arch = "wasm32"))]
             {
-                let write = move |app: &mut RectoApp, path: std::path::PathBuf| match crate::editing::write_atomically(
+                let write = move |app: &mut PagicApp, path: std::path::PathBuf| match crate::editing::write_atomically(
                     &path.to_string_lossy(),
                     csv.as_bytes(),
                 ) {

@@ -1,4 +1,4 @@
-use super::{GridDrop, GridFile, RectoApp};
+use super::{GridDrop, GridFile, PagicApp};
 #[cfg(not(target_arch = "wasm32"))]
 use super::{OpenRequest, open_worker};
 
@@ -11,7 +11,7 @@ fn read_grid_file((name, source): GridFile) -> Result<(String, Vec<u8>), (String
     Ok((name, bytes))
 }
 
-impl RectoApp {
+impl PagicApp {
     #[cfg(not(target_arch = "wasm32"))]
     pub(super) fn open_dropped(&mut self, f: egui::DroppedFileHandle, _ctx: &egui::Context) {
         let p = f.path().to_string_lossy().into_owned();
@@ -46,14 +46,14 @@ impl RectoApp {
     }
 
     /// The document whose page grid is showing and may take pages, if any.
-    fn grid_target(&self) -> Option<recto_engine::DocId> {
+    fn grid_target(&self) -> Option<pagic_engine::DocId> {
         let view = self.active.and_then(|i| self.views.get(i)).filter(|v| v.organize)?;
         (self.dialog.is_none() && self.session.get(view.id)?.allows_assembly()).then_some(view.id)
     }
 
     /// The document whose Pages panel is under the pointer and may take pages, if any.
     #[cfg(not(target_arch = "wasm32"))]
-    fn panel_target(&self, ctx: &egui::Context) -> Option<recto_engine::DocId> {
+    fn panel_target(&self, ctx: &egui::Context) -> Option<pagic_engine::DocId> {
         let view = self.active.and_then(|i| self.views.get(i))?;
         let pointer = ctx.input(|i| i.pointer.hover_pos())?;
         let over = view.pages_panel.is_some_and(|panel| panel.contains(pointer));

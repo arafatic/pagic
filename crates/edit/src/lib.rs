@@ -1,4 +1,4 @@
-//! recto-edit — page content editing (L4). Today: page marks, Acrobat's Header & footer,
+//! pagic-edit — page content editing (L4). Today: page marks, Acrobat's Header & footer,
 //! Watermark, Background and Bates numbering (execution plan M7.6).
 //!
 //! **How marks are stored.** Each mark is one content stream appended to (or, for content behind
@@ -17,8 +17,8 @@
 
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
-use recto_cos::{Dict, Document, ObjRef, Object, Stream};
-use recto_fonts::{helvetica_width, literal, win_ansi};
+use pagic_cos::{Dict, Document, ObjRef, Object, Stream};
+use pagic_fonts::{helvetica_width, literal, win_ansi};
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 pub enum EditError {
@@ -28,7 +28,7 @@ pub enum EditError {
     #[error("{0}")]
     Invalid(String),
     #[error("{0}")]
-    Cos(#[from] recto_cos::CosError),
+    Cos(#[from] pagic_cos::CosError),
 }
 
 pub type Rgb = [f64; 3];

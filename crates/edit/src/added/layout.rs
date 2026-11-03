@@ -124,28 +124,26 @@ pub(super) fn is_hebrew(c: char) -> bool {
 /// keeps it open.
 pub fn first_undrawable(t: &AddedText) -> Option<char> {
     if t.text.chars().any(is_thai) {
-        if let Some(c) = t.text.chars().find(|c| is_thai(*c) && !recto_fonts::thai_has(*c)) {
+        if let Some(c) = t.text.chars().find(|c| is_thai(*c) && !pagic_fonts::thai_has(*c)) {
             return Some(c);
         }
         let rest = AddedText { text: t.text.chars().filter(|c| !is_thai(*c)).collect(), ..t.clone() };
         return first_undrawable(&rest);
     }
     // Arabic or Hebrew that nothing can draw: there's no face, or the face lacks it.
-    if let Some(c) =
-        t.text.chars().find(|c| (shaped_arabic(*c) && !recto_fonts::arabic_has(*c)) || (is_hebrew(*c) && !recto_fonts::hebrew_has(*c)))
-    {
+    if let Some(c) = t.text.chars().find(|c| (shaped_arabic(*c) && !pagic_fonts::arabic_has(*c)) || (is_hebrew(*c) && !pagic_fonts::hebrew_has(*c))) {
         return Some(c);
     }
     if !shaped_by_a_face(t) {
         // Drawn line by line in the item's standard font (`\n` splits lines). Without the face
         // that is also how `draw` redraws an existing item, so it's checked that way.
-        return t.text.split('\n').find_map(recto_fonts::first_non_win_ansi);
+        return t.text.split('\n').find_map(pagic_fonts::first_non_win_ansi);
     }
     // What `shaped_layout` leaves to the standard font, exactly as `draw_shaped` splits it.
     wrapped(t).into_iter().find_map(|(line, rtl)| {
         let (pieces, _) = shaped_layout(t, &line, rtl).ok()?;
         pieces.iter().find_map(|p| match p {
-            Piece::Latin(s) => recto_fonts::first_non_win_ansi(s),
+            Piece::Latin(s) => pagic_fonts::first_non_win_ansi(s),
             Piece::Shaped(_) => None,
         })
     })
@@ -154,8 +152,8 @@ pub fn first_undrawable(t: &AddedText) -> Option<char> {
 /// Whether `t` has Arabic or Hebrew that its bundled font face draws (so `draw` lays it out with
 /// [`draw_shaped`]).
 fn shaped_by_a_face(t: &AddedText) -> bool {
-    (recto_fonts::document_arabic_font().is_some() && t.text.chars().any(is_arabic))
-        || (recto_fonts::document_hebrew_font(false).is_some() && t.text.chars().any(is_hebrew))
+    (pagic_fonts::document_arabic_font().is_some() && t.text.chars().any(is_arabic))
+        || (pagic_fonts::document_hebrew_font(false).is_some() && t.text.chars().any(is_hebrew))
 }
 
 /// An Arabic character the face shapes and draws (U+061C, a direction mark, is dropped).
@@ -214,9 +212,9 @@ pub(super) fn shaped_layout(t: &AddedText, line: &str, rtl: bool) -> Result<(Vec
             let after_hebrew = segments.last().is_some_and(|(kind, _)| *kind == Some(ShapedScript::Hebrew));
             let script = if is_thai(c) {
                 Some(ShapedScript::Thai)
-            } else if is_hebrew(c) || (run_rtl && after_hebrew && !c.is_alphanumeric() && recto_fonts::hebrew_has(c)) {
+            } else if is_hebrew(c) || (run_rtl && after_hebrew && !c.is_alphanumeric() && pagic_fonts::hebrew_has(c)) {
                 Some(ShapedScript::Hebrew)
-            } else if is_arabic(c) || (run_rtl && !c.is_alphanumeric() && recto_fonts::arabic_has(c)) {
+            } else if is_arabic(c) || (run_rtl && !c.is_alphanumeric() && pagic_fonts::arabic_has(c)) {
                 Some(ShapedScript::Arabic)
             } else {
                 None
@@ -263,8 +261,8 @@ fn shaped_width(t: &AddedText, s: &str, rtl: bool) -> f64 {
 
 pub(super) fn arabic_error(e: GlyphError, text: &str) -> EditError {
     EditError::Invalid(match e {
-        GlyphError::NoFont => "Arabic text needs Recto's Arabic font, which this build doesn't include \
-                               (to build it in, set RECTO_FONTS_DIR to font assets directory that has an Arab face)"
+        GlyphError::NoFont => "Arabic text needs Pagic's Arabic font, which this build doesn't include \
+                               (to build it in, set PAGIC_FONTS_DIR to font assets directory that has an Arab face)"
             .into(),
         GlyphError::Missing => format!("the Arabic font can't show \"{text}\""),
         GlyphError::TooComplex => format!("the Arabic font's glyphs for \"{text}\" are too complex"),
@@ -273,8 +271,8 @@ pub(super) fn arabic_error(e: GlyphError, text: &str) -> EditError {
 
 pub(super) fn hebrew_error(e: GlyphError, text: &str) -> EditError {
     EditError::Invalid(match e {
-        GlyphError::NoFont => "Hebrew text needs Recto's Hebrew font, which this build doesn't include \
-                               (to build it in, set RECTO_FONTS_DIR to font assets directory that has a Hebr face)"
+        GlyphError::NoFont => "Hebrew text needs Pagic's Hebrew font, which this build doesn't include \
+                               (to build it in, set PAGIC_FONTS_DIR to font assets directory that has a Hebr face)"
             .into(),
         GlyphError::Missing => format!("the Hebrew font can't show \"{text}\""),
         GlyphError::TooComplex => format!("the Hebrew font's glyphs for \"{text}\" are too complex"),
@@ -284,7 +282,7 @@ pub(super) fn hebrew_error(e: GlyphError, text: &str) -> EditError {
 pub(super) fn thai_error(e: GlyphError, text: &str) -> EditError {
     EditError::Invalid(match e {
         GlyphError::NoFont => {
-            "Thai text needs a Thai font in this build; rebuild with RECTO_FONTS_DIR pointing to bundled fonts with a Thai face".into()
+            "Thai text needs a Thai font in this build; rebuild with PAGIC_FONTS_DIR pointing to bundled fonts with a Thai face".into()
         }
         GlyphError::Missing => format!("the Thai font can't show \"{text}\""),
         GlyphError::TooComplex => "the Thai glyphs are too complex; use a shorter text box".into(),

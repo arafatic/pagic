@@ -54,18 +54,18 @@ impl Automation {
                     None => (0..doc.info.pages.len()).collect(),
                 };
                 let parity = match a.opt_str("subset")?.unwrap_or("all") {
-                    "all" => recto_engine::PageParity::Both,
-                    "even" => recto_engine::PageParity::Even,
-                    "odd" => recto_engine::PageParity::Odd,
+                    "all" => pagic_engine::PageParity::Both,
+                    "even" => pagic_engine::PageParity::Even,
+                    "odd" => pagic_engine::PageParity::Odd,
                     s => return Err(ToolError::InvalidArgs(format!("unknown subset {s:?} (all, even, odd)"))),
                 };
                 let orientation = match a.opt_str("orientation")?.unwrap_or("all") {
-                    "all" => recto_engine::PageOrientation::Both,
-                    "landscape" => recto_engine::PageOrientation::Landscape,
-                    "portrait" => recto_engine::PageOrientation::Portrait,
+                    "all" => pagic_engine::PageOrientation::Both,
+                    "landscape" => pagic_engine::PageOrientation::Landscape,
+                    "portrait" => pagic_engine::PageOrientation::Portrait,
                     o => return Err(ToolError::InvalidArgs(format!("unknown orientation {o:?} (all, landscape, portrait)"))),
                 };
-                let pages = recto_engine::filter_pages(&self.doc(&a)?.info, &base, parity, orientation);
+                let pages = pagic_engine::filter_pages(&self.doc(&a)?.info, &base, parity, orientation);
                 if pages.is_empty() {
                     return Err(failed("no pages match the filters"));
                 }
@@ -94,8 +94,8 @@ impl Automation {
                     Some(l) => return Err(ToolError::InvalidArgs(format!("level must be between 0 and 100, not {l}"))),
                 };
                 let look = match a.opt_str("mode")? {
-                    None => recto_engine::camera_clean::Look::Colour,
-                    Some(m) => recto_engine::camera_clean::Look::from_name(m)
+                    None => pagic_engine::camera_clean::Look::Colour,
+                    Some(m) => pagic_engine::camera_clean::Look::from_name(m)
                         .ok_or_else(|| ToolError::InvalidArgs(format!("unknown mode {m:?} (original, colour, greyscale, bw)")))?,
                 };
                 self.session.enhance_camera_page_at(id, page, corners, look, level).map_err(failed)?;
@@ -144,7 +144,7 @@ impl Automation {
             "doc_inspect" => self.doc_inspect(&a)?,
             "render_preview" => return self.render_preview(&a).map(|c| vec![c]),
             "page_number" => {
-                use recto_organize::LabelStyle as L;
+                use pagic_organize::LabelStyle as L;
                 let n = self.doc(&a)?.info.pages.len();
                 let (from, to) = (a.int("from")?, a.int("to")?);
                 if from < 1 || to < from || to as usize > n {
@@ -356,7 +356,7 @@ impl Automation {
                     write_atomic(&path, &bytes)?;
                     json!({ "path": path.to_string_lossy(), "format": ext, "bytes": bytes.len() })
                 } else {
-                    use recto_engine::ImageEdit;
+                    use pagic_engine::ImageEdit;
                     let change = match a.str("action")? {
                         "move" => {
                             let r: Vec<f64> =
@@ -444,9 +444,9 @@ impl Automation {
                 } else if let Some(root) = &self.root {
                     vec![root.clone()]
                 } else {
-                    recto_engine::text_fonts::installed_directories()
+                    pagic_engine::text_fonts::installed_directories()
                 };
-                json!({"fonts": recto_engine::text_fonts::discover(&roots).into_iter().map(|f| json!({"path":f.path,"family":f.family,"font":f.face})).collect::<Vec<_>>()})
+                json!({"fonts": pagic_engine::text_fonts::discover(&roots).into_iter().map(|f| json!({"path":f.path,"family":f.family,"font":f.face})).collect::<Vec<_>>()})
             }
             "text_font_import" => {
                 let page = self.page(&a)?;
@@ -483,7 +483,7 @@ impl Automation {
                 let index = self.paragraph_index(doc.id, page, k, &blocks)?;
                 let source = blocks.get(index).ok_or_else(|| ToolError::InvalidArgs("paragraph is out of range".into()))?;
                 let text = a.opt_str("text")?.unwrap_or(&source.editor_text);
-                let style = recto_engine::BlockStyle {
+                let style = pagic_engine::BlockStyle {
                     size: a.opt_num("size")?,
                     width: a.opt_num("width")?,
                     resource: a.opt_str("font_resource")?.map(str::to_owned),
@@ -511,7 +511,7 @@ impl Automation {
                 let index = self.paragraph_index(id, page, k, &blocks)?;
                 let block = blocks.get(index).cloned().ok_or_else(|| ToolError::InvalidArgs(format!("paragraph {k} is out of range")))?;
                 let text = a.opt_str("text")?.map(str::to_owned).unwrap_or(block.text);
-                let mut style = recto_engine::BlockStyle {
+                let mut style = pagic_engine::BlockStyle {
                     ranges: parse_style_ranges(a.get("ranges"))?,
                     resource: a.opt_str("font_resource")?.map(str::to_owned),
                     bold: a.opt_bool("bold")?,
@@ -529,9 +529,9 @@ impl Automation {
                 }
                 if let Some(f) = a.opt_str("font")? {
                     let family = match f {
-                        "helvetica" => recto_engine::FontFamily::Helvetica,
-                        "times" => recto_engine::FontFamily::Times,
-                        "courier" => recto_engine::FontFamily::Courier,
+                        "helvetica" => pagic_engine::FontFamily::Helvetica,
+                        "times" => pagic_engine::FontFamily::Times,
+                        "courier" => pagic_engine::FontFamily::Courier,
                         other => return Err(ToolError::InvalidArgs(format!("unknown font {other:?} (helvetica, times, courier)"))),
                     };
                     style.family = Some((family, a.opt_bool("bold")?.unwrap_or(false), a.opt_bool("italic")?.unwrap_or(false)));
@@ -541,10 +541,10 @@ impl Automation {
                 }
                 if let Some(al) = a.opt_str("align")? {
                     style.align = Some(match al {
-                        "left" => recto_engine::TextAlign::Left,
-                        "center" => recto_engine::TextAlign::Center,
-                        "right" => recto_engine::TextAlign::Right,
-                        "justify" => recto_engine::TextAlign::Justify,
+                        "left" => pagic_engine::TextAlign::Left,
+                        "center" => pagic_engine::TextAlign::Center,
+                        "right" => pagic_engine::TextAlign::Right,
+                        "justify" => pagic_engine::TextAlign::Justify,
                         other => return Err(ToolError::InvalidArgs(format!("unknown align {other:?}"))),
                     });
                 }
@@ -658,7 +658,7 @@ impl Automation {
                     Some(n) => n.to_string(),
                     None => path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
                 };
-                let mime = recto_engine::mime_for_name(&name).map(str::to_string);
+                let mime = pagic_engine::mime_for_name(&name).map(str::to_string);
                 let description = a.opt_str("description")?.map(str::to_string);
                 // Only the document-level keys: an annotation attachment of the same name is not the new one.
                 let before = document_attachment_keys(self.doc(&a)?);
@@ -674,9 +674,9 @@ impl Automation {
             "doc_audit_redactions" => self.doc_audit_redactions(&a)?,
             "fill_sign_add" => self.fill_sign_add(&a)?,
             "fill_sign_date_format" => self.fill_sign_date_format(&a)?,
-            "measure_distance" => self.measurement_add(&a, recto_engine::measure::Kind::Distance)?,
-            "measure_perimeter" => self.measurement_add(&a, recto_engine::measure::Kind::Perimeter)?,
-            "measure_area" => self.measurement_add(&a, recto_engine::measure::Kind::Area)?,
+            "measure_distance" => self.measurement_add(&a, pagic_engine::measure::Kind::Distance)?,
+            "measure_perimeter" => self.measurement_add(&a, pagic_engine::measure::Kind::Perimeter)?,
+            "measure_area" => self.measurement_add(&a, pagic_engine::measure::Kind::Area)?,
             "measure_info" => self.measurement_info(&a)?,
             "measure_list" => self.measurement_list(&a)?,
             "measure_scale" => self.measurement_scale(&a)?,
@@ -710,8 +710,8 @@ impl Automation {
             "pdfa_convert" => self.pdfa_convert(&a)?,
             "standards_remove_id" => {
                 let standard = match a.str("standard")? {
-                    "pdfa" => recto_engine::Standard::PdfA,
-                    "pdfx" => recto_engine::Standard::PdfX,
+                    "pdfa" => pagic_engine::Standard::PdfA,
+                    "pdfx" => pagic_engine::Standard::PdfX,
                     other => return Err(ToolError::InvalidArgs(format!("standard must be pdfa or pdfx, not {other}"))),
                 };
                 self.apply(&a, Edit::RemoveStandardId { standard })?
@@ -739,10 +739,10 @@ impl Automation {
             "sign_document" => self.sign_document(&a)?,
             "sign_keychain_ids" => {
                 #[cfg(target_os = "macos")]
-                let ids: Vec<Value> = recto_engine::sign::keychain::identities(None)
+                let ids: Vec<Value> = pagic_engine::sign::keychain::identities(None)
                     .map_err(failed)?
                     .iter()
-                    .map(|id| json!({ "id": recto_engine::sign::keychain::reference(&id.certificate), "certificate": super::signing::cert_json(&id.certificate) }))
+                    .map(|id| json!({ "id": pagic_engine::sign::keychain::reference(&id.certificate), "certificate": super::signing::cert_json(&id.certificate) }))
                     .collect();
                 #[cfg(not(target_os = "macos"))]
                 let ids: Vec<Value> = Vec::new();
@@ -751,11 +751,11 @@ impl Automation {
             "sign_windows_ids" => {
                 #[cfg(target_os = "windows")]
                 let (ids, unusable): (Vec<Value>, Vec<Value>) = {
-                    let listing = recto_engine::sign::windows::list().map_err(failed)?;
+                    let listing = pagic_engine::sign::windows::list().map_err(failed)?;
                     let ids = listing
                         .ids
                         .iter()
-                        .map(|id| json!({ "id": recto_engine::sign::windows::reference(&id.certificate), "certificate": super::signing::cert_json(&id.certificate) }))
+                        .map(|id| json!({ "id": pagic_engine::sign::windows::reference(&id.certificate), "certificate": super::signing::cert_json(&id.certificate) }))
                         .collect();
                     let unusable = listing
                         .unusable

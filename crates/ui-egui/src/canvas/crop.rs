@@ -2,8 +2,8 @@
 //! rectangle; double-click a page to open Set Page Boxes for it.
 
 use egui::{Color32, CornerRadius, Pos2, Rect, Stroke};
-use recto_engine::{BoxSpec, Edit, PageBox};
-use recto_render::DocInfo;
+use pagic_engine::{BoxSpec, Edit, PageBox};
+use pagic_render::DocInfo;
 
 use crate::canvas::{DocView, PageXform};
 use crate::page_pointer::PagePointer;

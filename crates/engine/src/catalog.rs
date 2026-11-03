@@ -14,7 +14,7 @@ pub enum Availability {
     Ready,
     /// Planned; ships in the named milestone.
     Planned(&'static str),
-    /// Cloud-only in Acrobat; Recto offers an optional pluggable provider instead.
+    /// Cloud-only in Acrobat; Pagic offers an optional pluggable provider instead.
     Provider,
 }
 

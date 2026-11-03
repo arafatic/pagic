@@ -24,11 +24,11 @@ pub enum EditError {
     #[error("the document's security settings don't allow {0}; open it with the owner password to make this change")]
     NotPermitted(&'static str),
     #[error("{0}")]
-    Organize(#[from] recto_organize::OrganizeError),
+    Organize(#[from] pagic_organize::OrganizeError),
     #[error("{0}")]
-    Bookmark(#[from] recto_organize::OutlineError),
+    Bookmark(#[from] pagic_organize::OutlineError),
     #[error("{0}")]
-    Comment(#[from] recto_annot::AnnotError),
+    Comment(#[from] pagic_annot::AnnotError),
     #[error(transparent)]
     Measure(#[from] measure::MeasureError),
     #[error("{0}")]
@@ -36,19 +36,19 @@ pub enum EditError {
     #[error("the password is incorrect")]
     WrongPassword,
     #[error("{0}")]
-    Form(#[from] recto_forms::FormError),
+    Form(#[from] pagic_forms::FormError),
     #[error(transparent)]
-    Redact(#[from] recto_redact::RedactError),
+    Redact(#[from] pagic_redact::RedactError),
     #[error("{0}")]
     Print(String),
     #[error("{0}")]
     Accessibility(String),
     #[error(transparent)]
-    Data(#[from] recto_xfdf::DataError),
+    Data(#[from] pagic_xfdf::DataError),
     #[error("{0}")]
-    Edit(#[from] recto_edit::EditError),
+    Edit(#[from] pagic_edit::EditError),
     #[error("{0}")]
-    Create(#[from] recto_create::CreateError),
+    Create(#[from] pagic_create::CreateError),
     #[error("the edited document could not be written: {0}")]
     Write(String),
     #[error("the edited document could not be reopened: {0}")]
@@ -73,8 +73,8 @@ pub enum EditError {
     Invalid(String),
 }
 
-impl From<recto_sign::SignError> for EditError {
-    fn from(e: recto_sign::SignError) -> Self {
+impl From<pagic_sign::SignError> for EditError {
+    fn from(e: pagic_sign::SignError) -> Self {
         EditError::Sign(e.to_string())
     }
 }

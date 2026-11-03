@@ -3,13 +3,13 @@ use super::{Args, Automation, Result, ToolError, Value, child, failed, json, wri
 impl Automation {
     /// Recognition settings from the arguments: `dpi` (clamped to 72–600), `language` (refused
     /// unless the models read it) and `skip_text_pages`, each left at its default when absent.
-    pub(crate) fn ocr_settings(&self, a: &Args) -> Result<recto_engine::ocr::OcrSettings> {
-        let mut settings = recto_engine::ocr::OcrSettings::default();
+    pub(crate) fn ocr_settings(&self, a: &Args) -> Result<pagic_engine::ocr::OcrSettings> {
+        let mut settings = pagic_engine::ocr::OcrSettings::default();
         if let Some(d) = a.opt_num("dpi")? {
             settings.dpi = d.clamp(72.0, 600.0) as f32;
         }
         if let Some(l) = a.opt_str("language")? {
-            if !recto_engine::ocr::LANGUAGES.iter().any(|x| x.0 == l) {
+            if !pagic_engine::ocr::LANGUAGES.iter().any(|x| x.0 == l) {
                 return Err(ToolError::InvalidArgs(format!("unsupported language {l:?}")));
             }
             settings.language = l.into();
@@ -44,13 +44,13 @@ impl Automation {
             )));
         }
         std::fs::create_dir_all(&folder).map_err(|e| failed(e.to_string()))?;
-        let ocr = recto_engine::ocr::engine().map_err(failed)?;
+        let ocr = pagic_engine::ocr::engine().map_err(failed)?;
         let mut out = Vec::new();
         for p in paths {
             let name = input_file_name(p);
             let result =
                 self.resolve(p, false).map_err(|e| e.to_string()).and_then(|src| crate::read_input_bytes(&src).map_err(|e| e.to_string())).and_then(
-                    |bytes| recto_engine::ocr::recognize_file(&name, std::sync::Arc::new(bytes), None, settings.clone(), &ocr, |_, _| true),
+                    |bytes| pagic_engine::ocr::recognize_file(&name, std::sync::Arc::new(bytes), None, settings.clone(), &ocr, |_, _| true),
                 );
             out.push(match result {
                 Ok(r) => {
@@ -89,7 +89,7 @@ impl Automation {
     /// Whether text recognition's models are installed, the directories searched for them (in
     /// order), and the languages it reads, each as a code and a name.
     pub(crate) fn ocr_status(&self) -> Result<Value> {
-        use recto_engine::ocr;
+        use pagic_engine::ocr;
         let dirs: Vec<String> = ocr::Models::search_dirs().iter().map(|d| d.to_string_lossy().into_owned()).collect();
         let langs: Vec<Value> = ocr::LANGUAGES.iter().map(|(c, n)| json!({ "code": c, "name": n })).collect();
         Ok(json!({ "available": ocr::available(), "search_dirs": dirs, "languages": langs }))

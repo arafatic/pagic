@@ -9,12 +9,12 @@
 //!   Reply, Set status, Colour and Delete.
 //! - **Composer:** the floating "Add a comment" card used for new notes, text boxes and edits.
 //!
-//! Everything is turned into `recto_engine::Edit`s, queued on the view as `pending_edit` and
+//! Everything is turned into `pagic_engine::Edit`s, queued on the view as `pending_edit` and
 //! applied by the app, so each change is one undo step.
 
 use egui::{Color32, CornerRadius, Pos2, Rect, Sense, Stroke, pos2, vec2};
-use recto_engine::{Edit, LineEnding, Markup, NewAnnotation, NoteIcon, ReviewState, Rgb, Shape, Style};
-use recto_render::{Annotation, DocInfo, PageInfo, PageText};
+use pagic_engine::{Edit, LineEnding, Markup, NewAnnotation, NoteIcon, ReviewState, Rgb, Shape, Style};
+use pagic_render::{Annotation, DocInfo, PageInfo, PageText};
 
 use crate::canvas::{DocView, PageXform};
 use crate::page_pointer::PagePointer;
@@ -248,7 +248,7 @@ impl CommentTool {
             Self::Caret => Shape::Caret { rect: [0.0; 4] },
             Self::ReplaceText => Shape::TextMarkup { kind: Markup::StrikeOut, quads: Vec::new() },
             Self::Eraser => Shape::Ink { strokes: Vec::new() },
-            Self::Attach => Shape::Attachment { at: [0.0; 2], icon: recto_engine::AttachIcon::PushPin, file: String::new(), data: Vec::new() },
+            Self::Attach => Shape::Attachment { at: [0.0; 2], icon: pagic_engine::AttachIcon::PushPin, file: String::new(), data: Vec::new() },
         }
     }
 }

@@ -11,12 +11,12 @@ use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 use egui::{Align, Color32, CornerRadius, Layout, Rect, RichText, Sense, Stroke, pos2, vec2};
-use recto_engine::field_table::{self, Cell, FieldTable, MAX_COLUMNS, MAX_FIRST_ROW, MAX_ROWS, TableError};
-use recto_engine::{DocId, Edit, FormField};
-use recto_render::PageInfo;
+use pagic_engine::field_table::{self, Cell, FieldTable, MAX_COLUMNS, MAX_FIRST_ROW, MAX_ROWS, TableError};
+use pagic_engine::{DocId, Edit, FormField};
+use pagic_render::PageInfo;
 
 use crate::canvas::PageXform;
-use crate::{Dialog, RectoApp, i18n, theme, widgets};
+use crate::{Dialog, PagicApp, i18n, theme, widgets};
 
 const SELECT_BLUE: Color32 = Color32::from_rgb(0x14, 0x73, 0xE6);
 const ERROR_RED: Color32 = Color32::from_gray(0x80);
@@ -134,7 +134,7 @@ impl FieldTableDraft {
 }
 
 /// Show the window while [`Dialog::FieldTable`] is open, and add the table when asked to.
-pub(crate) fn show(app: &mut RectoApp, ctx: &egui::Context) {
+pub(crate) fn show(app: &mut PagicApp, ctx: &egui::Context) {
     // The window belongs to one page of one document, while that document is being prepared.
     let active = app.active_ids().map(|(_, id)| id);
     let preparing = app.is_preparing();
@@ -193,7 +193,7 @@ pub(crate) fn show(app: &mut RectoApp, ctx: &egui::Context) {
 }
 
 /// Drop the table being set up, and the dialog with it if it is still the open one.
-fn close(app: &mut RectoApp) {
+fn close(app: &mut PagicApp) {
     app.field_table_draft = None;
     if app.dialog == Some(Dialog::FieldTable) {
         app.dialog = None;
@@ -452,7 +452,7 @@ pub(crate) fn paint_preview(painter: &egui::Painter, xf: &PageXform, page: usize
 
 #[cfg(test)]
 mod tests {
-    use recto_engine::field_table::TableColumn;
+    use pagic_engine::field_table::TableColumn;
 
     use super::*;
 

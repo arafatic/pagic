@@ -2,8 +2,8 @@
 //! document, and manage trusted certificates. Rectangles are points from the top-left of the
 //! displayed page.
 
-use recto_engine::sign::{self, Certificate, DigitalId, Modification, Name, PrivateKey};
-use recto_engine::{SignOptions, SignatureInfo, SignatureStatus};
+use pagic_engine::sign::{self, Certificate, DigitalId, Modification, Name, PrivateKey};
+use pagic_engine::{SignOptions, SignatureInfo, SignatureStatus};
 use serde_json::{Value, json};
 
 use crate::{Args, Automation, Result, ToolError, failed, write_atomic};
@@ -65,10 +65,7 @@ fn labels_arg(v: &Value) -> Result<sign::AppearanceLabels> {
         *label = text.to_string();
     }
     if let Some((field, c)) = labels.first_undrawable() {
-        return Err(bad(format!(
-            "labels.{field}: {}",
-            recto_engine::undrawable_message(&format!("the {field} label of the visible signature"), c)
-        )));
+        return Err(bad(format!("labels.{field}: {}", pagic_engine::undrawable_message(&format!("the {field} label of the visible signature"), c))));
     }
     Ok(labels)
 }
@@ -260,7 +257,7 @@ impl Automation {
         };
         let signed = self.session.sign(doc_id, &id, opts).map_err(|e| match e {
             // A graphic the signer refuses is the caller's to fix.
-            recto_engine::EditError::Sign(m) if m.starts_with("the signature graphic") => bad(m),
+            pagic_engine::EditError::Sign(m) if m.starts_with("the signature graphic") => bad(m),
             e => failed(e),
         })?;
         write_atomic(&out, &signed)?;
@@ -279,23 +276,20 @@ impl Automation {
         if let Some(path) = o.get("image") {
             let path = self.resolve(path.as_str().ok_or_else(|| bad("graphic.image must be a path"))?, false)?;
             let file = std::fs::File::open(&path).map_err(|e| bad(format!("graphic.image {}: {e}", path.display())))?;
-            return Ok(recto_engine::SignatureImage::read(file).map_err(|e| bad(e.to_string()))?.graphic());
+            return Ok(pagic_engine::SignatureImage::read(file).map_err(|e| bad(e.to_string()))?.graphic());
         }
         if let Some(text) = o.get("text") {
             let text = text.as_str().ok_or_else(|| bad("graphic.text must be a string"))?;
             // Nobody sees a preview here: refuse what the script font and its fallback would leave out.
-            if let Some(c) = recto_engine::script_missing(text) {
+            if let Some(c) = pagic_engine::script_missing(text) {
                 return Err(bad(format!(
                     "the signature script font can't draw \"{}\" (U+{:04X}) in graphic.text; type it in Latin, Cyrillic or Greek letters, or pass graphic.image instead",
                     c.escape_debug(),
                     u32::from(c)
                 )));
             }
-            return recto_engine::typed_signature_graphic(text).ok_or_else(|| {
-                bad(format!(
-                    "graphic.text {text:?} has nothing the script font can draw (at most {} characters)",
-                    recto_engine::MAX_SIGNATURE_CHARS
-                ))
+            return pagic_engine::typed_signature_graphic(text).ok_or_else(|| {
+                bad(format!("graphic.text {text:?} has nothing the script font can draw (at most {} characters)", pagic_engine::MAX_SIGNATURE_CHARS))
             });
         }
         if let Some(strokes) = o.get("strokes") {

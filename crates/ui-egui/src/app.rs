@@ -24,13 +24,13 @@ pub(crate) use files::same_file;
 use frame::migrate_panel_state;
 pub(crate) use prefs::{MAX_AUTHOR_CHARS, date_text_for_pdf};
 
-impl Default for RectoApp {
+impl Default for PagicApp {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Construct an application with the default session, panels, theme and control state.
     pub fn new() -> Self {
         Self {
@@ -243,7 +243,7 @@ impl RectoApp {
             link_draft: None,
             text_style: content_ui::default_style(),
             replace_draft: None,
-            number_draft: NumberDraft { from: 1, to: 1, style: recto_engine::LabelStyle::Decimal, prefix: String::new(), start: 1 },
+            number_draft: NumberDraft { from: 1, to: 1, style: pagic_engine::LabelStyle::Decimal, prefix: String::new(), start: 1 },
             word_count_draft: word_count_ui::Draft::default(),
             available_update: None,
             update_job: None,
@@ -306,7 +306,7 @@ impl RectoApp {
 
     /// Check for application updates asynchronously.
     pub fn check_for_updates(&mut self, manual: bool) {
-        if recto_engine::identity::UPDATE_API.is_none() {
+        if pagic_engine::identity::UPDATE_API.is_none() {
             if manual {
                 self.notify_tr("No application update source is configured for this build");
             }
@@ -338,7 +338,7 @@ impl RectoApp {
                     }
                     crate::updater::UpdateOutcome::UpToDate => {
                         if manual {
-                            self.notify_tr("Recto is up to date");
+                            self.notify_tr("Pagic is up to date");
                         }
                     }
                     crate::updater::UpdateOutcome::Error(err) => {
@@ -361,7 +361,7 @@ impl RectoApp {
     }
 }
 
-impl eframe::App for RectoApp {
+impl eframe::App for PagicApp {
     /// While files are dragged over the window the system sends no pointer moves, so egui
     /// would keep the place the pointer entered at: tell it where the pointer really is, so the
     /// page grid can show (and use) the gap under it.
@@ -385,7 +385,7 @@ impl eframe::App for RectoApp {
             let minimized = self.ctx.as_ref().is_some_and(|c| c.input(|i| i.viewport().minimized == Some(true)));
             self.window_state.keep(storage, minimized);
         }
-        storage.set_string(recto_engine::identity::STORAGE_KEY, self.persist());
+        storage.set_string(pagic_engine::identity::STORAGE_KEY, self.persist());
     }
 
     /// Each frame's work before drawing: opens, operating-system and control-channel requests,
@@ -590,7 +590,7 @@ impl eframe::App for RectoApp {
             .active
             .and_then(|i| crate::canvas::tab_label(self, i))
             .or_else(|| self.combine_showing().then(|| tl!("Combine files").to_owned()))
-            .map_or_else(|| "Recto".to_owned(), |name| format!("{name} — Recto"));
+            .map_or_else(|| "Pagic".to_owned(), |name| format!("{name} — Pagic"));
         if title != self.window_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
             self.window_title = title;

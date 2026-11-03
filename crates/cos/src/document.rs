@@ -55,7 +55,7 @@ pub struct Document {
     header_offset: usize,
     version: String,
     /// The authenticated security handler of an encrypted document.
-    security: Option<Arc<recto_crypt::SecurityHandler>>,
+    security: Option<Arc<pagic_crypt::SecurityHandler>>,
     /// Object number of the `/Encrypt` dictionary (never encrypted itself).
     encrypt_num: Option<u32>,
     /// Encryption was added, changed or removed since opening: only a full save can apply it.
@@ -63,7 +63,7 @@ pub struct Document {
     /// Set by edits that must not leave earlier revisions in the file (redaction).
     full_save: bool,
     /// The handler and `/Encrypt` object number that saves use, when encryption changed.
-    out_security: Option<Arc<recto_crypt::SecurityHandler>>,
+    out_security: Option<Arc<pagic_crypt::SecurityHandler>>,
     out_encrypt_num: Option<u32>,
 }
 
