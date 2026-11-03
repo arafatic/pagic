@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate the app icons from assets/app-icon/pagic.svg and the Windows PDF file icon
+# Regenerate the app icons from assets/app-icon/pagic-app-icon.svg and the Windows PDF file icon
 # from assets/app-icon/pagic-document.svg. Both are master vectors.
 #
 # Needs: resvg (brew install resvg / cargo install resvg) and python3 (stdlib only, for the .ico).
@@ -11,7 +11,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIR="$ROOT/assets/app-icon"
-SVG="$DIR/pagic.svg"
+SVG="$DIR/pagic-app-icon.svg"
 ID="local.pagic.desktop"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -64,7 +64,9 @@ cp "$SVG" "$DIR/hicolor/scalable/apps/$ID.svg"
 for name in pagic pagic-document; do
   ICO_PNGS=()
   for s in 16 20 24 32 40 48 64 128 256; do
-    render "$DIR/$name.svg" "$s" "$TMP/$name-$s.png"
+    source="$SVG"
+    if [[ "$name" = pagic-document ]]; then source="$DIR/pagic-document.svg"; fi
+    render "$source" "$s" "$TMP/$name-$s.png"
     ICO_PNGS+=("$TMP/$name-$s.png")
   done
   python3 - "$DIR/$name.ico" "${ICO_PNGS[@]}" <<'PY'
@@ -105,8 +107,8 @@ done
 for s in 16 20 24 30 32 36 40 48 60 64 72 80 96 256; do
   base="$MSIX/Square44x44Logo.targetsize-$s"
   render "$SVG" "$s" "$base.png"
-  # The approved artwork is plated. Retain it exactly for every theme; qualifiers
-  # suppress an additional OS plate, not the background in the supplied SVG.
+  # Keep the approved rounded background and transparent corners for every theme.
+  # Qualifiers suppress an additional OS plate; they do not alter the supplied art.
   cp "$base.png" "${base}_altform-unplated.png"
   cp "$base.png" "${base}_altform-lightunplated.png"
 done

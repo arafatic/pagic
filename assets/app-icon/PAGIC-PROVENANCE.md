@@ -11,13 +11,27 @@ SHA-256 of each original SVG:
 Self-contained vector paths, circle and opaque `#1e1e1e` background, with `#f5f5f7` foreground;
 viewBox `0 0 330.68 330.68`. No text, fonts, raster images or external resources.
 
+## Approved rounded application icon update
+
+The owner subsequently supplied `pagic-app-icon.svg` for application icons. Its SHA-256 is
+`d03d1618f03c362a1c056e3b0ac471b6ca680e55f994f52733da05eadf9d72a5`.
+It is preserved byte-for-byte: self-contained paths, viewBox 1032.694 by 1032.694, transparent
+corners around its supplied rounded dark background and light Pagic mark. No masking,
+redesign, recoloring, cropping or nonuniform scaling is applied. Its embedded title
+`Untitled-1` is retained as supplied; this metadata is not the application's display name.
+
+Application derivatives now use this new master. `pagic.svg` remains the unchanged original
+brand logo; `pagic-document.svg` and `pagic-document.ico` remain byte-identical to their
+previous versions and retain their document-specific role. The two original SVGs above do
+not become copies of the rounded icon. This update adds no new dependencies or identities.
+
 Generated derivatives are recorded in `pagic-assets.sha256.json`. Renderer: the already-locked
 resvg 0.45.1 library, through a temporary size-only helper (no new project dependency), plus
 macOS 26.3.1 iconutil for ICNS. Future regeneration can use the normal resvg CLI with
 `packaging/icons.sh`. Scaling is uniform. macOS adds the previously agreed transparent inset.
 MSIX theme variants keep the original background and colors; they are not redesigned glyphs.
 
-The supplied SVGs contain no author, copyright or license metadata. Exact creator/rights and
+None of the supplied SVGs contains author, copyright or license metadata. Exact creator/rights and
 redistribution/trademark terms were not separately provided. Record those facts before public
 release; do not infer them from the archived Recto license or invent an authorship claim.
 Approval here is for the requested integration, not a new third-party license notice.

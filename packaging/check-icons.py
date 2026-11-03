@@ -19,7 +19,7 @@ SIZES = (16, 20, 24, 30, 32, 36, 40, 48, 60, 64, 72, 80, 96, 256)
 ICO_SIZES = (16, 20, 24, 32, 40, 48, 64, 128, 256)
 
 
-def png(data, size, mac=False):
+def png(data, size, mac=False, rounded=False):
     assert data[:8] == b'\x89PNG\r\n\x1a\n', 'not a PNG'
     offset, compressed = 8, b''
     while offset < len(data):
@@ -62,7 +62,7 @@ def png(data, size, mac=False):
         previous = row
     alpha = pixels[3::4]
     if mac:
-        # The unchanged approved master fills an 824/1024 square with a transparent inset.
+        # Uniformly scale the approved master into the 824/1024 macOS body.
         lo, hi = size * 100 // 1024, (size * 924 + 1023) // 1024
         assert min(alpha) == 0 and max(alpha) == 255
         assert not any(alpha[:lo * size]) and not any(alpha[hi * size:])
@@ -70,14 +70,23 @@ def png(data, size, mac=False):
             assert not any(alpha[y * size:y * size + lo])
             assert not any(alpha[y * size + hi:(y + 1) * size])
         assert alpha[(size // 2) * size + size // 2] == 255
-    else:
+    elif not rounded:
         assert min(alpha) == max(alpha) == 255, 'approved full-background artwork must remain opaque'
+    if rounded:
+        assert min(alpha) == 0 and max(alpha) == 255, 'expected transparent rounded artwork'
+        near = int(size * (100 + 824 * 0.03) / 1024) if mac else 0
+        for x, y in ((near, near), (size - near - 1, near),
+                     (near, size - near - 1), (size - near - 1, size - near - 1)):
+            assert alpha[y * size + x] == 0, 'rounded corners must be transparent'
+        assert alpha[(size // 2) * size + size // 2] == 255
+        assert b'\x1e\x1e\x1e\xff' in pixels, 'approved dark background missing'
+        assert b'\xf5\xf5\xf7\xff' in pixels, 'approved light logomark missing'
     return bytes(pixels)
 
 
 def validate():
     files = []
-    for name in ('pagic.svg', 'pagic-document.svg'):
+    for name in ('pagic.svg', 'pagic-document.svg', 'pagic-app-icon.svg'):
         path = ICONS / name
         tree = ET.parse(path).getroot()
         _, _, w, h = map(float, tree.attrib['viewBox'].split())
@@ -85,14 +94,14 @@ def validate():
         assert not any(n.tag.rsplit('}', 1)[-1] in {'text', 'image', 'script', 'foreignObject'} for n in tree.iter())
         files.append(path)
     scalable = ICONS / 'hicolor/scalable/apps/local.pagic.desktop.svg'
-    assert scalable.read_bytes() == (ICONS / 'pagic.svg').read_bytes()
+    assert scalable.read_bytes() == (ICONS / 'pagic-app-icon.svg').read_bytes()
     files.append(scalable)
     for size in (16, 24, 32, 48, 64, 128, 256, 512):
         path = ICONS / ('hicolor/{0}x{0}/apps/local.pagic.desktop.png'.format(size))
-        png(path.read_bytes(), size)
+        png(path.read_bytes(), size, rounded=True)
         files.append(path)
     path = ICONS / 'pagic-1024.png'
-    png(path.read_bytes(), 1024, mac=True)
+    png(path.read_bytes(), 1024, mac=True, rounded=True)
     files.append(path)
     for name in ('pagic.ico', 'pagic-document.ico'):
         path = ICONS / name
@@ -102,7 +111,7 @@ def validate():
         for index, size in enumerate(ICO_SIZES):
             w, h, colors, reserved, planes, bits, length, start = struct.unpack_from('<BBBBHHII', data, 6 + index * 16)
             assert (w or 256, h or 256, colors, reserved, planes, bits, start) == (size, size, 0, 0, 1, 32, offset)
-            png(data[start:start + length], size)
+            png(data[start:start + length], size, rounded=(name == 'pagic.ico'))
             offset += length
         assert offset == len(data)
         files.append(path)
@@ -124,22 +133,23 @@ def validate():
             for size in (16, 32, 128, 256, 512):
                 for scale in (1, 2):
                     suffix = '@2x' if scale == 2 else ''
-                    png((out / ('icon_{0}x{0}{1}.png'.format(size, suffix))).read_bytes(), size * scale, mac=True)
+                    png((out / ('icon_{0}x{0}{1}.png'.format(size, suffix))).read_bytes(), size * scale, mac=True, rounded=True)
     files.append(icns)
     for scale in (100, 200, 400):
         for name, size in (('Square44x44Logo', 44), ('Square150x150Logo', 150), ('StoreLogo', 50)):
             path = MSIX / '{}.scale-{}.png'.format(name, scale)
-            png(path.read_bytes(), size * scale // 100)
+            png(path.read_bytes(), size * scale // 100, rounded=True)
             files.append(path)
     for size in SIZES:
         base = MSIX / 'Square44x44Logo.targetsize-{}.png'.format(size)
         for suffix in ('', '_altform-unplated', '_altform-lightunplated'):
             path = base.with_name(base.stem + suffix + '.png')
-            png(path.read_bytes(), size)
+            png(path.read_bytes(), size, rounded=True)
             assert path.read_bytes() == base.read_bytes(), 'theme files must preserve the approved background'
             files.append(path)
-    assert len(files) == 66
+    assert len(files) == 67
     references = {
+        'packaging/icons.sh': ('SVG="$DIR/pagic-app-icon.svg"', 'source="$DIR/pagic-document.svg"'),
         'apps/pagic/build.rs': ('pagic.ico', 'pagic-document.ico', 'pagic-1024.png', 'local.pagic.desktop.png'),
         'packaging/macos/Info.plist.in': ('pagic',),
         'packaging/linux/local.pagic.desktop.desktop': ('Icon=local.pagic.desktop',),
@@ -159,4 +169,4 @@ if __name__ == '__main__':
     if args.write_manifest:
         MANIFEST.write_text(json.dumps(hashes, indent=2, sort_keys=True) + '\n')
     assert json.loads(MANIFEST.read_text()) == hashes, 'asset manifest is stale'
-    print('PASS: 66 source/generated assets; PNG alpha/dimensions/CRC, ICO entries, ICNS representations, references and hashes')
+    print('PASS: 67 source/generated assets; PNG alpha/dimensions/CRC, ICO entries, ICNS representations, references and hashes')
