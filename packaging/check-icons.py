@@ -158,7 +158,7 @@ def validate():
     for source, values in references.items():
         text = (ROOT / source).read_text()
         assert all(value in text for value in values), source
-    return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files)}
+    return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files)}
 
 
 if __name__ == '__main__':
