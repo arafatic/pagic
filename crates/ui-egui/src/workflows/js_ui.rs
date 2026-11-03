@@ -315,7 +315,8 @@ fn date_language_picker_name(l: &pagic_engine::dates::DateLanguage, drawable: im
 /// Preferences: interface language and size, appearance, identity and JavaScript. Drawn in a scroll
 /// area; [`preferences_buttons`] goes below it, outside the scroll, so OK is always in reach.
 pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) {
-    ui.label(egui::RichText::new(tl!("Preferences")).font(theme::semibold(18.0)));
+    let title = if cfg!(target_os = "macos") { tl!("Settings") } else { tl!("Preferences") };
+    ui.label(egui::RichText::new(title).font(theme::semibold(18.0)));
     ui.horizontal(|ui| {
         let label = ui.label(tl!("Interface language"));
         // A native name is only drawn when these fonts can draw it; otherwise the English name

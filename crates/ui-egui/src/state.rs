@@ -105,6 +105,7 @@ pub enum Dialog {
     CreateImages,
     Properties(PropsTab),
     About,
+    CreditsLicenses,
     Shortcuts,
     UpdateAvailable,
     Split,

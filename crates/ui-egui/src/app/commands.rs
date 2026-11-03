@@ -61,6 +61,11 @@ impl PagicApp {
         self.all_tools_full = false;
         self.left = LeftPanel::Tool(id);
         self.reveal_tools();
+        if id == "edit" {
+            // Keep the All tools workspace/back navigation, but activate the same guarded
+            // command as the toolbar and native Edit menu (not merely its side panel).
+            self.execute("edit.edit_text");
+        }
         if let Some(view) = self.active.and_then(|i| self.views.get_mut(i)) {
             if id == "organize" {
                 view.open_organize();

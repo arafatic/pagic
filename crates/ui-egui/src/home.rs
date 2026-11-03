@@ -22,7 +22,7 @@ pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
                     ("Open PDF", "folder-open", "Browse your files"),
                     ("Edit PDF", "type", "Edit text and images"),
                     ("Merge PDFs", "files", "Combine documents"),
-                    ("Convert", "file-output", "Word, images and more"),
+                    ("Export", "file-output", "Word, images and more"),
                     ("Compress PDF", "file-down", "Reduce file size"),
                 ] {
                     let width = ui.max_rect().width().clamp(1.0, 204.0);
@@ -41,7 +41,7 @@ pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
                     painter.text(rect.min + vec2(16.0, 58.0), Align2::LEFT_CENTER, label, theme::semibold(14.0), t.text);
                     painter.text(rect.min + vec2(16.0, 84.0), Align2::LEFT_CENTER, detail, theme::regular(12.0), t.text_muted);
                     let resp = theme::hand(resp).on_hover_text(detail);
-                    if label == "Convert" {
+                    if label == "Export" {
                         egui::Popup::menu(&resp).show(|ui| {
                             for (format, command) in [
                                 ("Word (.docx)", "export.docx"),

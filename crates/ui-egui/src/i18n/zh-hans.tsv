@@ -2521,3 +2521,13 @@ animation effects	Off	关
 	Rotate the selected pages clockwise	顺时针旋转所选页面
 	Extract the selected pages…	提取所选页面…
 	Delete the selected pages	删除所选页面
+
+# macOS acceptance corrections; copyright/license texts remain verbatim.
+	Developed and maintained by Arafatic	由 Arafatic 开发和维护
+	Based on Recto and contributions from open-source developers	基于 Recto 及开源开发者的贡献
+	Credits & Licenses	致谢与许可
+	Edit text & images active	已启用文本和图像编辑
+	Click text to edit · Drag images to move	单击文本以编辑 · 拖动图像以移动
+	The editor could not identify editable text on this page. Text may use unsupported mappings or structures, outlines, or a scan. Try Scan & OCR or Add text.	编辑器无法识别此页中的可编辑文本。文本可能使用不支持的映射或结构、轮廓，或来自扫描。请尝试扫描和 OCR 或添加文本。
+	{name} workspace	{name}工作区
+	License notice	许可声明

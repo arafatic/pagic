@@ -398,6 +398,7 @@ pub const COMMANDS: &[CommandSpec] = &[
     c("help.github", "Pagic on GitHub", HELP, None, Nothing, "code-xml"),
     c("help.website", "Documentation", HELP, None, Nothing, "external-link"),
     c("help.check_updates", "Check for updates…", HELP, None, Nothing, "cloud"),
+    c("help.credits", "Credits & Licenses", HELP, None, Nothing, "info"),
     c("help.about", "About Pagic", HELP, None, Nothing, "info"),
 ];
 

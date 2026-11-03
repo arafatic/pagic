@@ -35,7 +35,8 @@ pub(super) fn edit_panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, g: &
         let title_width = (ui.available_width() - 2.0 * (26.0 + ui.spacing().item_spacing.x)).max(1.0);
         ui.add_sized([title_width, 26.0], egui::Label::new(egui::RichText::new(title).font(theme::semibold(15.5)).color(t.text)).truncate())
             .on_hover_text(title);
-        if icons::button(ui, "settings", 26.0, false, tl!("Preferences")).clicked() {
+        let settings = if cfg!(target_os = "macos") { tl!("Settings…") } else { tl!("Preferences") };
+        if icons::button(ui, "settings", 26.0, false, settings).clicked() {
             run = Some("app.preferences");
         }
         if icons::button(ui, "x", 26.0, false, tl!("Close panel")).clicked() {
@@ -45,7 +46,33 @@ pub(super) fn edit_panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, g: &
     ui.add_space(4.0);
     ui.separator();
     ui.add_space(6.0);
-    // Several objects selected: how many, and how to move them. Acrobat's panel has no idle hint.
+    let mut editing = app.quick_tool == crate::QuickTool::EditText;
+    let may_edit = app.active_ids().and_then(|(_, id)| app.session.get(id)).is_some_and(|doc| doc.allows_modification());
+    if ui.add_enabled(may_edit, egui::Checkbox::new(&mut editing, tl!("Edit text & images active"))).changed() {
+        if editing {
+            app.execute("edit.edit_text");
+        } else {
+            app.put_down_edit_text();
+        }
+    }
+    if !may_edit && app.active.is_some() {
+        ui.label(tl!("The document's security settings don't allow this change"));
+    }
+    if editing {
+        ui.label(tl!("Click text to edit · Drag images to move"));
+        if may_edit
+            && let Some((i, id)) = app.active_ids()
+            && let Some(doc) = app.session.get(id)
+            && app.views[i]
+                .edit_lines
+                .get(&app.views[i].current)
+                .is_some_and(|(generation, lines)| *generation == doc.edit_generation() && lines.is_empty())
+        {
+            ui.label(tl!("The editor could not identify editable text on this page. Text may use unsupported mappings or structures, outlines, or a scan. Try Scan & OCR or Add text."));
+        }
+        ui.add_space(6.0);
+    }
+    // Several objects selected: how many, and how to move them.
     let count = app.active_ids().filter(|_| app.quick_tool == crate::QuickTool::EditText).map_or(0, |(i, _)| app.views[i].objects.count());
     if count > 0 {
         ui.label(crate::i18n::trn(crate::i18n::current(), count as u64, "{n} object selected", "{n} objects selected"));

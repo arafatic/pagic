@@ -242,6 +242,7 @@ impl PagicApp {
             "optimize.reduce" => self.reduce_file_size(),
             "help.shortcuts" => self.dialog = Some(Dialog::Shortcuts),
             "help.about" => self.dialog = Some(Dialog::About),
+            "help.credits" => self.dialog = Some(Dialog::CreditsLicenses),
             "help.check_updates" => self.check_for_updates(true),
             _ => return None,
         }

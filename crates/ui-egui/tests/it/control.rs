@@ -176,18 +176,18 @@ fn control_resize_reports_observed_dimensions_and_rejects_invalid_sizes() {
 #[test]
 fn control_focus_traverses_real_widgets_and_keyboard_activates() {
     let (mut h, c) = harness();
-    ok(&mut h, &c, "ui.focus", json!({"label": "Convert"}));
-    let convert = ok(&mut h, &c, "ui.inspect", json!({"query": "Convert", "role": "Button"}));
+    ok(&mut h, &c, "ui.focus", json!({"label": "Export"}));
+    let convert = ok(&mut h, &c, "ui.inspect", json!({"query": "Export", "role": "Button"}));
     let focused =
         |found: &serde_json::Value, label: &str| found["widgets"].as_array().unwrap().iter().any(|w| w["label"] == label && w["focused"] == true);
-    assert!(focused(&convert, "Convert"), "{convert}");
-    assert!(convert["widgets"].as_array().unwrap().iter().any(|w| w["label"] == "Convert" && w["focusable"] == true));
+    assert!(focused(&convert, "Export"), "{convert}");
+    assert!(convert["widgets"].as_array().unwrap().iter().any(|w| w["label"] == "Export" && w["focusable"] == true));
     ok(&mut h, &c, "ui.key", json!({"key": "Tab"}));
-    let sign = ok(&mut h, &c, "ui.inspect", json!({"query": "E-Sign", "role": "Button"}));
-    assert!(focused(&sign, "E-Sign"), "{sign}");
+    let sign = ok(&mut h, &c, "ui.inspect", json!({"query": "Fill & Sign workspace", "role": "Button"}));
+    assert!(focused(&sign, "Fill & Sign workspace"), "{sign}");
     ok(&mut h, &c, "ui.key", json!({"key": "Tab", "modifiers": ["shift"]}));
-    let convert = ok(&mut h, &c, "ui.inspect", json!({"query": "Convert", "role": "Button"}));
-    assert!(focused(&convert, "Convert"), "{convert}");
+    let convert = ok(&mut h, &c, "ui.inspect", json!({"query": "Export", "role": "Button"}));
+    assert!(focused(&convert, "Export"), "{convert}");
     ok(&mut h, &c, "ui.key", json!({"key": "Enter"}));
     let state = ok(&mut h, &c, "ui.state", json!({}));
     assert_eq!(state["mode"], "Convert");
@@ -219,11 +219,14 @@ fn call_production(h: &mut Harness<'static, PagicApp>, c: &ControlClient, method
 #[test]
 fn production_key_release_survives_the_focus_change_its_press_causes() {
     let (mut h, c) = harness();
-    ok(&mut h, &c, "ui.focus", json!({"label": "Convert"}));
+    ok(&mut h, &c, "ui.focus", json!({"label": "Export"}));
     let reply = call_production(&mut h, &c, "ui.key", json!({"key": "Tab"}));
     reply.unwrap_or_else(|e| panic!("a Tab press that moves focus must not leave its release unapplied: {e}"));
-    let sign = ok(&mut h, &c, "ui.inspect", json!({"query": "E-Sign", "role": "Button"}));
-    assert!(sign["widgets"].as_array().unwrap().iter().any(|w| w["label"] == "E-Sign" && w["focused"] == true), "focus moved on the press: {sign}");
+    let sign = ok(&mut h, &c, "ui.inspect", json!({"query": "Fill & Sign workspace", "role": "Button"}));
+    assert!(
+        sign["widgets"].as_array().unwrap().iter().any(|w| w["label"] == "Fill & Sign workspace" && w["focused"] == true),
+        "focus moved on the press: {sign}"
+    );
     assert!(!h.ctx.input(|i| i.keys_down.contains(&egui::Key::Tab)), "the release reached egui: no stuck Tab");
 }
 
@@ -246,7 +249,7 @@ fn production_drag_releases_the_button_after_the_press_moves_focus() {
 #[test]
 fn control_button_focus_preserves_document_undo_redo_shortcuts() {
     let (mut h, c) = harness_pages(2);
-    ok(&mut h, &c, "ui.focus", json!({"label": "Convert"}));
+    ok(&mut h, &c, "ui.focus", json!({"label": "Export"}));
     ok(&mut h, &c, "ui.key", json!({"key": "Enter"}));
     ok(&mut h, &c, "ui.click", json!({"label": "All tools"}));
     assert!(h.ctx.egui_wants_keyboard_input());
@@ -284,9 +287,9 @@ fn control_focus_rejects_missing_ambiguous_disabled_and_nonfocusable_targets() {
         json!({"label": "does not exist"}),
         json!({"id": "not a number"}),
         json!({"id": 0}),
-        json!({"id": 1, "label": "Convert"}),
+        json!({"id": 1, "label": "Export"}),
         json!({"label": false}),
-        json!({"label": "Convert", "force": true}),
+        json!({"label": "Export", "force": true}),
         json!([]),
     ] {
         assert!(call(&mut h, &c, "ui.focus", params).is_err());
@@ -294,10 +297,10 @@ fn control_focus_rejects_missing_ambiguous_disabled_and_nonfocusable_targets() {
     let widgets = ok(&mut h, &c, "ui.inspect", json!({}));
     let nonfocusable = widgets["widgets"].as_array().unwrap().iter().find(|w| w["focusable"] == false).unwrap();
     assert!(call(&mut h, &c, "ui.focus", json!({"id": nonfocusable["id"]})).is_err());
-    let convert = widgets["widgets"].as_array().unwrap().iter().find(|w| w["label"] == "Convert").unwrap();
+    let convert = widgets["widgets"].as_array().unwrap().iter().find(|w| w["label"] == "Export").unwrap();
     ok(&mut h, &c, "ui.focus", json!({"id": convert["id"]}));
-    let found = ok(&mut h, &c, "ui.inspect", json!({"query": "Convert", "role": "Button"}));
-    assert!(found["widgets"].as_array().unwrap().iter().any(|w| w["label"] == "Convert" && w["focused"] == true), "{found}");
+    let found = ok(&mut h, &c, "ui.inspect", json!({"query": "Export", "role": "Button"}));
+    assert!(found["widgets"].as_array().unwrap().iter().any(|w| w["label"] == "Export" && w["focused"] == true), "{found}");
     // Home has no active document, so its document-only toolbar controls are disabled.
     ok(&mut h, &c, "ui.click", json!({"label": "Home"}));
     assert_eq!(ok(&mut h, &c, "ui.state", json!({}))["home"], true);
@@ -1115,12 +1118,21 @@ fn simplified_chinese_about_content_and_close_preserve_document_state() {
     ok(&mut h, &c, "ui.set", json!({"key": "dialog", "value": "about"}));
     settle(&mut h);
     assert_eq!(h.state().dialog, Some(pagic_ui_egui::Dialog::About));
-    // Pagic's About dialog has static credits, not the legacy contributor/model tables.
+    // About stays minimal; Help retains offline attribution and license access.
     let version = format!("版本{}", pagic_engine::build_info::version());
-    for label in ["Pagic", version.as_str(), "贡献者", "用 Rust 从零编写的开源 PDF 应用。MIT OR Apache-2.0 许可。"] {
+    for label in ["Pagic", version.as_str(), "由 Arafatic 开发和维护"] {
         let found = ok(&mut h, &c, "ui.inspect", json!({"query": label}));
         assert!(found["widgets"].as_array().unwrap().iter().any(|w| w["label"] == label || w["value"] == label), "{label}: {found}");
     }
+    assert_eq!(ok(&mut h, &c, "ui.inspect", json!({"query": "基于 Recto 及开源开发者的贡献"}))["count"], 0);
+    assert_eq!(ok(&mut h, &c, "ui.inspect", json!({"query": "致谢与许可", "role": "Button"}))["count"], 0);
+    ok(&mut h, &c, "ui.click", json!({"label": "关闭"}));
+    settle(&mut h);
+    ok(&mut h, &c, "ui.command", json!({"id": "help.credits"}));
+    settle(&mut h);
+    assert_eq!(h.state().dialog, Some(pagic_ui_egui::Dialog::CreditsLicenses));
+    let contributors = ok(&mut h, &c, "ui.inspect", json!({"query": "贡献者"}));
+    assert!(contributors["count"].as_u64().unwrap() > 0);
     let close = ok(&mut h, &c, "ui.inspect", json!({"query": "关闭", "role": "Button"}));
     assert!(close["widgets"].as_array().unwrap().iter().any(|w| w["label"] == "关闭" && w["enabled"] == true), "{close}");
     assert_eq!(ok(&mut h, &c, "ui.state", json!({}))["documents"], documents);
@@ -1166,13 +1178,13 @@ fn simplified_chinese_signature_prompts_and_errors_keep_document_state() {
 #[test]
 fn inspect_and_click_by_label_and_id() {
     let (mut h, c) = harness();
-    let found = ok(&mut h, &c, "ui.inspect", json!({ "query": "convert" }));
+    let found = ok(&mut h, &c, "ui.inspect", json!({ "query": "EXPORT" }));
     let convert =
-        found["widgets"].as_array().unwrap().iter().find(|w| w["label"] == "Convert" && w["clickable"] == true).cloned().expect("a Convert tab");
+        found["widgets"].as_array().unwrap().iter().find(|w| w["label"] == "Export" && w["clickable"] == true).cloned().expect("a Convert tab");
     let rect = convert["rect"].as_array().unwrap();
     assert!(rect[2].as_f64().unwrap() > rect[0].as_f64().unwrap());
 
-    ok(&mut h, &c, "ui.click", json!({ "label": "Convert" }));
+    ok(&mut h, &c, "ui.click", json!({ "label": "Export" }));
     assert_eq!(ok(&mut h, &c, "ui.state", json!({}))["mode"], "Convert");
 
     let all = ok(&mut h, &c, "ui.inspect", json!({ "query": "all tools" }));
@@ -1964,9 +1976,12 @@ fn click_and_drag_refuse_coordinates_that_overflow_like_move() {
         let e = call(&mut h, &c, method, params.clone()).expect_err(&format!("{method} {params} is refused"));
         assert!(e.starts_with(&format!("{method}: ")) && e.contains("finite"), "{e}");
         h.run_steps(4);
-        assert_eq!(ok(&mut h, &c, "ui.inspect", json!({ "query": "Convert", "role": "Button" }))["count"], 1);
+        let found = ok(&mut h, &c, "ui.inspect", json!({ "query": "Export", "role": "Button" }));
+        // The substring query also finds All tools' "Export a PDF" entry.
+        assert_eq!(found["widgets"].as_array().unwrap().iter().filter(|w| w["label"] == "Export").count(), 1);
     }
-    let convert = ok(&mut h, &c, "ui.inspect", json!({ "query": "Convert", "role": "Button" }))["widgets"][0]["rect"].clone();
+    let found = ok(&mut h, &c, "ui.inspect", json!({ "query": "Export", "role": "Button" }));
+    let convert = found["widgets"].as_array().unwrap().iter().find(|w| w["label"] == "Export").unwrap()["rect"].clone();
     let (x, y) = (convert[0].as_f64().unwrap() + 4.0, convert[1].as_f64().unwrap() + 4.0);
     assert_eq!(ok(&mut h, &c, "ui.click", json!({ "x": x, "y": y }))["clicked"], json!([x, y]));
     ok(&mut h, &c, "ui.drag", json!({ "from": [x, y], "to": [x + 10.0, y], "steps": 2 }));

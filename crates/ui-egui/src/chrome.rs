@@ -482,8 +482,14 @@ pub fn mode_bar(app: &mut PagicApp, ui: &mut egui::Ui) {
                 }
                 // Acrobat's mode bar has no Read tab: reading is what the viewer does with no tool
                 // in use. Read mode (the panes hidden) stays a View command and a default workspace.
-                for (mode, label) in [(Mode::AllTools, "All tools"), (Mode::Edit, "Edit"), (Mode::Convert, "Convert"), (Mode::Sign, "E-Sign")] {
-                    if widgets::mode_tab(ui, tl!(label), app.mode == mode).clicked() {
+                for (mode, label) in [(Mode::AllTools, "All tools"), (Mode::Edit, "Edit"), (Mode::Convert, "Export"), (Mode::Sign, "Fill & Sign")] {
+                    let response = widgets::mode_tab(ui, tl!(label), app.mode == mode);
+                    if mode == Mode::Sign {
+                        // Distinguish the workspace from the same-named All tools entry.
+                        let name = crate::i18n::fmt(tl!("{name} workspace"), &[("name", tl!(label))]);
+                        response.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, ui.is_enabled(), app.mode == mode, name.clone()));
+                    }
+                    if response.clicked() {
                         app.switch_mode(mode, true);
                     }
                 }

@@ -31,4 +31,6 @@ cargo build --release -p pagic
 ```
 
 ## License
-This project is licensed under the [MIT License](LICENSE).
+This project retains the upstream `MIT OR Apache-2.0` license declaration: see the original
+[MIT License](LICENSE-MIT) and [Apache License 2.0](LICENSE-APACHE). Dependencies and artwork
+retain their own terms; see [verified license sources](licenses/README.md).

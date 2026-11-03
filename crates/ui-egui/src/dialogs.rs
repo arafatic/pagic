@@ -10,6 +10,7 @@ use crate::{CloseRequest, Dialog, PagicApp, PropsTab, panels::human_size, widget
 pub(super) mod appearance;
 pub(super) mod comment_props;
 pub(super) mod credits;
+mod licenses;
 pub(super) mod marks_ui;
 pub(super) mod pageboxes;
 pub(super) mod palette;
@@ -120,12 +121,14 @@ fn dialogs(app: &mut PagicApp, ctx: &egui::Context) {
         app.custom_draft = Some((id, crate::CustomDraft { props: doc.custom_info(), ..Default::default() }));
     }
     let mut req = Pending::default();
-    let modal = widgets::show_modal(ctx, "dialog", |ui| {
+    let modal_id = if dialog == Dialog::CreditsLicenses { "credits-licenses" } else { "dialog" };
+    let modal = widgets::show_modal(ctx, modal_id, |ui| {
         ui.set_width(match dialog {
             Dialog::Properties(_) => 640.0,
             Dialog::Print => 820.0,
             Dialog::FieldProps | Dialog::BulkFieldProps => 600.0,
-            Dialog::About => 780.0,
+            Dialog::About => 540.0,
+            Dialog::CreditsLicenses => 780.0,
             Dialog::UpdateAvailable => 480.0,
             _ => 520.0,
         });
@@ -428,6 +431,7 @@ fn dialog_body(ui: &mut egui::Ui, app: &mut PagicApp, dialog: Dialog, req: &mut 
                 return false;
             }
         }
+        Dialog::CreditsLicenses => return dialog_credits(ui, req),
         Dialog::UpdateAvailable => {
             if !dialog_update(ui, app, req) {
                 return false;
@@ -1482,7 +1486,6 @@ fn dialog_shortcuts(ui: &mut egui::Ui) -> bool {
 
 /// `Dialog::About` content. Returns `false` when it has its own buttons and no footer is wanted.
 fn dialog_about(ui: &mut egui::Ui, _req: &mut Pending) -> bool {
-    let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             ui.label(egui::RichText::new("Pagic").font(theme::semibold(20.0)));
@@ -1490,14 +1493,27 @@ fn dialog_about(ui: &mut egui::Ui, _req: &mut Pending) -> bool {
         });
     });
     ui.add_space(6.0);
-    ui.label(tl!("Contributors"));
-    ui.label(tl!("A clean-room, open-source PDF application written in Rust. MIT OR Apache-2.0."));
-    ui.label(
-        egui::RichText::new("Rendering: hayro (bootstrap) · UI: egui · Icons: Lucide (ISC) · Fonts: Inter, JetBrains Mono, Dancing Script (OFL)")
-            .color(t.text_muted)
-            .small(),
-    );
+    ui.label(tl!("Developed and maintained by Arafatic"));
     true
+}
+
+/// A separate, fixed-size reader keeps legal text from moving About's controls.
+fn dialog_credits(ui: &mut egui::Ui, req: &mut Pending) -> bool {
+    ui.label(egui::RichText::new(tl!("Credits & Licenses")).font(theme::semibold(18.0)));
+    ui.label(tl!("Based on Recto and contributions from open-source developers"));
+    ui.label(tl!("Contributors"));
+    for contributor in credits::CONTRIBUTORS {
+        ui.label(contributor.display_name.unwrap_or(contributor.login));
+    }
+    ui.label("Rendering: hayro · UI: egui · Icons: Lucide (ISC) · Fonts: Inter, JetBrains Mono, Dancing Script and bundled OFL faces");
+    ui.label("MIT OR Apache-2.0. Original and third-party copyright notices and license terms follow.");
+    licenses::show(ui);
+    ui.horizontal(|ui| {
+        if widgets::pill_button(ui, tl!("Close"), true).clicked() {
+            req.close = true;
+        }
+    });
+    false
 }
 
 /// `Dialog::UpdateAvailable` content. Returns `false` as it draws its own action buttons.

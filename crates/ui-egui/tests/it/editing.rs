@@ -6372,13 +6372,13 @@ fn mode_tab(h: &Harness<'static, PagicApp>, label: &str) -> egui::Rect {
 }
 
 /// The cursor over each mode bar tab that page 1's text lies under, once that text is scrolled
-/// up under the bar. With the All tools panel closed it lies under Edit, Convert and E-Sign; it
+/// up under the bar. With the All tools panel closed it lies under Edit, Export and Fill & Sign; it
 /// starts right of All tools.
 fn mode_tab_cursors(h: &mut Harness<'static, PagicApp>, text: egui::Rect) -> [(&'static str, egui::CursorIcon); 3] {
     h.state_mut().views[0].goto = Some((0, 0.5));
     h.run_steps(4);
     let offset = h.state().views[0].page_screen_rect(0).expect("on screen").top();
-    ["Edit", "Convert", "E-Sign"].map(|label| {
+    ["Edit", "Export", "Fill & Sign workspace"].map(|label| {
         let at = mode_tab(h, label).center();
         assert!(text.translate(egui::vec2(0.0, offset)).contains(at), "the text lies under {label}");
         h.hover_at(at);
@@ -6388,7 +6388,7 @@ fn mode_tab_cursors(h: &mut Harness<'static, PagicApp>, text: egui::Rect) -> [(&
 }
 
 const HAND_ON_EVERY_TAB: [(&str, egui::CursorIcon); 3] =
-    [("Edit", egui::CursorIcon::PointingHand), ("Convert", egui::CursorIcon::PointingHand), ("E-Sign", egui::CursorIcon::PointingHand)];
+    [("Edit", egui::CursorIcon::PointingHand), ("Export", egui::CursorIcon::PointingHand), ("Fill & Sign workspace", egui::CursorIcon::PointingHand)];
 
 /// Page 1's text block on screen, relative to the page's top edge, in the window as it is now.
 fn page_text(h: &Harness<'static, PagicApp>) -> egui::Rect {
@@ -6441,7 +6441,7 @@ fn mode_tabs_keep_the_hand_over_a_paragraph_scrolled_under_them() {
     assert_eq!(mode_tab_cursors(&mut h, text), HAND_ON_EVERY_TAB, "the open paragraph under the tabs");
     // Nor does the editor's frame, with the paragraph's top edge just under a tab (the frame
     // reaches 2 to 6 points outside it).
-    let convert = mode_tab(&h, "Convert").center();
+    let convert = mode_tab(&h, "Export").center();
     h.state_mut().views[0].goto = Some((0, 0.0));
     h.run_steps(4);
     let page = h.state().views[0].page_screen_rect(0).expect("on screen");
@@ -6486,4 +6486,61 @@ fn a_paragraph_selected_by_its_frame_deletes_with_one_key() {
         h.run_steps(2);
         assert_eq!(blocks(&h).iter().map(|b| b.text.as_str()).collect::<Vec<_>>(), ["Page 1"], "undo restores it");
     }
+}
+
+#[test]
+fn all_tools_edit_route_activates_and_saves_existing_text() {
+    use pagic_ui_egui::{LeftPanel, Mode, QuickTool, SaveTarget};
+    let mut h = harness(1, |_| {});
+    h.get_by_label("Edit a PDF").click();
+    h.run_steps(3);
+    assert_eq!((h.state().mode, h.state().left, h.state().quick_tool), (Mode::AllTools, LeftPanel::Tool("edit"), QuickTool::EditText));
+    let guidance = h.get_by_label("Click text to edit · Drag images to move").rect();
+    let active = h.get_by_label("Edit text & images active").rect();
+    assert!(guidance.top() >= active.bottom(), "guidance stays below the mode control");
+    assert!(!guidance.intersects(h.state().views[0].page_screen_rect(0).unwrap()), "guidance stays in the panel, off the PDF");
+    let r = h.state().views[0].page_screen_rect(0).unwrap();
+    let at = egui::pos2(r.left() + 40.0 / 200.0 * r.width(), r.top() + (300.0 - 158.0) / 300.0 * r.height());
+    h.hover_at(at);
+    h.run_steps(1);
+    h.drag_at(at);
+    h.run_steps(1);
+    h.drop_at(at);
+    h.run_steps(3);
+    assert!(h.state().views[0].line_editor.is_some());
+    h.key_press_modifiers(Modifiers::COMMAND, Key::A);
+    h.run_steps(1);
+    h.event(egui::Event::Text("Edited text".into()));
+    h.run_steps(2);
+    h.key_press_modifiers(Modifiers::COMMAND, Key::Enter);
+    h.run_steps(3);
+    assert_eq!(texts_of(h.state(), 0), ["Edited text"]);
+    assert!(h.state_mut().execute("edit.undo"));
+    h.run_steps(2);
+    assert_eq!(texts_of(h.state(), 0), ["Page 1"]);
+    assert!(h.state_mut().execute("edit.redo"));
+    let out = temp_path("all-tools-existing-text.pdf");
+    h.state_mut().save_override = Some(out.to_string_lossy().into_owned());
+    assert!(h.state_mut().save_active(SaveTarget::As));
+    let mut reopened = PagicApp::new();
+    reopened.open_bytes("reopened.pdf", None, std::fs::read(out).unwrap()).unwrap();
+    assert_eq!(texts_of(&reopened, 0), ["Edited text"]);
+    h.get_by_label("Back to all tools").click();
+    h.run_steps(3);
+    assert_eq!((h.state().mode, h.state().left, h.state().quick_tool), (Mode::AllTools, LeftPanel::AllTools, QuickTool::Select));
+}
+
+#[test]
+fn edit_mode_feedback_does_not_claim_missing_text_is_absent() {
+    let mut h = harness(1, |_| {});
+    assert!(h.state_mut().apply_edit(pagic_engine::Edit::EditTextBlock { page: 0, block: 0, text: String::new(), style: Default::default() }));
+    h.get_by_label("Edit a PDF").click();
+    h.run_steps(4);
+    h.get_by_label_contains("The editor could not identify editable text on this page.");
+    h.get_by_label_contains("unsupported mappings or structures");
+    h.get_by_label("Edit text & images active").click();
+    h.run_steps(2);
+    assert_eq!(h.state().quick_tool, pagic_ui_egui::QuickTool::Select);
+    assert!(h.query_by_label("Click text to edit · Drag images to move").is_none());
+    assert!(h.query_by_label_contains("The editor could not identify editable text on this page.").is_none());
 }

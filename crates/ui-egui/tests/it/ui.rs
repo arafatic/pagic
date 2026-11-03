@@ -36,7 +36,7 @@ fn home_shows_welcome_and_tools() {
     let h = harness(|_| {});
     assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Pagic"));
     h.get_by_label("Welcome to Pagic");
-    for label in ["Open PDF", "Edit PDF", "Merge PDFs", "Convert", "Compress PDF"] {
+    for label in ["Open PDF", "Edit PDF", "Merge PDFs", "Export", "Compress PDF"] {
         assert!(h.query_all_by_label(label).count() >= 1, "{label}");
     }
     assert!(h.query_by_label("Discord").is_none());
@@ -383,13 +383,13 @@ fn read_mode_rail_buttons_open_their_panels() {
     h.get_by_label("Alpha section");
 }
 
-/// The mode bar matches Acrobat's: All tools, Edit, Convert and E-Sign, with no Read tab. Read
+/// The mode bar exposes All tools, Edit, Export and Fill & Sign, with no Read tab. Read
 /// mode is still a View command.
 #[test]
 fn the_mode_bar_has_no_read_tab() {
     use pagic_ui_egui::Mode;
     let mut h = harness(|app| app.open_bytes("fixture.pdf", None, FIXTURE.to_vec()).expect("fixture opens"));
-    for label in ["All tools", "Edit", "Convert", "E-Sign"] {
+    for label in ["All tools", "Edit", "Export", "Fill & Sign workspace"] {
         assert!(h.query_all_by_label(label).next().is_some(), "the {label} tab is there");
     }
     assert!(h.query_all_by_label("Read").next().is_none(), "no Read tab");
@@ -1659,7 +1659,7 @@ fn the_edit_tab_turns_on_edit_text_and_images() {
     support::outside_menus(&h, "Edit").click();
     h.run_steps(3);
     h.state_mut().quick_tool = QuickTool::Hand;
-    h.query_all_by_label("Convert").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())).unwrap().click();
+    h.query_all_by_label("Export").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())).unwrap().click();
     h.run_steps(3);
     assert_eq!(h.state().quick_tool, QuickTool::Hand);
 }
@@ -1876,7 +1876,7 @@ fn full_screen_neither_is_remembered_nor_hides_the_last_view() {
 #[test]
 fn home_convert_lists_working_formats_and_merge_opens_the_workflow() {
     let mut h = harness(|_| {});
-    h.query_all_by_label("Convert").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())).unwrap().click();
+    h.query_all_by_label("Export").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())).unwrap().click();
     h.run_steps(3);
     for label in ["Word (.docx)", "PowerPoint (.pptx)", "Images", "Plain text", "HTML", "Rich text (.rtf)"] {
         h.get_by_label(label);
@@ -1886,4 +1886,55 @@ fn home_convert_lists_working_formats_and_merge_opens_the_workflow() {
     h.get_by_label("Merge PDFs").click();
     h.run_steps(4);
     assert!(h.state().combine_tab.open);
+}
+
+#[test]
+fn edit_menu_exposes_the_existing_text_action() {
+    let mut h = harness(|app| app.open_bytes("fixture.pdf", None, FIXTURE.to_vec()).unwrap());
+    support::open_menu(&mut h, "Edit");
+    h.get_by_role_and_label(egui::accesskit::Role::MenuItem, "Edit text & images").click();
+    h.run_steps(3);
+    assert_eq!(h.state().quick_tool, pagic_ui_egui::QuickTool::EditText);
+    assert_eq!(h.state().left, pagic_ui_egui::LeftPanel::Tool("edit"));
+}
+
+#[test]
+fn about_is_minimal_and_help_opens_offline_licenses() {
+    let mut h = harness(|app| app.dialog = Some(pagic_ui_egui::Dialog::About));
+    h.get_by_label("Developed and maintained by Arafatic");
+    assert!(h.query_by_label("Based on Recto and contributions from open-source developers").is_none());
+    assert!(h.query_by_role_and_label(egui::accesskit::Role::Button, "Credits & Licenses").is_none());
+    h.get_by_label("Close").click();
+    h.run();
+    support::open_menu(&mut h, "Help");
+    h.get_by_role_and_label(egui::accesskit::Role::MenuItem, "Credits & Licenses").click();
+    h.run();
+    assert_eq!(h.state().dialog, Some(pagic_ui_egui::Dialog::CreditsLicenses));
+    h.get_by_label("Based on Recto and contributions from open-source developers");
+    h.get_by_label("Contributors");
+    assert!(
+        h.query_all_by(|n: &egui_kittest::kittest::AccessKitNode<'_>| n.value().is_some_and(|v| v.contains("Copyright (c) 2026 Arafatul Islam")))
+            .count()
+            >= 1
+    );
+    // Native pointer movement precedes the press; resolve the row again after layout settles.
+    h.get_by_label("Apache License 2.0").hover();
+    h.run();
+    h.get_by_label("Apache License 2.0").click();
+    h.run();
+    assert!(
+        h.query_all_by(|n: &egui_kittest::kittest::AccessKitNode<'_>| n
+            .value()
+            .is_some_and(|v| v.contains("TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION")))
+            .count()
+            >= 1
+    );
+    h.get_by_label("egui — MIT").hover();
+    h.run();
+    h.get_by_label("egui — MIT").click();
+    h.run();
+    assert!(h.query_all_by(|n: &egui_kittest::kittest::AccessKitNode<'_>| n.value().is_some_and(|v| v.contains("Emil Ernerfeldt"))).count() >= 1);
+    h.get_by_label("Close").click();
+    h.run();
+    assert_eq!(h.state().dialog, None);
 }

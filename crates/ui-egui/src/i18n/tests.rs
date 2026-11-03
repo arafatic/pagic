@@ -1223,7 +1223,11 @@ fn pagic_branding_preserves_non_product_recto_printing_terms() {
     for info in &LANGUAGES {
         for line in info.source.lines().filter(|line| !line.starts_with('#')) {
             if let Some(key) = line.split('\t').nth(1) {
-                assert!(!key.contains("Recto"), "{} has an old product key: {key}", info.code);
+                assert!(
+                    !key.contains("Recto") || key == "Based on Recto and contributions from open-source developers",
+                    "{} has an old product key: {key}",
+                    info.code
+                );
             }
         }
         let lang = Lang::from_code(info.code).unwrap();
