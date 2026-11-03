@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def sources(root=ROOT):
-    return {name: (root / name).read_text() for name in [
+    return {name: (root / name).read_text(encoding="utf-8") for name in [
         "packaging/windows/setup.iss", "packaging/windows/pagic.iss",
         "packaging/windows/pagic.wxs", "packaging/windows/install-policy.wxi",
         "packaging/windows/install-policy.json", "packaging/macos/Info.plist.in",
@@ -90,7 +90,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--require-release-ready", action="store_true")
     args = parser.parse_args()
-    identity = json.loads((ROOT / "packaging/pagic-identity.json").read_text())
+    identity = json.loads((ROOT / "packaging/pagic-identity.json").read_text(encoding="utf-8"))
     errors = validate(identity, sources())
     if args.require_release_ready:
         errors += release_blockers(identity)
