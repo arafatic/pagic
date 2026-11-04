@@ -31,10 +31,15 @@ macOS 26.3.1 iconutil for ICNS. Future regeneration can use the normal resvg CLI
 `packaging/icons.sh`. Scaling is uniform. macOS adds the previously agreed transparent inset.
 MSIX theme variants keep the original background and colors; they are not redesigned glyphs.
 
-None of the supplied SVGs contains author, copyright or license metadata. Exact creator/rights and
-redistribution/trademark terms were not separately provided. Record those facts before public
-release; do not infer them from the archived Recto license or invent an authorship claim.
-Approval here is for the requested integration, not a new third-party license notice.
+## Artwork Ownership and Rights Confirmation
+
+The project owner and author originally created, designed, and owns all rights to the Pagic
+artwork files listed above (`pagic.svg`, `pagic-app-icon.svg`, `pagic-document.svg`).
+Complete usage, reproduction, and distribution permissions—including for desktop application
+packages, installers, documentation, marketing materials, and Microsoft Store distribution—are
+formally documented and affirmed in `PAGIC-ARTWORK-RIGHTS.md`. The artwork does not intentionally
+incorporate third-party logos or trademarked marks. The artwork-rights blocker for distribution
+is resolved.
 
 Unused Recto artwork was removed from the current tree after the reference audit; its
 original bytes remain in Git history. LICENSE-recto.txt remains unchanged. Lucide icons/licenses, bundled

@@ -124,7 +124,8 @@ def legal(stage, metadata):
     for name in ('licenses',):
         shutil.copytree(ROOT / name, stage / 'Legal' / name)
     for name in ('assets/icons/LICENSE-lucide.txt', 'assets/app-icon/LICENSE-recto.txt',
-                 'assets/app-icon/PAGIC-PROVENANCE.md', 'docs/brand/LICENSE-brand.txt'):
+                 'assets/app-icon/PAGIC-PROVENANCE.md', 'assets/app-icon/PAGIC-ARTWORK-RIGHTS.md',
+                 'docs/brand/LICENSE-brand.txt'):
         copy(ROOT / name, stage / 'Legal' / name)
     manifest = upstream_notices()
     verified_upstream = {(item['name'], item['version']): item for item in manifest['packages']}
@@ -208,7 +209,6 @@ def legal(stage, metadata):
               'unverified_dependency_notice_files': unverified_gaps,
               'submission_review_required': [
                   'Review dependency SPDX choices and any missing full notice texts.',
-                  'Confirm distribution rights for approved Pagic artwork.',
                   'OCR model bundle is not supplied by this pipeline; OCR requires separately reviewed models.']}
     (stage / 'Legal/dependency-inventory.json').write_text(json.dumps(report, indent=2) + '\n')
     return report

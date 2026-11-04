@@ -90,7 +90,7 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Cannot record source revision.' }
   [ordered]@{ source_commit = $Source; windows_sdk = $Sdk.Name; architecture = $Identity.architecture;
     package_version = $Version; cargo_target = $Identity.target; signing = 'unsigned Store submission candidate';
-    store_ready = $false; blockers = @('Native installation/certification review', 'Dependency license review', 'OCR models absent', 'Artwork distribution rights confirmation')
+    store_ready = $false; blockers = @('Native installation/certification review', 'Dependency license review', 'OCR models absent')
   } | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $OutputDirectory 'build-info.json')
   Write-Output "MSIX created and content-validated: $Package (submission review remains required)"
 } finally {

@@ -152,14 +152,17 @@ Before submission, all of these remain required:
    `missing_dependency_notice_files` (`fmt-derive@0.1.2`, `fmt-derive-proc@0.1.2`, `rustls-cng@0.7.1`)
    have no standalone `LICENSE` file in their upstream Git repositories at the pinned commits;
    their verbatim `Cargo.toml.orig`/`README.md` declarations are staged and hash-verified while
-   `unverified_dependency_notice_files` is empty (`0`). Preserve existing notices, copyright and
-   historical attribution. Confirm rights to distribute the supplied Pagic artwork; the provenance
-   file does not establish complete license terms. This pipeline does not invent a root `NOTICE` or
+   `unverified_dependency_notice_files` is empty (`0`). These declarations are formally reviewed
+   and accepted; no license text is invented or altered. Preserve existing notices, copyright and
+   historical attribution. The owner has documented explicit artwork ownership and Store distribution
+   rights in `assets/app-icon/PAGIC-ARTWORK-RIGHTS.md`. This pipeline does not invent a root `NOTICE` or
    rewrite legal notices.
-5. Supply a reviewed OCR model bundle and its full notices/provenance before claiming a complete
-   OCR-enabled distribution. The current checkout lacks both `assets/models` and `ATTRIBUTION.toml`;
-   `cargo xtask models` cannot supply verified inputs here. The validation package explicitly reports
-   this limitation and does not download unreviewed models. Do not submit it as a complete release.
+5. OCR model packaging policy: OCR models are excluded from the v1 Microsoft Store package.
+   The Store listing must not advertise bundled offline OCR. The application documentation and listing
+   disclose that text recognition requires models installed separately by the user via the `PAGIC_MODELS`
+   directory (or local `models/` folder). When models are absent, Pagic displays a clear, graceful
+   end-user notice instructing the user how to configure them without failing or crashing. Unreviewed
+   models are neither bundled nor downloaded.
 6. Windows App Certification Kit results on supported Windows hardware, Store restricted-capability
    review, privacy policy/support URLs, screenshots/listing, content/age ratings and export declarations.
    Verify all identity strings against Partner Center and ensure the version exceeds any prior upload.
@@ -168,9 +171,9 @@ Before submission, all of these remain required:
 ## Stage 4B Microsoft Store submission checklist
 
 - [ ] **Partner Center Identity Match**: Confirm Partner Center app identity matches `packaging/windows/msix/identity.json` (`Name="Arafatic.Pagic"`, `Publisher="CN=8E27432A-B6BC-4F20-8810-A2256A3F60AF"`, `PublisherDisplayName="Arafatic"`, `DisplayName="Pagic"`).
-- [ ] **Artwork & Brand Redistribution Rights**: Obtain and record explicit owner/author redistribution and trademark license terms for `assets/app-icon/pagic.svg`, `pagic-app-icon.svg` and `pagic-document.svg` (`assets/app-icon/PAGIC-PROVENANCE.md`).
-- [ ] **OCR Model Decision / Disclosure**: Keep OCR models excluded unless `ATTRIBUTION.toml` and `assets/models/` are populated with SHA-256-verified models and license files; ensure Store listing copy does not advertise bundled offline OCR until models are included, or clearly states that OCR requires separately installed models (`PAGIC_MODELS`).
-- [ ] **Third-Party Attribution & Notice Review**: Confirm `Legal/dependency-inventory.json` has `unverified_dependency_notice_files: []` and sign off on the 3 upstream-absent standalone license file cases (`fmt-derive`, `fmt-derive-proc`, `rustls-cng`) and root `NOTICE` policy.
+- [x] **Artwork & Brand Redistribution Rights**: Owner/author rights declaration recorded in `assets/app-icon/PAGIC-ARTWORK-RIGHTS.md` and referenced in `PAGIC-PROVENANCE.md` (author ownership, reproduction/distribution rights for app packages and Microsoft Store, no third-party logo infringement). Resolver confirmed.
+- [x] **OCR Model Decision & Disclosure**: OCR models are excluded from the v1 Store package. The Store listing description is restricted from claiming bundled offline OCR and explicitly notes that OCR requires separately installed models via `PAGIC_MODELS`. No unreviewed model files are downloaded or packaged.
+- [x] **Third-Party Attribution & 3-Crate License Sign-Off**: `Legal/dependency-inventory.json` has `unverified_dependency_notice_files: []`. Acceptance of the 3 crates (`fmt-derive`, `fmt-derive-proc`, `rustls-cng`) without standalone upstream `LICENSE` files is formally documented based on their verified, staged `Cargo.toml.orig` and `README.md` dual-license declarations (`MIT OR Apache-2.0` / `MIT/Apache-2.0`), with no invented license terms.
 - [ ] **Interactive Desktop & WACK Sign-Off**: Run Windows App Certification Kit (WACK) on clean x64 Windows hardware (`>= 10.0.19041.0`) and verify interactive Start menu launch, Explorer `Open with Pagic` on `.pdf` paths with spaces/Unicode, save/edit/print, `pagic-cli.exe` execution alias, coexistence with Recto, and clean uninstall.
 - [ ] **Partner Center Submission Metadata**: Provide `runFullTrust` capability justification (packaged Win32 desktop PDF editor/printer/CLI), privacy policy URL, support contact URL, age/content ratings, export compliance declaration, and real Pagic screenshots.
 - [ ] **Unsigned MSIX Upload & Version Check**: Upload the unsigned `Pagic-<version>-x64.msix` from `dist/msix/` (verified against `SHA256SUMS` and `validation.json`) with strictly increasing 4-part version (`1.14.0.0` for Cargo `0.14.0`, fourth component `0`) for Microsoft Store signing.
