@@ -1814,7 +1814,7 @@
 	there are no pages to print	nincs nyomtatható oldal
 	the document has no tags	a dokumentumnak nincs címkéje
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	a szövegfelismerés modelljei nincsenek telepítve (telepítsd újra a Pagicot, vagy állítsd a PAGIC_MODELS változót az őket tartalmazó mappára)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	a szövegfelismerés modelljei nincsenek telepítve (állítsd a PAGIC_MODELS változót az őket tartalmazó mappára)
 	the image is empty	a kép üres
 	this file isn't XFDF, FDF, XML or text form data	ez a fájl nem XFDF, FDF, XML vagy szöveges űrlapadat
 	nothing in the file matches this document	a fájlban semmi sem illeszkedik ehhez a dokumentumhoz

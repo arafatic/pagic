@@ -1832,7 +1832,7 @@
 	there are no pages to print	tulostettavia sivuja ei ole
 	the document has no tags	asiakirjassa ei ole tageja
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	tekstintunnistusmalleja ei ole asennettu (asenna Pagic uudelleen tai aseta PAGIC_MODELS osoittamaan mallien kansioon)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	tekstintunnistusmalleja ei ole asennettu (aseta PAGIC_MODELS osoittamaan mallien kansioon)
 	the image is empty	kuva on tyhjä
 	this file isn't XFDF, FDF, XML or text form data	tämä tiedosto ei ole XFDF-, FDF-, XML- tai tekstimuotoista lomaketietoa
 	nothing in the file matches this document	mikään tiedostossa ei vastaa tätä asiakirjaa

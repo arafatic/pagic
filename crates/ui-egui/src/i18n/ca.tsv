@@ -1851,7 +1851,7 @@ action wizard	Start	Inicia
 	there are no pages to print	no hi ha pàgines per imprimir
 	the document has no tags	el document no té etiquetes
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	els models de reconeixement de text no estan instal·lats (reinstal·la Pagic o defineix PAGIC_MODELS amb la carpeta que els conté)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	els models de reconeixement de text no estan instal·lats (defineix PAGIC_MODELS amb la carpeta que els conté)
 	the image is empty	la imatge és buida
 	this file isn't XFDF, FDF, XML or text form data	aquest fitxer no és de dades de formulari XFDF, FDF, XML ni de text
 	nothing in the file matches this document	res del fitxer coincideix amb aquest document

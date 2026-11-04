@@ -1907,7 +1907,7 @@ action wizard	Start	شروع
 	there are no pages to print	هیچ صفح‌های برای چاپ وجود ندارد
 	the document has no tags	سند هیچ برچسبی ندارد
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	مدل‌های تشخیص متن نصب نشدهاند (Pagic را دوباره نصب کنید، یا PAGIC_MODELS را روی پوش‌های که آن‌ها را نگه می‌دارد تنظیم کنید)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	مدل‌های تشخیص متن نصب نشدهاند (PAGIC_MODELS را روی پوش‌های که آن‌ها را نگه می‌دارد تنظیم کنید)
 	the image is empty	تصویر خالی است
 	this file isn't XFDF, FDF, XML or text form data	این فایل داده فرم XFDF، FDF، XML یا متنی نیست
 	nothing in the file matches this document	هیچچیز در فایل با این سند مطابقت ندارد

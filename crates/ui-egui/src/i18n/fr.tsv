@@ -1824,7 +1824,7 @@
 	there are no pages to print	il n'y a aucune page à imprimer
 	the document has no tags	le document ne contient aucune balise
 	{0}: {1}	{0} : {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	les modèles de reconnaissance de texte ne sont pas installés (réinstallez Pagic, ou définissez PAGIC_MODELS sur le dossier qui les contient)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	les modèles de reconnaissance de texte ne sont pas installés (définissez PAGIC_MODELS sur le dossier qui les contient)
 	the image is empty	l'image est vide
 	this file isn't XFDF, FDF, XML or text form data	ce fichier n'est pas des données de formulaire XFDF, FDF, XML ou texte
 	nothing in the file matches this document	rien dans le fichier ne correspond à ce document

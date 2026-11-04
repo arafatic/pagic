@@ -119,6 +119,34 @@ fn home_removes_one_recent_file_or_clears_them_all() {
 }
 
 #[test]
+fn home_recent_supports_context_menu_and_keyboard_delete() {
+    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 1600.0)).build_eframe(|_cc| {
+        let mut app = PagicApp::new();
+        app.set_option("language", "en").unwrap();
+        for name in ["first.pdf", "second.pdf", "third.pdf"] {
+            app.recent.push(pagic_ui_egui::RecentFile { name: name.into(), path: format!("/nowhere/{name}"), pages: 1, size: 0 });
+        }
+        app
+    });
+    h.run_steps(4);
+    // Keyboard delete
+    h.get_by_label("second.pdf").focus();
+    h.run_steps(2);
+    h.key_press(egui::Key::Delete);
+    h.run_steps(2);
+    let names: Vec<String> = h.state().recent.iter().map(|r| r.name.clone()).collect();
+    assert_eq!(names, ["first.pdf", "third.pdf"], "Delete key removed focused row");
+
+    // Context menu remove
+    h.get_by_label("first.pdf").click_secondary();
+    h.run_steps(2);
+    h.get_by_label("Remove from Recent").click();
+    h.run_steps(2);
+    let names: Vec<String> = h.state().recent.iter().map(|r| r.name.clone()).collect();
+    assert_eq!(names, ["third.pdf"], "context menu removed first.pdf");
+}
+
+#[test]
 fn every_catalog_tool_is_listed_after_view_more() {
     let mut h = harness(|_| {});
     h.get_by_label("View more").click();

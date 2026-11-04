@@ -1906,7 +1906,7 @@
 	there are no pages to print	印刷するページはありません
 	the document has no tags	文書にタグはありません
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	テキスト認識モデルがインストールされていません（Pagic を再インストールするか、PAGIC_MODELS にモデルのあるフォルダーを設定してください）
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	テキスト認識モデルがインストールされていません（PAGIC_MODELS にモデルのあるフォルダーを設定してください）
 	the image is empty	画像が空です
 	this file isn't XFDF, FDF, XML or text form data	このファイルは XFDF、FDF、XML、テキストのフォームデータではありません
 	nothing in the file matches this document	この文書に一致する項目がファイルにありません

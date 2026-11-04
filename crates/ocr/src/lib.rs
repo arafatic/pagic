@@ -30,7 +30,7 @@ pub const LANGUAGES: &[(&str, &str)] = &[("en", "English")];
 pub enum OcrError {
     /// Shown to end users (release packages ship the models; a source build fetches them with
     /// `cargo xtask models`). The UI catalogs key this exact text.
-    #[error("the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)")]
+    #[error("the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)")]
     NoModels,
     #[error("loading {0}: {1}")]
     Load(String, String),
@@ -429,7 +429,7 @@ mod tests {
     #[test]
     fn missing_models_message_is_for_end_users() {
         let message = OcrError::NoModels.to_string();
-        assert!(!message.contains("cargo") && message.contains("RECTO_MODELS"), "{message}");
+        assert!(!message.contains("cargo") && message.contains("PAGIC_MODELS"), "{message}");
     }
 
     /// End to end on rendered text, when the models are installed (`cargo xtask models`).

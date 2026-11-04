@@ -1274,7 +1274,7 @@
 	there are no pages to print	δεν υπάρχουν σελίδες προς εκτύπωση
 	the document has no tags	το έγγραφο δεν περιέχει ετικέτες δομής
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	τα μοντέλα αναγνώρισης κειμένου δεν είναι εγκατεστημένα (επανεγκαταστήστε το Pagic ή ορίστε το PAGIC_MODELS στον φάκελο που τα περιέχει)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	τα μοντέλα αναγνώρισης κειμένου δεν είναι εγκατεστημένα (ορίστε το PAGIC_MODELS στον φάκελο που τα περιέχει)
 	the image is empty	η εικόνα είναι κενή
 	this file isn't XFDF, FDF, XML or text form data	αυτό το αρχείο δεν περιέχει δεδομένα φόρμας XFDF, FDF, XML ή κειμένου
 	nothing in the file matches this document	κανένα στοιχείο του αρχείου δεν αντιστοιχεί στο έγγραφο

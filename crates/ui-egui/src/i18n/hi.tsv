@@ -1815,7 +1815,7 @@
 	there are no pages to print	छपाई के लिए कोई पृष्ठ नहीं हैं
 	the document has no tags	दस्तावेज़ में कोई टैग नहीं हैं
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	टेक्स्ट पहचान मॉडल इंस्टॉल नहीं हैं (Pagic दोबारा इंस्टॉल करें, या PAGIC_MODELS को उस फ़ोल्डर पर सेट करें जिसमें वे मौजूद हैं)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	टेक्स्ट पहचान मॉडल इंस्टॉल नहीं हैं (PAGIC_MODELS को उस फ़ोल्डर पर सेट करें जिसमें वे मौजूद हैं)
 	the image is empty	छवि ख़ाली है
 	this file isn't XFDF, FDF, XML or text form data	यह फ़ाइल XFDF, FDF, XML या टेक्स्ट फ़ॉर्म डेटा नहीं है
 	nothing in the file matches this document	फ़ाइल में कुछ भी इस दस्तावेज़ से मेल नहीं खाता

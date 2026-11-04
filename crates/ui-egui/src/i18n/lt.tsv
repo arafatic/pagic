@@ -2472,7 +2472,7 @@ comment menu	Edit	Redaguoti
 	the document is protected by a password	dokumentas apsaugotas slaptažodžiu
 	the image is empty	paveikslėlis tuščias
 	the password is incorrect	slaptažodis netinkamas
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	teksto atpažinimo modeliai neįdiegti (iš naujo įdiekite „Pagic“ arba nustatykite PAGIC_MODELS aplanką, kuriame jie laikomi)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	teksto atpažinimo modeliai neįdiegti (nustatykite PAGIC_MODELS aplanką, kuriame jie laikomi)
 	the title must not be empty	pavadinimas negali būti tuščias
 	there are no pages to print	nėra spausdintinų puslapių
 	there are no redaction marks to apply	nėra pritaikytinų konfidencialios informacijos šalinimo žymų

@@ -1891,7 +1891,7 @@
 	there are no pages to print	немає сторінок для друку
 	the document has no tags	документ не має тегів
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	моделі розпізнавання тексту не встановлено (перевстановіть Pagic або задайте в PAGIC_MODELS теку, у якій вони лежать)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	моделі розпізнавання тексту не встановлено (задайте в PAGIC_MODELS теку, у якій вони лежать)
 	the image is empty	зображення порожнє
 	this file isn't XFDF, FDF, XML or text form data	цей файл не містить даних форми XFDF, FDF, XML чи текстових даних
 	nothing in the file matches this document	ніщо у файлі не відповідає цьому документу

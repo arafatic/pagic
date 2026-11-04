@@ -1887,7 +1887,7 @@
 	there are no pages to print	brak stron do wydrukowania
 	the document has no tags	dokument nie ma tagów
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	modele rozpoznawania tekstu nie są zainstalowane (zainstaluj Pagic ponownie lub ustaw PAGIC_MODELS na folder zawierający modele)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	modele rozpoznawania tekstu nie są zainstalowane (ustaw PAGIC_MODELS na folder zawierający modele)
 	the image is empty	obraz jest pusty
 	this file isn't XFDF, FDF, XML or text form data	ten plik nie zawiera danych formularza XFDF, FDF, XML ani tekstowych
 	nothing in the file matches this document	żadne dane w pliku nie pasują do tego dokumentu

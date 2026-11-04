@@ -1787,7 +1787,7 @@
 	there are no pages to print	yazdırılacak sayfa yok
 	the document has no tags	belgenin etiketi yok
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	metin tanıma modelleri yüklü değil (Pagic'ı yeniden yükleyin veya PAGIC_MODELS değişkenini bunları içeren klasöre ayarlayın)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	metin tanıma modelleri yüklü değil (PAGIC_MODELS değişkenini bunları içeren klasöre ayarlayın)
 	the image is empty	resim boş
 	this file isn't XFDF, FDF, XML or text form data	bu dosya XFDF, FDF, XML veya metin form verisi değil
 	nothing in the file matches this document	dosyadaki hiçbir şey bu belgeyle eşleşmiyor

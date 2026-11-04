@@ -1813,7 +1813,7 @@ action wizard	Start	ప్రారంభించు
 	there are no pages to print	ముద్రించడానికి పేజీలు ఏవీ లేవు
 	the document has no tags	పత్రంలో ట్యాగ్‌లు లేవు
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	టెక్స్ట్ గుర్తింపు మోడల్‌లు ఇన్‌స్టాల్ చేయబడలేదు (Pagicను మళ్లీ ఇన్‌స్టాల్ చేయండి, లేదా వాటిని కలిగి ఉన్న ఫోల్డర్‌కు PAGIC_MODELSను సెట్ చేయండి)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	టెక్స్ట్ గుర్తింపు మోడల్‌లు ఇన్‌స్టాల్ చేయబడలేదు (వాటిని కలిగి ఉన్న ఫోల్డర్‌కు PAGIC_MODELSను సెట్ చేయండి)
 	the image is empty	చిత్రం ఖాళీగా ఉంది
 	this file isn't XFDF, FDF, XML or text form data	ఈ ఫైల్ XFDF, FDF, XML లేదా టెక్స్ట్ ఫారం డేటా కాదు
 	nothing in the file matches this document	ఫైల్‌లోని ఏదీ ఈ పత్రంతో సరిపోలడం లేదు

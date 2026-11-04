@@ -2403,7 +2403,7 @@ comment menu	Edit	Edit
 	the document is protected by a password	dokumen dilindungi kata sandi
 	the image is empty	gambarnya kosong
 	the password is incorrect	kata sandinya salah
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	model pengenalan teks belum terpasang (pasang ulang Pagic, atau atur PAGIC_MODELS ke folder yang memuatnya)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	model pengenalan teks belum terpasang (atur PAGIC_MODELS ke folder yang memuatnya)
 	the title must not be empty	judul tidak boleh kosong
 	there are no pages to print	tidak ada halaman untuk dicetak
 	there are no redaction marks to apply	tidak ada tanda penyensoran untuk diterapkan

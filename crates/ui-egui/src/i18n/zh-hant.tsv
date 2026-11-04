@@ -1893,7 +1893,7 @@
 	there are no pages to print	沒有可列印的頁面
 	the document has no tags	此文件沒有標籤
 	{0}: {1}	{0}：{1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	尚未安裝文字辨識模型（請重新安裝 Pagic，或將 PAGIC_MODELS 設定為包含這些模型的資料夾）
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	尚未安裝文字辨識模型（請將 PAGIC_MODELS 設定為包含這些模型的資料夾）
 	the image is empty	圖片是空的
 	this file isn't XFDF, FDF, XML or text form data	此檔案不是 XFDF、FDF、XML 或純文字表單資料
 	nothing in the file matches this document	檔案中沒有與此文件相符的資料

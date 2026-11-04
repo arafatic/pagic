@@ -2112,7 +2112,7 @@
 	the image is empty	изображението е празно
 	The operation failed.	Операцията е неуспешна.
 	the password is incorrect	паролата е грешна
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	моделите за разпознаване на текст не са инсталирани (инсталирайте Pagic отново или задайте в PAGIC_MODELS папката, която ги съдържа)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	моделите за разпознаване на текст не са инсталирани (задайте в PAGIC_MODELS папката, която ги съдържа)
 	The title in the metadata and the document information differ	Заглавието в метаданните и в информацията за документа се различават
 	the title must not be empty	заглавието не може да е празно
 	there are no pages to print	няма страници за печат

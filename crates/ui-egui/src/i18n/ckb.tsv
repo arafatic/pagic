@@ -1857,7 +1857,7 @@
 	there are no pages to print	هیچ پەڕەیەک نییە بۆ چاپکردن
 	the document has no tags	بەڵگەنامەکە هیچ تاگێکی نییە
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	مۆدێلەکانی ناسینەوەی دەق دانەمەزراون (Pagic دابمەزرێنەرەوە، یان PAGIC_MODELS بکە بە فۆڵدەرەکەی کە لەخۆی دەگرێت)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	مۆدێلەکانی ناسینەوەی دەق دانەمەزراون (PAGIC_MODELS بکە بە فۆڵدەرەکەی کە لەخۆی دەگرێت)
 	the image is empty	وێنەکە بەتاڵە
 	this file isn't XFDF, FDF, XML or text form data	ئەم فایلە داتای فۆڕمی XFDF یان FDF یان XML یان دەق نییە
 	nothing in the file matches this document	هیچ شتێک لە فایلەکەدا لەگەڵ ئەم بەڵگەنامەیە ناگونجێت

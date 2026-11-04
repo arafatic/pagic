@@ -1829,7 +1829,7 @@
 	there are no pages to print	keine Seiten zum Drucken vorhanden
 	the document has no tags	das Dokument hat keine Tags
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	die Modelle für die Texterkennung sind nicht installiert (installiere Pagic neu oder setze PAGIC_MODELS auf den Ordner, der sie enthält)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	die Modelle für die Texterkennung sind nicht installiert (setze PAGIC_MODELS auf den Ordner, der sie enthält)
 	the image is empty	das Bild ist leer
 	this file isn't XFDF, FDF, XML or text form data	diese Datei enthält keine Formulardaten als XFDF, FDF, XML oder Text
 	nothing in the file matches this document	nichts in der Datei passt zu diesem Dokument

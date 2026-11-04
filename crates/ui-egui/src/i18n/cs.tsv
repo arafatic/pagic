@@ -1943,7 +1943,7 @@ key	Space	Mezerník
 	there are no pages to print	nejsou žádné stránky k tisku
 	the document has no tags	dokument nemá žádné tagy
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	modely pro rozpoznávání textu nejsou nainstalované (přeinstalujte Pagic nebo nastavte PAGIC_MODELS na složku, ve které jsou)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	modely pro rozpoznávání textu nejsou nainstalované (nastavte PAGIC_MODELS na složku, ve které jsou)
 	the image is empty	obrázek je prázdný
 	this file isn't XFDF, FDF, XML or text form data	tento soubor neobsahuje data formuláře ve formátu XFDF, FDF, XML ani v textovém
 	nothing in the file matches this document	nic v souboru neodpovídá tomuto dokumentu

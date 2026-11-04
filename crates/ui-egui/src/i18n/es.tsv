@@ -1906,7 +1906,7 @@ action wizard	Start	Iniciar
 	there are no pages to print	no hay páginas que imprimir
 	the document has no tags	el documento no tiene etiquetas
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	los modelos de reconocimiento de texto no están instalados (reinstala Pagic o define PAGIC_MODELS con la carpeta que los contiene)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	los modelos de reconocimiento de texto no están instalados (define PAGIC_MODELS con la carpeta que los contiene)
 	the image is empty	la imagen está vacía
 	this file isn't XFDF, FDF, XML or text form data	este archivo no contiene datos de formulario XFDF, FDF, XML ni de texto
 	nothing in the file matches this document	nada en el archivo coincide con este documento

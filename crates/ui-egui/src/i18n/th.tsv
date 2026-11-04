@@ -1838,7 +1838,7 @@
 	there are no pages to print	ไม่มีหน้าให้พิมพ์
 	the document has no tags	เอกสารไม่มีแท็ก
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	ยังไม่ได้ติดตั้งโมเดลการรู้จำข้อความ (ติดตั้ง Pagic ใหม่ หรือตั้ง PAGIC_MODELS ไปยังโฟลเดอร์ที่มีไฟล์เหล่านั้น)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	ยังไม่ได้ติดตั้งโมเดลการรู้จำข้อความ (ตั้ง PAGIC_MODELS ไปยังโฟลเดอร์ที่มีไฟล์เหล่านั้น)
 	the image is empty	รูปภาพว่างเปล่า
 	this file isn't XFDF, FDF, XML or text form data	ไฟล์นี้ไม่ใช่ข้อมูลแบบฟอร์มชนิด XFDF, FDF, XML หรือข้อความ
 	nothing in the file matches this document	ไม่มีอะไรในไฟล์ที่ตรงกับเอกสารนี้

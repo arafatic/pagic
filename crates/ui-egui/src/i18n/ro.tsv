@@ -2414,7 +2414,7 @@ comment menu	Edit	Editare
 	the document is protected by a password	documentul este protejat cu parolă
 	the image is empty	imaginea este goală
 	the password is incorrect	parola este incorectă
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	modelele de recunoaștere a textului nu sunt instalate (reinstalați Pagic sau setați PAGIC_MODELS la folderul care le conține)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	modelele de recunoaștere a textului nu sunt instalate (setați PAGIC_MODELS la folderul care le conține)
 	the title must not be empty	titlul nu poate fi gol
 	there are no pages to print	nu există pagini de imprimat
 	there are no redaction marks to apply	nu există marcaje de anonimizare de aplicat

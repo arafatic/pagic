@@ -2263,7 +2263,7 @@ calendar date	December	Желтоқсан
 	Zoom in ({key})	Үлкейту ({key})
 	Zoom in / out (also pinch or {key}-scroll)	Үлкейту / кішірейту (сонымен қатар қысу немесе {key}-айналдыру)
 	Zoom out ({key})	Кішірейту ({key})
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	мәтінді тану модельдері орнатылмаған (Pagic қайта орнатыңыз немесе PAGIC_MODELS айнымалысына олар жатқан қалтаны көрсетіңіз)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	мәтінді тану модельдері орнатылмаған (PAGIC_MODELS айнымалысына олар жатқан қалтаны көрсетіңіз)
 	{name} is too large for a word list (at most 1 MB).	{name} сөз тізімі үшін тым үлкен (ең көбі 1 МБ).
 	{n} fields selected	{n} өріс таңдалды
 	{n} word(s) or phrase(s)	{n} сөз немесе тіркес

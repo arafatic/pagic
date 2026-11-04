@@ -2408,7 +2408,7 @@
 	the document is protected by a password	dokumentet er beskyttet med passord
 	the image is empty	bildet er tomt
 	the password is incorrect	passordet er feil
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	modellene for tekstgjenkjenning er ikke installert (installer Pagic på nytt, eller sett PAGIC_MODELS til mappen som inneholder dem)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	modellene for tekstgjenkjenning er ikke installert (sett PAGIC_MODELS til mappen som inneholder dem)
 	the title must not be empty	tittelen kan ikke være tom
 	there are no pages to print	det er ingen sider å skrive ut
 	there are no redaction marks to apply	det er ingen sladdemerker å bruke

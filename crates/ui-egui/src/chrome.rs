@@ -443,17 +443,22 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
             15.0,
             if active { t.accent } else { t.text_muted },
         );
-        ui.painter().galley(rect.min + vec2(28.0, (rect.height() - label_galley.size().y) / 2.0), label_galley.clone(), label_color);
+        let title_pos = rect.min + vec2(28.0, (rect.height() - label_galley.size().y) / 2.0);
+        ui.painter().galley(title_pos, label_galley.clone(), label_color);
+        if dirty {
+            let dot_pos = egui::pos2(title_pos.x + text_w + 6.0, rect.center().y);
+            ui.painter().circle_filled(dot_pos, 3.0, if active { t.accent } else { t.text_muted });
+        }
     });
     let x_rect = Rect::from_center_size(rect.right_center() - vec2(16.0, 0.0), vec2(20.0, 20.0));
     let x = ui.interact(x_rect, id.with("close"), Sense::click());
     let x_press = theme::Press::track(ui, &x);
     x_press.wash(ui, x_rect, 4, false);
-    // Unsaved changes: a dot where the close button sits, until the tab is hovered.
-    if dirty && !resp.hovered() && !x.hovered() {
-        ui.painter().circle_filled(x_rect.center(), 4.0, if active { t.text } else { t.text_muted });
-    } else if active || resp.hovered() || x.hovered() {
+    // Unsaved changes: close button or dot when idle; persistent dot beside title stays visible.
+    if active || resp.hovered() || x.hovered() {
         icons::paint(ui, x_rect.translate(x_press.offset()), "x", 13.0, t.text_muted);
+    } else if dirty {
+        ui.painter().circle_filled(x_rect.center(), 4.0, if active { t.text } else { t.text_muted });
     }
     if theme::hand(x).clicked() {
         *close = Some(index);
@@ -517,8 +522,16 @@ pub fn mode_bar(app: &mut PagicApp, ui: &mut egui::Ui) {
                         }
                     });
                     ui.add_space(8.0);
-                    if widgets::search_box(ui, tl!("Find tools and commands"), ui.available_width().clamp(40.0, 220.0)).clicked() {
-                        app.palette_open = true;
+                    let avail = ui.available_width();
+                    if avail >= 110.0 {
+                        if widgets::search_box(ui, tl!("Find tools and commands"), avail.clamp(40.0, 220.0)).clicked() {
+                            app.palette_open = true;
+                        }
+                    } else if avail >= 32.0 {
+                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Find tools and commands ({key})"), "view.palette");
+                        if icons::button(ui, "search", 32.0, false, &tip).clicked() {
+                            app.palette_open = true;
+                        }
                     }
                 });
             });

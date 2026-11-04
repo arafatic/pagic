@@ -1815,7 +1815,7 @@
 	there are no pages to print	인쇄할 페이지가 없음
 	the document has no tags	문서에 태그가 없음
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	텍스트 인식 모델이 설치되어 있지 않음(Pagic을 다시 설치하거나 PAGIC_MODELS를 모델이 있는 폴더로 설정하세요)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	텍스트 인식 모델이 설치되어 있지 않음(PAGIC_MODELS를 모델이 있는 폴더로 설정하세요)
 	the image is empty	이미지가 비어 있음
 	this file isn't XFDF, FDF, XML or text form data	이 파일은 XFDF, FDF, XML 또는 텍스트 양식 데이터가 아님
 	nothing in the file matches this document	파일에서 이 문서와 일치하는 항목이 없음

@@ -1893,7 +1893,7 @@
 	there are no pages to print	لا توجد صفحات للطباعة
 	the document has no tags	المستند لا يحتوي على وسوم
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	نماذج التعرف على النص غير مثبتة (أعد تثبيت Pagic، أو اضبط PAGIC_MODELS على المجلد الذي يحتويها)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	نماذج التعرف على النص غير مثبتة (اضبط PAGIC_MODELS على المجلد الذي يحتويها)
 	the image is empty	الصورة فارغة
 	this file isn't XFDF, FDF, XML or text form data	هذا الملف ليس بيانات نموذج بصيغة XFDF أو FDF أو XML أو نص
 	nothing in the file matches this document	لا شيء في الملف يطابق هذا المستند

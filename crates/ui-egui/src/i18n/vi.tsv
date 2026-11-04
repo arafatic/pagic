@@ -2458,7 +2458,7 @@ comment menu	Edit	Sửa
 	the document is protected by a password	tài liệu được bảo vệ bằng mật khẩu
 	the image is empty	hình ảnh trống
 	the password is incorrect	mật khẩu không đúng
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	các mô hình nhận dạng văn bản chưa được cài đặt (hãy cài đặt lại Pagic, hoặc đặt PAGIC_MODELS thành thư mục chứa chúng)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	các mô hình nhận dạng văn bản chưa được cài đặt (đặt PAGIC_MODELS thành thư mục chứa chúng)
 	the title must not be empty	tiêu đề không được để trống
 	there are no pages to print	không có trang nào để in
 	there are no redaction marks to apply	không có dấu đánh dấu xóa nào để áp dụng

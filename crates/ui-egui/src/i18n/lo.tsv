@@ -1867,7 +1867,7 @@
 	there are no pages to print	ບໍ່ມີໜ້າທີ່ຈະພິມ
 	the document has no tags	ເອກະສານບໍ່ມີແທັກ
 	{0}: {1}	{0}: {1}
-	the text recognition models are not installed (reinstall Pagic, or set PAGIC_MODELS to the folder that holds them)	ໂມເດວການຮັບຮູ້ຂໍ້ຄວາມຍັງບໍ່ໄດ້ຕິດຕັ້ງ (ຕິດຕັ້ງ Pagic ຄືນໃໝ່, ຫຼື ຕັ້ງຄ່າ PAGIC_MODELS ໄປຫາໂຟນເດີທີ່ບັນຈຸໂມເດວ)
+	the text recognition models are not installed (set PAGIC_MODELS to the folder that holds them)	ໂມເດວການຮັບຮູ້ຂໍ້ຄວາມຍັງບໍ່ໄດ້ຕິດຕັ້ງ (ຕັ້ງຄ່າ PAGIC_MODELS ໄປຫາໂຟນເດີທີ່ບັນຈຸໂມເດວ)
 	the image is empty	ຮູບພາບຫວ່າງເປົ່າ
 	this file isn't XFDF, FDF, XML or text form data	ໄຟລ໌ນີ້ບໍ່ແມ່ນຂໍ້ມູນຟອມປະເພດ XFDF, FDF, XML ຫຼື ຂໍ້ຄວາມ
 	nothing in the file matches this document	ບໍ່ມີສິ່ງໃດໃນໄຟລ໌ກົງກັບເອກະສານນີ້
