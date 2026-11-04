@@ -16,6 +16,7 @@ import struct
 import subprocess
 import xml.etree.ElementTree as ET
 import zipfile
+from urllib.parse import unquote
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -246,10 +247,15 @@ def verify_archive(package, stage):
     with zipfile.ZipFile(package) as archive:
         require(archive.testzip() is None, 'MSIX ZIP CRC failure')
         names = archive.namelist()
-        require(len(names) == len(set(n.lower() for n in names)), 'Duplicate package members')
-        require(all(not n.startswith(('/', '\\')) and '..' not in n.replace('\\', '/').split('/') for n in names), 'Unsafe package member')
+        # MakeAppx stores OPC part names: e.g. a literal '+' is '%2B' in the ZIP.
+        # Decode exactly once; unquote_plus would incorrectly turn literal '+' into a space.
+        decoded = [unquote(name, errors='strict') for name in names]
+        require(len(decoded) == len(set(n.lower() for n in decoded)), 'Duplicate package members')
+        require(all(not n.startswith(('/', '\\')) and '..' not in n.replace('\\', '/').split('/') for n in decoded), 'Unsafe package member')
+        members = dict(zip(decoded, names))
         for relative, expected in inventory(stage).items():
-            require(hashlib.sha256(archive.read(relative)).hexdigest() == expected, f'Package content mismatch: {relative}')
+            require(relative in members, f'Missing archive entry: {relative}')
+            require(hashlib.sha256(archive.read(members[relative])).hexdigest() == expected, f'Package content mismatch: {relative}')
         require({'AppxBlockMap.xml', '[Content_Types].xml'} <= set(names), 'Missing MSIX metadata')
         blockmap = ET.fromstring(archive.read('AppxBlockMap.xml'))
         require(blockmap.get('HashMethod') == 'http://www.w3.org/2001/04/xmlenc#sha256', 'MSIX block map must use SHA-256')

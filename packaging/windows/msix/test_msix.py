@@ -98,6 +98,42 @@ class PackagingTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     msix.verify_archive(package, stage)
 
+    def test_makeappx_uri_encoded_license_paths_preserve_notice_bytes(self):
+        # Reproduces the native Windows MakeAppx ash-license member spelling.
+        relative = 'Legal/dependencies/ash-0.38.0+1.3.281-e7f9f4e9/LICENSE-APACHE'
+        with tempfile.TemporaryDirectory() as directory:
+            stage = Path(directory) / 'stage'
+            notice = stage / relative
+            notice.parent.mkdir(parents=True)
+            notice.write_bytes(b'Copyright fixture\r\nComplete license terms\n')
+            # Also preserve a literal percent sequence: URI decoding must happen only once.
+            literal = stage / 'Legal/literal%2B+notice.txt'
+            literal.write_bytes(b'Original literal-percent notice\n')
+            package = Path(directory) / 'makeappx-test-only.zip'
+            with zipfile.ZipFile(package, 'w') as archive:
+                archive.write(notice, relative.replace('+', '%2B'))
+                archive.write(literal, 'Legal/literal%252B+notice.txt')
+                archive.writestr('AppxBlockMap.xml', '<BlockMap HashMethod="http://www.w3.org/2001/04/xmlenc#sha256"/>')
+                archive.writestr('[Content_Types].xml', '<Types/>')
+            with patch.object(msix, 'validate_stage'):
+                self.assertEqual(msix.verify_archive(package, stage)['files_verified'], 2)
+                notice.write_bytes(b'Truncated or altered license')
+                with self.assertRaisesRegex(ValueError, 'content mismatch'):
+                    msix.verify_archive(package, stage)
+
+    def test_uri_decoding_rejects_ambiguous_or_escaping_members(self):
+        with tempfile.TemporaryDirectory() as directory:
+            stage = Path(directory) / 'stage'
+            stage.mkdir()
+            for names in (('Legal/a+b', 'Legal/a%2Bb'), ('%2E%2E/outside',)):
+                with self.subTest(names=names):
+                    package = Path(directory) / 'invalid-test-only.zip'
+                    with zipfile.ZipFile(package, 'w') as archive:
+                        for name in names:
+                            archive.writestr(name, b'fixture')
+                    with patch.object(msix, 'validate_stage'), self.assertRaises(ValueError):
+                        msix.verify_archive(package, stage)
+
     def test_unsafe_package_paths_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             stage = Path(directory) / 'stage'
