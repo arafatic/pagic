@@ -85,6 +85,22 @@ class PackagingTests(unittest.TestCase):
                     manifest.write_text(rendered.replace(old, new))
                     msix.validate_manifest(manifest)
 
+    @patch.object(msix, 'workspace_version', return_value='0.14.0')
+    def test_console_alias_requires_application_multiple_instances(self, _):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / 'AppxManifest.xml'
+            rendered = msix.render_manifest('0.14.0')
+            manifest.write_text(rendered)
+            msix.validate_manifest(manifest)
+            required = 'uap10:SupportsMultipleInstances="true"'
+            self.assertIn(required, rendered)
+            for replacement in ('', 'uap10:SupportsMultipleInstances="false"',
+                                'SupportsMultipleInstances="true"'):
+                with self.subTest(replacement=replacement):
+                    manifest.write_text(rendered.replace(required, replacement))
+                    with self.assertRaisesRegex(ValueError, 'Application uap10:SupportsMultipleInstances'):
+                        msix.validate_manifest(manifest)
+
     def test_wrong_executable_architecture_and_subsystem_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             exe = Path(directory) / 'test.exe'

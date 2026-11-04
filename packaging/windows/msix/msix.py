@@ -218,6 +218,8 @@ def validate_manifest(path):
                              'MaxVersionTested': contract['maximum_tested_windows_version']}, 'Wrong OS contract')
     require([n.text for n in root.findall('.//uap:FileType', NS)] == ['.pdf'], 'Incorrect file associations')
     require(root.find('.//uap3:Verb', NS).get('Parameters') == '"%1"', 'PDF paths must be quoted')
+    require(app.get('{'+NS['uap10']+'}SupportsMultipleInstances') == 'true',
+            'Console CLI alias requires Application uap10:SupportsMultipleInstances=true')
     aliases = app.findall('f:Extensions/uap5:Extension[@Category="windows.appExecutionAlias"]', NS)
     require(len(aliases) == 1, 'Expected one CLI execution alias extension')
     extension = aliases[0]
