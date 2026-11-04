@@ -57,8 +57,33 @@ try {
     Start-Sleep -Milliseconds 250
   } while ((Get-Date) -lt $Deadline)
   if (-not (Test-Path $Control)) { throw 'Installed GUI did not become ready in 60 seconds. Inspect Windows graphics/session logs.' }
-  $State = & (Join-Path $Installed.InstallLocation 'pagic-cli.exe') ui --control $Control ui.state
-  if ($LASTEXITCODE -ne 0) { throw 'Installed app control query failed.' }
+  # Explicit pipes avoid PowerShell's native-command encoding/redirect mismatch for MSIX executables.
+  $CliInfo = [Diagnostics.ProcessStartInfo]::new()
+  $CliInfo.FileName = Join-Path $Installed.InstallLocation 'pagic-cli.exe'
+  $CliInfo.UseShellExecute = $false
+  $CliInfo.RedirectStandardOutput = $true
+  $CliInfo.RedirectStandardError = $true
+  $CliInfo.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+  $CliInfo.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
+  foreach ($Argument in @('ui', '--control', $Control, 'ui.state')) { $CliInfo.ArgumentList.Add($Argument) }
+  $Cli = [Diagnostics.Process]::new()
+  $Cli.StartInfo = $CliInfo
+  $CliStarted = $false
+  try {
+    $CliStarted = $Cli.Start()
+    if (-not $CliStarted) { throw 'Installed app control query failed to start.' }
+    # Drain both streams concurrently so a full stderr pipe cannot block stdout or process exit.
+    $Stdout = $Cli.StandardOutput.ReadToEndAsync()
+    $Stderr = $Cli.StandardError.ReadToEndAsync()
+    if (-not $Cli.WaitForExit(60000)) { throw 'Installed app control query timed out after 60 seconds.' }
+    $State = $Stdout.GetAwaiter().GetResult()
+    $CliError = $Stderr.GetAwaiter().GetResult()
+    if ($Cli.ExitCode -ne 0) { throw "Installed app control query failed (exit $($Cli.ExitCode)): $CliError" }
+    if ($CliError) { Write-Host $CliError }
+  } finally {
+    if ($CliStarted -and -not $Cli.HasExited) { $Cli.Kill($true); $null = $Cli.WaitForExit(5000) }
+    $Cli.Dispose()
+  }
   $Parsed = ($State -join "`n") | ConvertFrom-Json
   if (@($Parsed.documents).Count -ne 1 -or $Parsed.documents[0].pages -ne 1 -or $Parsed.documents[0].name -ne 'Pagic MSIX smoke.pdf') {
     throw 'Installed application did not open the expected one-page PDF.'
