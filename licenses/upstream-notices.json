@@ -1,0 +1,907 @@
+{
+  "packages": [
+    {
+      "name": "accesskit",
+      "version": "0.25.2",
+      "repository": "https://github.com/AccessKit/accesskit",
+      "vcs_sha1": "f3026222559c7f5f46d8f25cb7404de68eb149f0",
+      "notices": [
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-APACHE",
+          "name": "LICENSE-APACHE",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-APACHE",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-MIT",
+          "git_blob_sha1": "31aa79387f27e730e33d871925e152e35e428031",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE.chromium",
+          "name": "LICENSE.chromium",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE.chromium",
+          "git_blob_sha1": "a32e00ce6be3620adca152e53734f7de8fda38cf",
+          "sha256": "845022e0c1db1abb41a6ba4cd3c4b674ec290f3359d9d3c78ae558d4c0ed9308"
+        }
+      ]
+    },
+    {
+      "name": "accesskit_consumer",
+      "version": "0.39.2",
+      "repository": "https://github.com/AccessKit/accesskit",
+      "vcs_sha1": "f3026222559c7f5f46d8f25cb7404de68eb149f0",
+      "notices": [
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-APACHE",
+          "name": "LICENSE-APACHE",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-APACHE",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-MIT",
+          "git_blob_sha1": "31aa79387f27e730e33d871925e152e35e428031",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE.chromium",
+          "name": "LICENSE.chromium",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE.chromium",
+          "git_blob_sha1": "a32e00ce6be3620adca152e53734f7de8fda38cf",
+          "sha256": "845022e0c1db1abb41a6ba4cd3c4b674ec290f3359d9d3c78ae558d4c0ed9308"
+        }
+      ]
+    },
+    {
+      "name": "accesskit_windows",
+      "version": "0.35.2",
+      "repository": "https://github.com/AccessKit/accesskit",
+      "vcs_sha1": "f3026222559c7f5f46d8f25cb7404de68eb149f0",
+      "notices": [
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-APACHE",
+          "name": "LICENSE-APACHE",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-APACHE",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-MIT",
+          "git_blob_sha1": "31aa79387f27e730e33d871925e152e35e428031",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE.chromium",
+          "name": "LICENSE.chromium",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE.chromium",
+          "git_blob_sha1": "a32e00ce6be3620adca152e53734f7de8fda38cf",
+          "sha256": "845022e0c1db1abb41a6ba4cd3c4b674ec290f3359d9d3c78ae558d4c0ed9308"
+        }
+      ]
+    },
+    {
+      "name": "accesskit_winit",
+      "version": "0.34.2",
+      "repository": "https://github.com/AccessKit/accesskit",
+      "vcs_sha1": "f3026222559c7f5f46d8f25cb7404de68eb149f0",
+      "notices": [
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-APACHE",
+          "name": "LICENSE-APACHE",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-APACHE",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE-MIT",
+          "git_blob_sha1": "31aa79387f27e730e33d871925e152e35e428031",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "path": "licenses/upstream/AccessKit-accesskit-f3026222559c/LICENSE.chromium",
+          "name": "LICENSE.chromium",
+          "upstream_url": "https://github.com/AccessKit/accesskit/blob/f3026222559c7f5f46d8f25cb7404de68eb149f0/LICENSE.chromium",
+          "git_blob_sha1": "a32e00ce6be3620adca152e53734f7de8fda38cf",
+          "sha256": "845022e0c1db1abb41a6ba4cd3c4b674ec290f3359d9d3c78ae558d4c0ed9308"
+        }
+      ]
+    },
+    {
+      "name": "alloc-stdlib",
+      "version": "0.2.4",
+      "repository": "https://github.com/dropbox/rust-alloc-no-stdlib",
+      "vcs_sha1": "ae42d22078b98549e987d2f03d12df7b984fde47",
+      "notices": [
+        {
+          "path": "licenses/upstream/dropbox-rust-alloc-no-stdlib-ae42d22078b9/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/dropbox/rust-alloc-no-stdlib/blob/ae42d22078b98549e987d2f03d12df7b984fde47/LICENSE",
+          "git_blob_sha1": "cd496ba72eb37e83a44958358d1f89a8a28cbc15",
+          "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae"
+        }
+      ]
+    },
+    {
+      "name": "boa_ast",
+      "version": "0.22.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "337a3668a0dc86dd401ea20906e782249a64a228",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "boa_engine",
+      "version": "0.22.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "337a3668a0dc86dd401ea20906e782249a64a228",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "boa_gc",
+      "version": "0.22.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "337a3668a0dc86dd401ea20906e782249a64a228",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "boa_interner",
+      "version": "0.22.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "337a3668a0dc86dd401ea20906e782249a64a228",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "boa_macros",
+      "version": "0.22.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "337a3668a0dc86dd401ea20906e782249a64a228",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "boa_parser",
+      "version": "0.22.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "337a3668a0dc86dd401ea20906e782249a64a228",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "boa_string",
+      "version": "0.22.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "337a3668a0dc86dd401ea20906e782249a64a228",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/337a3668a0dc86dd401ea20906e782249a64a228/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "clipboard-win",
+      "version": "5.4.3",
+      "repository": "https://github.com/DoumanAsh/clipboard-win",
+      "vcs_sha1": "ed27008ae5d1f10cfbb266de039f0fb35fd05a56",
+      "notices": [
+        {
+          "path": "licenses/upstream/DoumanAsh-clipboard-win-ed27008ae5d1/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/DoumanAsh/clipboard-win/blob/ed27008ae5d1f10cfbb266de039f0fb35fd05a56/LICENSE",
+          "git_blob_sha1": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+          "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
+        }
+      ]
+    },
+    {
+      "name": "cms",
+      "version": "0.2.3",
+      "repository": "https://github.com/RustCrypto/formats",
+      "vcs_sha1": "5821a21553509dbd03eae593b0a1fad4e2083d4e",
+      "notices": [
+        {
+          "path": "licenses/upstream/RustCrypto-formats-5821a2155350/LICENSE-APACHE",
+          "name": "LICENSE-APACHE",
+          "upstream_url": "https://github.com/RustCrypto/formats/blob/5821a21553509dbd03eae593b0a1fad4e2083d4e/der/LICENSE-APACHE",
+          "git_blob_sha1": "78173fa2e753d614bb0aa5ad125ddbbe70b282c4",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "path": "licenses/upstream/RustCrypto-formats-5821a2155350/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/RustCrypto/formats/blob/5821a21553509dbd03eae593b0a1fad4e2083d4e/der/LICENSE-MIT",
+          "git_blob_sha1": "e0d082780149ee3ce9f69b764dd138f757f2b62c",
+          "sha256": "ad64fcb9589f162720f3cc5010ad76ca6ad3764e11861f9192c489df176bb71d"
+        }
+      ]
+    },
+    {
+      "name": "flatbuffers",
+      "version": "24.12.23",
+      "repository": "https://github.com/google/flatbuffers",
+      "vcs_sha1": "a2cd1ea3b6d3fee220106b5fed3f7ce8da9eb757",
+      "notices": [
+        {
+          "path": "licenses/upstream/google-flatbuffers-a2cd1ea3b6d3/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/google/flatbuffers/blob/a2cd1ea3b6d3fee220106b5fed3f7ce8da9eb757/LICENSE",
+          "git_blob_sha1": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "name": "gl_generator",
+      "version": "0.14.0",
+      "repository": "https://github.com/brendanzab/gl-rs",
+      "vcs_sha1": "ea503e8d5fb6d73c6030e6191ce738cd3bf3433e",
+      "notices": [
+        {
+          "path": "licenses/upstream/brendanzab-gl-rs/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/brendanzab/gl-rs/blob/ea503e8d5fb6d73c6030e6191ce738cd3bf3433e/LICENSE",
+          "git_blob_sha1": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "name": "khronos_api",
+      "version": "3.1.0",
+      "repository": "https://github.com/brendanzab/gl-rs",
+      "vcs_sha1": "f150967b1c44ae888e6676f93f639ebc82771bdc",
+      "notices": [
+        {
+          "path": "licenses/upstream/brendanzab-gl-rs/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/brendanzab/gl-rs/blob/f150967b1c44ae888e6676f93f639ebc82771bdc/LICENSE",
+          "git_blob_sha1": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "name": "ocrs",
+      "version": "0.13.1",
+      "repository": "https://github.com/robertknight/ocrs",
+      "vcs_sha1": "e5f1c5205326804637368422fe420aa1b9769676",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-ocrs-e5f1c5205326/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/ocrs/blob/e5f1c5205326804637368422fe420aa1b9769676/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-ocrs-e5f1c5205326/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/ocrs/blob/e5f1c5205326804637368422fe420aa1b9769676/LICENSE-MIT.txt",
+          "git_blob_sha1": "4fe232785fbf61fe9000d206d248bbefda37c307",
+          "sha256": "96b5371602fbd3cb11a680dade714465520c72b02397be5095a3c29b1a3fb30a"
+        }
+      ]
+    },
+    {
+      "name": "profiling",
+      "version": "1.0.18",
+      "repository": "https://github.com/aclysma/profiling",
+      "vcs_sha1": "8271551172eb6fa4cba47369aedd93790c623df9",
+      "notices": [
+        {
+          "path": "licenses/upstream/aclysma-profiling-8271551172eb/LICENSE-APACHE",
+          "name": "LICENSE-APACHE",
+          "upstream_url": "https://github.com/aclysma/profiling/blob/8271551172eb6fa4cba47369aedd93790c623df9/LICENSE-APACHE",
+          "git_blob_sha1": "139dce95d473c201a8561ef17536314d8b8cda65",
+          "sha256": "10d30a673cd5e9349bdc02aeb48f14b3386d27d0da32df8f0a555d4aa16aa551"
+        },
+        {
+          "path": "licenses/upstream/aclysma-profiling-8271551172eb/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/aclysma/profiling/blob/8271551172eb6fa4cba47369aedd93790c623df9/LICENSE-MIT",
+          "git_blob_sha1": "6a84e059ad8b43e03c2b06bc2af4dc1d8442808d",
+          "sha256": "c8167fdeeed46d3f244d3f85c5bf998ce889343691c32be2c61a8bc4b5c08333"
+        }
+      ]
+    },
+    {
+      "name": "rten",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-base",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-gemm",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-imageproc",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-model-file",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-onnx",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-parallel",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-shape-inference",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-simd",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-tensor",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "rten-vecmath",
+      "version": "0.26.0",
+      "repository": "https://github.com/robertknight/rten",
+      "vcs_sha1": "14cbf4620476f402237bb29f731a244d3b6bed4d",
+      "notices": [
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-APACHE.txt",
+          "name": "LICENSE-APACHE.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-APACHE.txt",
+          "git_blob_sha1": "1b5ec8b78e237b5c3b3d812a7c0a6589d0f7161d",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "path": "licenses/upstream/robertknight-rten-14cbf4620476/LICENSE-MIT.txt",
+          "name": "LICENSE-MIT.txt",
+          "upstream_url": "https://github.com/robertknight/rten/blob/14cbf4620476f402237bb29f731a244d3b6bed4d/LICENSE-MIT.txt",
+          "git_blob_sha1": "706fc8c2382ae463729fdcdcf559dbf0319e0b0a",
+          "sha256": "5096967f408fab8da02f4b6dfac6b00ccc19ca17c635f9009ee74594ac275e18"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-bundle",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-crypto",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-merkle",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-rekor",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-trust-root",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-tsa",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-types",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "sigstore-verify",
+      "version": "0.6.6",
+      "repository": "https://github.com/prefix-dev/sigstore-rust",
+      "vcs_sha1": "c9d76063833cb58a06483b181096294524d2dbf1",
+      "notices": [
+        {
+          "path": "licenses/upstream/prefix-dev-sigstore-rust-c9d76063833c/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/prefix-dev/sigstore-rust/blob/c9d76063833cb58a06483b181096294524d2dbf1/LICENSE",
+          "git_blob_sha1": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "small_btree",
+      "version": "0.1.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "ad8739f5e0b51d20faf7a2cce98afa5c40121438",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/ad8739f5e0b51d20faf7a2cce98afa5c40121438/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/ad8739f5e0b51d20faf7a2cce98afa5c40121438/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    },
+    {
+      "name": "spirv",
+      "version": "0.4.0+sdk-1.4.341.0",
+      "repository": "https://github.com/gfx-rs/rspirv",
+      "vcs_sha1": "8afc3d0ac8e158128cd1410bb2e4b4c26ab11bb4",
+      "notices": [
+        {
+          "path": "licenses/upstream/gfx-rs-rspirv-8afc3d0ac8e1/LICENSE",
+          "name": "LICENSE",
+          "upstream_url": "https://github.com/gfx-rs/rspirv/blob/8afc3d0ac8e158128cd1410bb2e4b4c26ab11bb4/LICENSE",
+          "git_blob_sha1": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ]
+    },
+    {
+      "name": "tag_ptr",
+      "version": "0.1.0",
+      "repository": "https://github.com/boa-dev/boa",
+      "vcs_sha1": "ad8739f5e0b51d20faf7a2cce98afa5c40121438",
+      "notices": [
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-MIT",
+          "name": "LICENSE-MIT",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/ad8739f5e0b51d20faf7a2cce98afa5c40121438/LICENSE-MIT",
+          "git_blob_sha1": "d87a9e81ddc8b3e77715796fa28b983c3f9ee4b1",
+          "sha256": "60d7cf4b66cef6bab24701e25f87829c4ce01fb734def53c41e5ed79ab434cb3"
+        },
+        {
+          "path": "licenses/upstream/boa-dev-boa/LICENSE-UNLICENSE",
+          "name": "LICENSE-UNLICENSE",
+          "upstream_url": "https://github.com/boa-dev/boa/blob/ad8739f5e0b51d20faf7a2cce98afa5c40121438/LICENSE-UNLICENSE",
+          "git_blob_sha1": "cf1ab25da0349f84a3fdd40032f0ce99db813b8b",
+          "sha256": "88d9b4eb60579c191ec391ca04c16130572d7eedc4a86daa58bf28c6e14c9bcd"
+        }
+      ]
+    }
+  ],
+  "upstream_without_license_file": [
+    {
+      "name": "fmt-derive",
+      "version": "0.1.2",
+      "repository": "https://github.com/danielschemmel/fmt-derive",
+      "vcs_sha1": "3f1abe44dc5e36e467565d3bf636faba5193f2a1",
+      "declared_license": "MIT OR Apache-2.0",
+      "authors": [
+        "Daniel Schemmel <daniel@schemmel.net>"
+      ],
+      "crate_metadata_files": [
+        {
+          "path": "Cargo.toml.orig",
+          "git_blob_sha1": "06b6e8611260ecffda22004c1c859c8f4f8eeef9",
+          "sha256": "9c189a45851c073e2a44c2a3ca7899fbd8e1afa20586111f6da4e0878e4e9409"
+        },
+        {
+          "path": "README.md",
+          "git_blob_sha1": "3075324687120707a6d9882c49d04f0f352ed972",
+          "sha256": "c0f60a951b9081918334fb15439a23565437103ccb7f9e788df246b9d0f4e63c"
+        }
+      ],
+      "reason": "Upstream Git repository at commit 3f1abe44dc5e36e467565d3bf636faba5193f2a1 contains no standalone LICENSE file; license and author metadata are declared only in Cargo.toml."
+    },
+    {
+      "name": "fmt-derive-proc",
+      "version": "0.1.2",
+      "repository": "https://github.com/danielschemmel/fmt-derive",
+      "vcs_sha1": "3f1abe44dc5e36e467565d3bf636faba5193f2a1",
+      "declared_license": "MIT OR Apache-2.0",
+      "authors": [
+        "Daniel Schemmel <daniel@schemmel.net>"
+      ],
+      "crate_metadata_files": [
+        {
+          "path": "Cargo.toml.orig",
+          "git_blob_sha1": "d155e2117beb642f50b55a4c560d1ad7f45180ea",
+          "sha256": "5712e5a55f0fa6650aa603686d68d22989700ec9d4963e0b1a7f422bd594791b"
+        },
+        {
+          "path": "README.md",
+          "git_blob_sha1": "c5a6ead3b422048d81aa559bb7f80024122d17f0",
+          "sha256": "47abfd71107ac0de38708c3e6c06b28129b55c62f49b1147cc4631e06892b310"
+        }
+      ],
+      "reason": "Upstream Git repository at commit 3f1abe44dc5e36e467565d3bf636faba5193f2a1 contains no standalone LICENSE file; license and author metadata are declared only in Cargo.toml."
+    },
+    {
+      "name": "rustls-cng",
+      "version": "0.7.1",
+      "repository": "https://github.com/rustls/rustls-cng",
+      "vcs_sha1": "b9126716029a105a08c1786993922103d9865bad",
+      "declared_license": "MIT/Apache-2.0",
+      "authors": [
+        "Dmitry Pankratov <dmitry@pankratov.net>"
+      ],
+      "crate_metadata_files": [
+        {
+          "path": "Cargo.toml.orig",
+          "git_blob_sha1": "6dc63a222692e7aa2f014ce4329c82607978aca9",
+          "sha256": "b0ebe8f044e61d675100e28feb2fd47275e469cd646627c33db6857390c93d66"
+        },
+        {
+          "path": "README.md",
+          "git_blob_sha1": "f6b071c3be74fb944a8503d12e30f47fcbdc1bfb",
+          "sha256": "3f30ebca33c1756ac89caafa5224ecca5e5de61175680372f7c8bb4955bb996d"
+        }
+      ],
+      "reason": "Upstream Git repository at commit b9126716029a105a08c1786993922103d9865bad contains no standalone LICENSE file; license and author metadata are declared in README.md and Cargo.toml."
+    }
+  ]
+}

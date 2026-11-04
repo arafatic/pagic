@@ -242,6 +242,39 @@ class PackagingTests(unittest.TestCase):
             self.assertFalse(report['missing_dependency_notice_files'])
             self.assertEqual(len(report['dependencies'][0]['notices']), 2)
 
+    def test_verified_upstream_notices_and_reuse_licenses_directory(self):
+        msix.verify_upstream_notices()
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            reuse = folder / 'reuse-crate'
+            (reuse / 'LICENSES').mkdir(parents=True)
+            (reuse / 'LICENSES/MIT.txt').write_bytes(b'MIT license fixture\n')
+            (reuse / 'README.md').write_text('<!-- SPDX-FileCopyrightText: 2025 Fixture Author -->\n')
+            upstream = folder / 'ocrs-crate'
+            upstream.mkdir()
+            (upstream / '.cargo_vcs_info.json').write_text(json.dumps({
+                'git': {'sha1': 'e5f1c5205326804637368422fe420aa1b9769676'}}))
+            stage = folder / 'stage'
+            stage.mkdir()
+            packages = [
+                dict(id='reuse-1', name='reuse-fixture', version='1.0.0', source='registry+test',
+                     manifest_path=str(reuse / 'Cargo.toml'), license='MIT'),
+                dict(id='ocrs-1', name='ocrs', version='0.13.1', source='registry+test',
+                     manifest_path=str(upstream / 'Cargo.toml'), license='MIT OR Apache-2.0'),
+            ]
+            report = msix.legal(stage, {'packages': packages})
+            self.assertFalse(report['missing_dependency_notice_files'])
+            self.assertFalse(report['unverified_dependency_notice_files'])
+            by_name = {pkg['name']: pkg for pkg in report['dependencies']}
+            self.assertEqual(len(by_name['reuse-fixture']['notices']), 2)
+            self.assertEqual(len(by_name['ocrs']['notices']), 2)
+            # A mismatched upstream VCS commit must be rejected rather than silently accepted.
+            (upstream / '.cargo_vcs_info.json').write_text(json.dumps({'git': {'sha1': '0' * 40}}))
+            stage2 = folder / 'stage2'
+            stage2.mkdir()
+            with self.assertRaisesRegex(ValueError, 'VCS commit mismatch'):
+                msix.legal(stage2, {'packages': [packages[1]]})
+
     def test_validation_workflow_cannot_publish(self):
         text = (msix.ROOT / '.github/workflows/msix.yml').read_text()
         self.assertIn('workflow_dispatch:', text)

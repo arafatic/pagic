@@ -142,10 +142,20 @@ Before submission, all of these remain required:
    file/registry virtualization. Verify actual redirected locations and uninstallation ownership
    natively. Do not automatically import/move Recto preferences, private keys or encrypted recovery.
    Packaged and unpackaged Pagic coexistence is unverified; they may share Pagic paths/endpoints.
-4. Resolve every applicable gap in `dependency-inventory.json` using verified upstream notice
-   texts and selected license terms. Preserve existing notices, copyright and historical attribution.
-   Confirm rights to distribute the supplied Pagic artwork; the provenance file does not establish
-   complete license terms. This pipeline does not invent a root `NOTICE` or rewrite legal notices.
+4. Verify `dependency-inventory.json` and selected license terms. Workspace-omitted upstream
+   notices for 41 crates (`AccessKit/accesskit`, `dropbox/rust-alloc-no-stdlib`, `boa-dev/boa`,
+   `DoumanAsh/clipboard-win`, `RustCrypto/formats`, `google/flatbuffers`, `brendanzab/gl-rs`,
+   `robertknight/ocrs`, `aclysma/profiling`, `robertknight/rten`, `prefix-dev/sigstore-rust`,
+   `gfx-rs/rspirv`) are supplied from their pinned `.cargo_vcs_info.json` Git commits in
+   `licenses/upstream/` (`licenses/upstream-notices.json`), and REUSE `LICENSES/` files in
+   `enum-map` and `enum-map-derive` are staged verbatim. The remaining 3 entries in
+   `missing_dependency_notice_files` (`fmt-derive@0.1.2`, `fmt-derive-proc@0.1.2`, `rustls-cng@0.7.1`)
+   have no standalone `LICENSE` file in their upstream Git repositories at the pinned commits;
+   their verbatim `Cargo.toml.orig`/`README.md` declarations are staged and hash-verified while
+   `unverified_dependency_notice_files` is empty (`0`). Preserve existing notices, copyright and
+   historical attribution. Confirm rights to distribute the supplied Pagic artwork; the provenance
+   file does not establish complete license terms. This pipeline does not invent a root `NOTICE` or
+   rewrite legal notices.
 5. Supply a reviewed OCR model bundle and its full notices/provenance before claiming a complete
    OCR-enabled distribution. The current checkout lacks both `assets/models` and `ATTRIBUTION.toml`;
    `cargo xtask models` cannot supply verified inputs here. The validation package explicitly reports
@@ -154,6 +164,16 @@ Before submission, all of these remain required:
    review, privacy policy/support URLs, screenshots/listing, content/age ratings and export declarations.
    Verify all identity strings against Partner Center and ensure the version exceeds any prior upload.
    x86/ARM64 and Windows versions below the declared minimum are not supported by this x64 pipeline.
+
+## Stage 4B Microsoft Store submission checklist
+
+- [ ] **Partner Center Identity Match**: Confirm Partner Center app identity matches `packaging/windows/msix/identity.json` (`Name="Arafatic.Pagic"`, `Publisher="CN=8E27432A-B6BC-4F20-8810-A2256A3F60AF"`, `PublisherDisplayName="Arafatic"`, `DisplayName="Pagic"`).
+- [ ] **Artwork & Brand Redistribution Rights**: Obtain and record explicit owner/author redistribution and trademark license terms for `assets/app-icon/pagic.svg`, `pagic-app-icon.svg` and `pagic-document.svg` (`assets/app-icon/PAGIC-PROVENANCE.md`).
+- [ ] **OCR Model Decision / Disclosure**: Keep OCR models excluded unless `ATTRIBUTION.toml` and `assets/models/` are populated with SHA-256-verified models and license files; ensure Store listing copy does not advertise bundled offline OCR until models are included, or clearly states that OCR requires separately installed models (`PAGIC_MODELS`).
+- [ ] **Third-Party Attribution & Notice Review**: Confirm `Legal/dependency-inventory.json` has `unverified_dependency_notice_files: []` and sign off on the 3 upstream-absent standalone license file cases (`fmt-derive`, `fmt-derive-proc`, `rustls-cng`) and root `NOTICE` policy.
+- [ ] **Interactive Desktop & WACK Sign-Off**: Run Windows App Certification Kit (WACK) on clean x64 Windows hardware (`>= 10.0.19041.0`) and verify interactive Start menu launch, Explorer `Open with Pagic` on `.pdf` paths with spaces/Unicode, save/edit/print, `pagic-cli.exe` execution alias, coexistence with Recto, and clean uninstall.
+- [ ] **Partner Center Submission Metadata**: Provide `runFullTrust` capability justification (packaged Win32 desktop PDF editor/printer/CLI), privacy policy URL, support contact URL, age/content ratings, export compliance declaration, and real Pagic screenshots.
+- [ ] **Unsigned MSIX Upload & Version Check**: Upload the unsigned `Pagic-<version>-x64.msix` from `dist/msix/` (verified against `SHA256SUMS` and `validation.json`) with strictly increasing 4-part version (`1.14.0.0` for Cargo `0.14.0`, fourth component `0`) for Microsoft Store signing.
 
 `build-info.json` deliberately records `store_ready: false`: archive validity alone cannot clear
 these human/native certification gates. No Partner Center API credentials or automatic submission

@@ -95,6 +95,28 @@ def cargo_metadata():
         '--filter-platform', identity()['target']], cwd=ROOT))
 
 
+def upstream_notices():
+    return json.loads((ROOT / 'licenses/upstream-notices.json').read_text(encoding='utf-8'))
+
+
+def verify_upstream_notices():
+    manifest = upstream_notices()
+    require(bool(manifest.get('packages')), 'Empty verified upstream notice manifest')
+    for pkg in manifest['packages']:
+        require(re.fullmatch(r'[0-9a-f]{40}', pkg.get('vcs_sha1', '')), f"Invalid VCS SHA-1 for {pkg.get('name')}")
+        require(bool(pkg.get('notices')), f"Missing notices for {pkg.get('name')}")
+        for item in pkg['notices']:
+            src = ROOT / item['path']
+            require(src.is_file(), f"Missing verified upstream notice file: {item['path']}")
+            data = src.read_bytes()
+            blob = hashlib.sha1(f'blob {len(data)}\0'.encode('ascii') + data).hexdigest()
+            require(digest(src) == item['sha256'], f"Verified upstream notice SHA-256 mismatch: {item['path']}")
+            require(blob == item['git_blob_sha1'], f"Verified upstream notice Git blob mismatch: {item['path']}")
+    for pkg in manifest.get('upstream_without_license_file', []):
+        require(re.fullmatch(r'[0-9a-f]{40}', pkg.get('vcs_sha1', '')), f"Invalid VCS SHA-1 for {pkg.get('name')}")
+        require(bool(pkg.get('crate_metadata_files')), f"Missing metadata files for {pkg.get('name')}")
+
+
 def legal(stage, metadata):
     """Conservative superset of resolved dependency notices, with explicit gaps for review."""
     for name in ('LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE'):
@@ -104,7 +126,10 @@ def legal(stage, metadata):
     for name in ('assets/icons/LICENSE-lucide.txt', 'assets/app-icon/LICENSE-recto.txt',
                  'assets/app-icon/PAGIC-PROVENANCE.md', 'docs/brand/LICENSE-brand.txt'):
         copy(ROOT / name, stage / 'Legal' / name)
-    records, gaps = [], []
+    manifest = upstream_notices()
+    verified_upstream = {(item['name'], item['version']): item for item in manifest['packages']}
+    upstream_no_license = {(item['name'], item['version']): item for item in manifest['upstream_without_license_file']}
+    records, gaps, unverified_gaps = [], [], []
     for pkg in sorted(metadata['packages'], key=lambda p: p['id']):
         if not pkg.get('source'):
             continue
@@ -112,8 +137,16 @@ def legal(stage, metadata):
         label = f"{pkg['name']}-{pkg['version']}-{hashlib.sha256(pkg['id'].encode()).hexdigest()[:8]}"
         def is_notice(path):
             return path.is_file() and any(word in path.name.lower() for word in
-                                         ('license', 'licence', 'notice', 'copying', 'copyright'))
+                                         ('license', 'licence', 'notice', 'copying', 'copyright', 'attribution'))
         candidates = {p.resolve(): p.relative_to(folder) for p in folder.rglob('*') if is_notice(p)}
+        for top in folder.iterdir():
+            if top.is_dir() and top.name.lower() in ('licenses', 'license'):
+                for src in top.rglob('*'):
+                    if src.is_file():
+                        candidates.setdefault(src.resolve(), src.relative_to(folder))
+                readme = folder / 'README.md'
+                if readme.is_file() and 'SPDX-FileCopyrightText' in readme.read_text(encoding='utf-8', errors='ignore'):
+                    candidates.setdefault(readme.resolve(), Path('README.md'))
         declared = pkg.get('license_file')
         if declared:
             src = (folder / declared).resolve()
@@ -127,20 +160,52 @@ def legal(stage, metadata):
                         if is_notice(src):
                             candidates.setdefault(src.resolve(), Path('workspace') / src.name)
                     break
+        key = (pkg['name'], pkg['version'])
+        if not candidates and key in verified_upstream:
+            entry = verified_upstream[key]
+            vcs_path = folder / '.cargo_vcs_info.json'
+            require(vcs_path.is_file(), f"Missing .cargo_vcs_info.json for {pkg['name']} {pkg['version']}")
+            vcs = json.loads(vcs_path.read_text(encoding='utf-8'))
+            require(vcs.get('git', {}).get('sha1') == entry['vcs_sha1'],
+                    f"Upstream VCS commit mismatch for {pkg['name']} {pkg['version']}")
+            for item in entry['notices']:
+                src = (ROOT / item['path']).resolve()
+                require(digest(src) == item['sha256'], f"Verified upstream notice hash mismatch: {item['path']}")
+                candidates[src] = Path('upstream') / item['name']
         notices = []
         for src, relative in sorted(candidates.items()):
             dst = stage / 'Legal/dependencies' / label / relative
             copy(src, dst)
             notices.append({'path': dst.relative_to(stage).as_posix(), 'sha256': digest(dst)})
+        record = {'name': pkg['name'], 'version': pkg['version'], 'source': pkg['source'],
+                  'license_expression': pkg.get('license'), 'notices': notices}
         if not notices:
             gaps.append(pkg['id'])
-        records.append({'name': pkg['name'], 'version': pkg['version'], 'source': pkg['source'],
-                        'license_expression': pkg.get('license'), 'notices': notices})
+            if key in upstream_no_license:
+                entry = upstream_no_license[key]
+                vcs_path = folder / '.cargo_vcs_info.json'
+                require(vcs_path.is_file(), f"Missing .cargo_vcs_info.json for {pkg['name']} {pkg['version']}")
+                vcs = json.loads(vcs_path.read_text(encoding='utf-8'))
+                require(vcs.get('git', {}).get('sha1') == entry['vcs_sha1'],
+                        f"Upstream VCS commit mismatch for {pkg['name']} {pkg['version']}")
+                metadata_files = []
+                for item in entry['crate_metadata_files']:
+                    src = (folder / item['path']).resolve()
+                    require(digest(src) == item['sha256'], f"Upstream metadata hash mismatch: {pkg['name']} {item['path']}")
+                    dst = stage / 'Legal/dependencies' / label / item['path']
+                    copy(src, dst)
+                    metadata_files.append({'path': dst.relative_to(stage).as_posix(), 'sha256': digest(dst)})
+                record['upstream_metadata_files'] = metadata_files
+                record['upstream_notice_status'] = entry['reason']
+            else:
+                unverified_gaps.append(pkg['id'])
+        records.append(record)
     # Vendored/path dependencies can have notices not represented as external Cargo sources.
     for src in (ROOT / 'vendor').rglob('*'):
-        if src.is_file() and any(word in src.name.lower() for word in ('license', 'licence', 'notice', 'copying', 'copyright')):
+        if src.is_file() and any(word in src.name.lower() for word in ('license', 'licence', 'notice', 'copying', 'copyright', 'attribution')):
             copy(src, stage / 'Legal/vendor' / src.relative_to(ROOT / 'vendor'))
     report = {'dependencies': records, 'missing_dependency_notice_files': gaps,
+              'unverified_dependency_notice_files': unverified_gaps,
               'submission_review_required': [
                   'Review dependency SPDX choices and any missing full notice texts.',
                   'Confirm distribution rights for approved Pagic artwork.',
@@ -249,6 +314,8 @@ def validate_stage(stage):
     for pkg in report['dependencies']:
         for notice in pkg['notices']:
             require(digest(stage / notice['path']) == notice['sha256'], 'Dependency notice hash mismatch')
+        for meta in pkg.get('upstream_metadata_files', []):
+            require(digest(stage / meta['path']) == meta['sha256'], 'Dependency metadata hash mismatch')
     for name in ('LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE'):
         require(digest(ROOT / name) == digest(stage / 'Legal' / name), f'Altered license: {name}')
 
@@ -292,7 +359,8 @@ def main():
         ET.fromstring(render_manifest(workspace_version()))
         require(len(list((HERE / 'Assets').glob('*.png'))) == 51, 'Missing approved MSIX artwork')
         document_png()
-        print('PASS: identity, version mapping, XML and 51 MSIX images plus document icon input')
+        verify_upstream_notices()
+        print('PASS: identity, version mapping, XML, verified upstream notices and 51 MSIX images plus document icon input')
     elif args.command == 'fonts':
         print(json.dumps(font_inventory(args.stage)))
     elif args.command == 'stage':
