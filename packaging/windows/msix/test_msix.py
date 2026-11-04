@@ -70,6 +70,21 @@ class PackagingTests(unittest.TestCase):
                     manifest.write_text(rendered.replace(old, new))
                     msix.validate_manifest(manifest)
 
+    @patch.object(msix, 'workspace_version', return_value='0.14.0')
+    def test_cli_alias_requires_console_and_correct_payload(self, _):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / 'AppxManifest.xml'
+            rendered = msix.render_manifest('0.14.0')
+            manifest.write_text(rendered)
+            msix.validate_manifest(manifest)
+            for old, new in [('Executable="pagic-cli.exe"', 'Executable="pagic.exe"'),
+                             ('Alias="pagic-cli.exe"', 'Alias="recto-cli.exe"'),
+                             ('Subsystem="console"', 'Subsystem="windows"'),
+                             ('windows.appExecutionAlias', 'windows.startupTask')]:
+                with self.subTest(new=new), self.assertRaisesRegex(ValueError, 'CLI|alias'):
+                    manifest.write_text(rendered.replace(old, new))
+                    msix.validate_manifest(manifest)
+
     def test_wrong_executable_architecture_and_subsystem_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             exe = Path(directory) / 'test.exe'

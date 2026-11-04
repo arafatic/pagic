@@ -23,6 +23,7 @@ ROOT = HERE.parents[2]
 NS = {'f': 'http://schemas.microsoft.com/appx/manifest/foundation/windows10',
       'uap': 'http://schemas.microsoft.com/appx/manifest/uap/windows10',
       'uap3': 'http://schemas.microsoft.com/appx/manifest/uap/windows10/3',
+      'uap5': 'http://schemas.microsoft.com/appx/manifest/uap/windows10/5',
       'uap10': 'http://schemas.microsoft.com/appx/manifest/uap/windows10/10',
       'rescap': 'http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities'}
 
@@ -217,6 +218,14 @@ def validate_manifest(path):
                              'MaxVersionTested': contract['maximum_tested_windows_version']}, 'Wrong OS contract')
     require([n.text for n in root.findall('.//uap:FileType', NS)] == ['.pdf'], 'Incorrect file associations')
     require(root.find('.//uap3:Verb', NS).get('Parameters') == '"%1"', 'PDF paths must be quoted')
+    aliases = app.findall('f:Extensions/uap5:Extension[@Category="windows.appExecutionAlias"]', NS)
+    require(len(aliases) == 1, 'Expected one CLI execution alias extension')
+    extension = aliases[0]
+    require(extension.get('Executable') == 'pagic-cli.exe' and
+            extension.get('EntryPoint') == 'Windows.FullTrustApplication', 'Wrong CLI activation target')
+    alias = extension.find('uap5:AppExecutionAlias', NS)
+    require(alias.get('{'+NS['uap10']+'}Subsystem') == 'console', 'CLI alias must use console subsystem')
+    require([node.get('Alias') for node in alias] == ['pagic-cli.exe'], 'Wrong CLI alias')
     require('MigrationProgId' not in path.read_text(encoding='utf-8') and 'Recto' not in path.read_text(encoding='utf-8'), 'Legacy ownership must not be inherited')
 
 

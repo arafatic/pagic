@@ -30,7 +30,12 @@ and the versions already accepted in Partner Center. The app still displays its 
 The manifest uses the existing Win32 executable with `uap10:RuntimeBehavior="packagedClassicApp"` and `uap10:TrustLevel="mediumIL"`,
 plus only the `runFullTrust` capability; this is a full-trust desktop package, not a sandboxed UWP port. Explain this
 capability during Store submission. No administrator elevation, broad-filesystem-access
-capability, startup entry, updater, execution alias or legacy ProgID migration is declared.
+capability, startup entry, updater or legacy ProgID migration is declared.
+The CLI has a console execution alias `pagic-cli.exe`, explicitly targeting the packaged CLI.
+Windows registers it under `%LOCALAPPDATA%/Microsoft/WindowsApps`; the installation test
+verifies the installed declaration and registration, then invokes that alias with UTF-8 pipes.
+It never changes protected-directory permissions or launches the CLI payload directly.
+An existing alias causes the disposable-runner test to stop rather than take it over.
 The PDF association advertises Open with Pagic and passes a quoted path to the existing
 CLI argument parser. It does not set or replace the user's default PDF handler.
 

@@ -11,6 +11,9 @@ if (-not $IsWindows -or $env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONME
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
 $Identity = Get-Content -Raw (Join-Path $PSScriptRoot 'identity.json') | ConvertFrom-Json
 if (Get-AppxPackage -Name $Identity.name) { throw 'Refusing to replace an existing Pagic installation.' }
+# Refuse to take over another installation's alias on this runner.
+$CliAlias = Join-Path $env:LOCALAPPDATA 'Microsoft/WindowsApps/pagic-cli.exe'
+if (Get-Item -LiteralPath $CliAlias -ErrorAction SilentlyContinue) { throw 'Refusing to replace an existing pagic-cli.exe execution alias.' }
 $Temp = Join-Path $env:RUNNER_TEMP ('pagic-msix-' + [guid]::NewGuid())
 New-Item -ItemType Directory $Temp | Out-Null
 $Cert = $null
@@ -40,8 +43,27 @@ try {
     throw 'Installed identity/publisher/architecture mismatch.'
   }
   $InstalledManifest = Get-AppxPackageManifest -Package $Installed.PackageFullName
-  if ($InstalledManifest.Package.Applications.Application.Extensions.Extension.FileTypeAssociation.SupportedFileTypes.FileType -ne '.pdf') {
+  $Namespaces = [Xml.XmlNamespaceManager]::new($InstalledManifest.NameTable)
+  $Namespaces.AddNamespace('uap', 'http://schemas.microsoft.com/appx/manifest/uap/windows10')
+  $Namespaces.AddNamespace('uap5', 'http://schemas.microsoft.com/appx/manifest/uap/windows10/5')
+  $Namespaces.AddNamespace('uap10', 'http://schemas.microsoft.com/appx/manifest/uap/windows10/10')
+  if ($InstalledManifest.SelectSingleNode('//uap:FileType', $Namespaces).InnerText -ne '.pdf') {
     throw 'Installed PDF association declaration is missing.'
+  }
+  $AliasExtension = $InstalledManifest.SelectSingleNode('//uap5:Extension[@Category="windows.appExecutionAlias"]', $Namespaces)
+  if (-not $AliasExtension -or $AliasExtension.GetAttribute('Executable') -ne 'pagic-cli.exe' -or
+      $AliasExtension.GetAttribute('EntryPoint') -ne 'Windows.FullTrustApplication') {
+    throw 'Installed CLI execution alias has an incorrect activation target.'
+  }
+  $AliasNode = $AliasExtension.SelectSingleNode('uap5:AppExecutionAlias', $Namespaces)
+  if ($AliasNode.GetAttribute('Subsystem', $Namespaces.LookupNamespace('uap10')) -ne 'console' -or
+      $AliasNode.SelectSingleNode('uap5:ExecutionAlias', $Namespaces).GetAttribute('Alias') -ne 'pagic-cli.exe') {
+    throw 'Installed CLI console alias declaration is missing or incorrect.'
+  }
+  $AliasDeadline = (Get-Date).AddSeconds(60)
+  while (-not (Get-Item -LiteralPath $CliAlias -ErrorAction SilentlyContinue)) {
+    if ((Get-Date) -ge $AliasDeadline) { throw 'Windows did not register the CLI execution alias within 60 seconds.' }
+    Start-Sleep -Milliseconds 250
   }
   # A small persistent-in-artifact PDF, generated without external libraries.
   $Sample = Join-Path $Temp 'Pagic MSIX smoke.pdf'
@@ -57,9 +79,10 @@ try {
     Start-Sleep -Milliseconds 250
   } while ((Get-Date) -lt $Deadline)
   if (-not (Test-Path $Control)) { throw 'Installed GUI did not become ready in 60 seconds. Inspect Windows graphics/session logs.' }
-  # Explicit pipes avoid PowerShell's native-command encoding/redirect mismatch for MSIX executables.
+  # Launch the OS-registered alias, never the protected WindowsApps payload path.
+  # Explicit pipes retain independent UTF-8 stdout/stderr capture.
   $CliInfo = [Diagnostics.ProcessStartInfo]::new()
-  $CliInfo.FileName = Join-Path $Installed.InstallLocation 'pagic-cli.exe'
+  $CliInfo.FileName = $CliAlias
   $CliInfo.UseShellExecute = $false
   $CliInfo.RedirectStandardOutput = $true
   $CliInfo.RedirectStandardError = $true
@@ -92,7 +115,7 @@ try {
   $State | Set-Content -Encoding utf8 (Join-Path $ReportDirectory 'installed-ui-state.json')
   Copy-Item $Sample $ReportDirectory
   [ordered]@{ status = 'PASS'; package_full_name = $Installed.PackageFullName;
-    publisher = $Installed.Publisher; install = 'PASS'; launch = 'PASS'; pdf_open = 'PASS';
+    cli_activation = 'registered execution alias'; publisher = $Installed.Publisher; install = 'PASS'; launch = 'PASS'; pdf_open = 'PASS';
     association_declaration = 'PASS'; explorer_activation = 'manual verification pending';
     data_virtualization_and_recto_coexistence = 'manual verification pending'; certification = 'not run'
   } | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $ReportDirectory 'installation.json')
