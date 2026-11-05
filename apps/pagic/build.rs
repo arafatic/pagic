@@ -6,13 +6,11 @@
 //! cross-compile from macOS or Linux still links, unless `PAGIC_REQUIRE_WINRES=1` (legacy `RECTO_REQUIRE_WINRES`) turns it
 //! into an error (for release builds).
 
-#[path = "src/windows_manifest.rs"]
-mod windows_manifest;
-
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=../../assets/app-icon/pagic.ico");
     println!("cargo:rerun-if-changed=../../assets/app-icon/pagic-document.ico");
+    println!("cargo:rerun-if-changed=pagic.exe.manifest");
     println!("cargo:rerun-if-changed=src/windows_manifest.rs");
     println!("cargo:rerun-if-env-changed=RECTO_REQUIRE_WINRES");
     println!("cargo:rerun-if-env-changed=PAGIC_REQUIRE_WINRES");
@@ -41,7 +39,7 @@ fn main() {
     if root.join("../../assets/app-icon/pagic-document.ico").is_file() {
         res.set_icon_with_id("../../assets/app-icon/pagic-document.ico", "2");
     }
-    res.set_manifest(windows_manifest::WINDOWS_MANIFEST)
+    res.set_manifest_file("pagic.exe.manifest")
         .set("ProductName", "Pagic")
         .set("FileDescription", "Pagic PDF application")
         .set("LegalCopyright", "Copyright (c) the Recto contributors. MIT OR Apache-2.0.")
