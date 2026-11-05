@@ -3,8 +3,7 @@
   <assemblyIdentity
       type="win32"
       name="Arafatic.Pagic"
-      version="1.0.0.0"
-      processorArchitecture="*" />
+      version="1.0.0.0" />
   <asmv3:application>
     <asmv3:windowsSettings>
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>
