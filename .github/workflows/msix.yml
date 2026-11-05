@@ -59,7 +59,7 @@ jobs:
         run: |
           $package = @(Get-ChildItem dist/msix/*.msix)
           if ($package.Count -ne 1) { throw 'Expected exactly one unsigned package' }
-          ./packaging/windows/msix/test-install.ps1 -Package $package[0].FullName -ReportDirectory dist/msix
+          ./packaging/windows/msix/test-install.ps1 -Package $package[0].FullName -ReportDirectory dist/msix -TestPackageDirectory dist/test-package
       - name: Retain private validation artifacts and reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,5 +72,17 @@ jobs:
             dist/msix/*.txt
             dist/msix/*.pdf
             dist/msix/SHA256SUMS
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Retain test-signed MSIX for manual acceptance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pagic-1.14.0.0-x64-test-signed
+          path: |
+            dist/test-package/Pagic-1.14.0.0-x64-test-signed.msix
+            dist/test-package/Pagic-test.cer
+            dist/test-package/INSTALL-TEST-PACKAGE.txt
+            dist/test-package/SHA256SUMS.txt
           if-no-files-found: warn
           retention-days: 14

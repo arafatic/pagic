@@ -2,7 +2,8 @@
    only the package/certificates created by this invocation. Never installs onto a user's PC.
 #>
 param([Parameter(Mandatory)] [string] $Package,
-      [Parameter(Mandatory)] [string] $ReportDirectory)
+      [Parameter(Mandatory)] [string] $ReportDirectory,
+      [string] $TestPackageDirectory = '')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 if (-not $IsWindows -or $env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
@@ -37,6 +38,39 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Development signing failed.' }
   & (Join-Path $Tools.FullName 'x64/signtool.exe') verify /pa /v $Signed
   if ($LASTEXITCODE -ne 0) { throw 'Development signature verification failed.' }
+  if ($TestPackageDirectory) {
+    New-Item -ItemType Directory -Force $TestPackageDirectory | Out-Null
+    $TestSignedName = [IO.Path]::GetFileNameWithoutExtension($Package) + '-test-signed.msix'
+    Copy-Item -LiteralPath $Signed (Join-Path $TestPackageDirectory $TestSignedName)
+    Copy-Item -LiteralPath $Public (Join-Path $TestPackageDirectory 'Pagic-test.cer')
+    @(
+      '=== Pagic Test-Signed MSIX Manual Installation Instructions ===',
+      '',
+      'This package is signed with a temporary self-signed certificate for local testing only.',
+      'Because Windows blocks untrusted certificates by default, trust the test certificate before installing:',
+      '',
+      'Option A (GUI):',
+      '1. Double-click "Pagic-test.cer".',
+      '2. Click "Install Certificate...".',
+      '3. Select "Local Machine" (requires Administrator prompt), then click Next.',
+      '4. Select "Place all certificates in the following store", click Browse, and choose:',
+      '   "Trusted People"',
+      '5. Click Next, then Finish.',
+      '6. Double-click "Pagic-1.14.0.0-x64-test-signed.msix" and click "Install".',
+      '',
+      'Option B (PowerShell as Administrator):',
+      '   Import-Certificate -FilePath .\Pagic-test.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople',
+      '   Add-AppxPackage -Path .\Pagic-1.14.0.0-x64-test-signed.msix',
+      '',
+      'To remove the test certificate after testing:',
+      '   Get-ChildItem Cert:\LocalMachine\TrustedPeople |',
+      '     Where-Object { $_.Subject -eq "CN=8E27432A-B6BC-4F20-8810-A2256A3F60AF" } |',
+      '     Remove-Item'
+    ) | Set-Content -Encoding utf8 (Join-Path $TestPackageDirectory 'INSTALL-TEST-PACKAGE.txt')
+    ((Get-FileHash (Join-Path $TestPackageDirectory $TestSignedName) -Algorithm SHA256).Hash.ToLower() + "  $TestSignedName`n" + `
+     (Get-FileHash (Join-Path $TestPackageDirectory 'Pagic-test.cer') -Algorithm SHA256).Hash.ToLower() + "  Pagic-test.cer") |
+      Set-Content -Encoding ascii (Join-Path $TestPackageDirectory 'SHA256SUMS.txt')
+  }
   Add-AppxPackage -Path $Signed
   $Installed = Get-AppxPackage -Name $Identity.name
   if (-not $Installed -or $Installed.Publisher -ne $Identity.publisher -or $Installed.Architecture -ne 'X64') {
