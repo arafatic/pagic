@@ -1,38 +1,36 @@
-# Recto
+# Pagic
 
-A fast, lightweight, and open-source PDF editor built with Rust and egui.
+A focused desktop PDF reader and editor built with Rust.
 
 ## Features
-- Clean-room modern UI
-- Fast document viewing and editing
-- Open-source and privacy-focused
 
-## Download Recto
+- Fast PDF reading and navigation
+- Edit existing PDF text
+- Move images inside PDF pages
+- Save and Save As
+- Compress PDFs
+- Export and conversion tools
+- Print PDFs
+- Recent files and multi-document tabs
+- Light and dark themes
+- Local-first core PDF workflows
 
-Download the latest version for your operating system:
+## Download
 
-| Platform | Download Link |
-| :--- | :--- |
-| **macOS (Apple Silicon)** | [Download .dmg / .zip](https://github.com/arafatic/recto/releases/latest) |
-| **Windows (64-bit)** | [Download .msi / .exe](https://github.com/arafatic/recto/releases/latest) |
-| **Linux** | [Download .AppImage](https://github.com/arafatic/recto/releases/latest) |
+### Windows
 
-## Getting Started
+Pagic is available from the Microsoft Store.
 
-### Prerequisites
-Make sure you have Rust and Cargo installed:
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+### macOS
 
-### Building & Running
-```bash
-# Run in development mode
-cargo run -p recto
+Pagic for macOS is in preparation.
 
-# Or build for release
-cargo build --release -p recto
-```
+- [Official website](https://arafatul.com/pagic)
+- [Privacy](https://arafatul.com/pagic/privacy)
+- [Support](https://arafatul.com/pagic/support)
 
 ## License
-This project is licensed under the [MIT License](LICENSE).
+
+Pagic is an independent continuation of Recto. The project is available under
+[MIT](LICENSE-MIT) or [Apache 2.0](https://github.com/arafatic/pagic/blob/36b76e74c6d197ea48a53b2a023ee7f747ec2e53/LICENSE-APACHE). Dependencies and artwork
+retain their own terms. See [verified license sources](https://github.com/arafatic/pagic/blob/36b76e74c6d197ea48a53b2a023ee7f747ec2e53/licenses/README.md).
