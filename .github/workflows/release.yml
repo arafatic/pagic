@@ -1,153 +1,259 @@
-name: Release
+name: Pagic Desktop Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      create_draft:
+        description: Attach all validated artifacts to a new private draft release (run on the matching version tag)
+        type: boolean
+        default: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build:
-    name: Build (${{ matrix.name }})
-    env:
-      PAGIC_FONTS_REQUIRED: "1"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: windows
-            os: windows-latest
-            artifact: Pagic-windows-x64.zip
-          - name: linux
-            os: ubuntu-latest
-            artifact: Pagic-linux-x64.tar.gz
-          - name: macos
-            os: macos-14
-            artifact: Pagic-macos-arm64.zip
-
+  plan:
+    name: Resolve source and versions
+    if: github.repository == 'arafatic/pagic' && github.event.repository.private == true
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.plan.outputs.source }}
+      version: ${{ steps.plan.outputs.version }}
+      store_version: ${{ steps.plan.outputs.store_version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check version and release intent
+        id: plan
+        env:
+          CREATE_DRAFT: ${{ inputs.create_draft }}
+          PYTHONDONTWRITEBYTECODE: '1'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libglib2.0-dev libgtk-3-dev libssl-dev pkg-config libx11-dev libasound2-dev libudev-dev
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+          import tomllib
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+          sys.path.insert(0, "packaging/windows/msix")
+          from msix import version
 
-      - name: Require approved Pagic packaging identities and artwork
-        run: python packaging/check-identity.py --require-release-ready
+          app = tomllib.loads(Path("Cargo.toml").read_text(encoding="utf-8"))["workspace"]["package"]["version"]
+          store = version(app)
+          ref_type = os.environ["GITHUB_REF_TYPE"]
+          tag = f"v{app}"
+          if ref_type == "tag" and os.environ["GITHUB_REF_NAME"] != tag:
+              sys.exit(f"Release tag must match Cargo.toml: expected {tag}")
+          if os.environ["CREATE_DRAFT"] == "true" and ref_type != "tag":
+              sys.exit(f"Draft releases require manual dispatch on the existing tag {tag}")
+          source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as outputs:
+              print(f"source={source}\nversion={app}\nstore_version={store}", file=outputs)
+          print(f"Pagic {app} / Store {store} at {source}")
+          PY
 
-      - name: Build release binary
-        run: cargo build --release --bin pagic
-
-      - name: Package Windows installer and archive
-        if: matrix.os == 'windows-latest'
+  windows:
+    name: Windows x64 MSIX and EXE
+    needs: plan
+    runs-on: windows-2025
+    timeout-minutes: 90
+    env:
+      PAGIC_BUILD_SHA: ${{ needs.plan.outputs.source }}
+      PAGIC_FONTS_REQUIRED: '1'
+      PAGIC_RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+      PAGIC_STORE_VERSION: ${{ needs.plan.outputs.store_version }}
+    defaults:
+      run:
         shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Validate packaging and local assets
         run: |
-          choco install innosetup --no-progress -y
-          $env:PATH += ";C:\Program Files (x86)\Inno Setup 6"
-
-          $VERSION = "${env:GITHUB_REF_NAME}" -replace '^v', ''
-          if ($env:GITHUB_REF_TYPE -ne 'tag') {
-            $metadata = cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
-            if ($LASTEXITCODE -ne 0) { throw 'cargo metadata failed' }
-            $VERSION = ($metadata.packages | Where-Object { $_.name -eq 'pagic' }).version
+          python packaging/windows/msix/test_msix.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'MSIX regression tests failed' }
+          cargo xtask assets
+          if ($LASTEXITCODE -ne 0) { throw 'Local asset validation failed' }
+      - name: Build and verify Store MSIX
+        id: msix
+        run: |
+          ./packaging/windows/msix/package.ps1
+          $Info = Get-Content dist/msix/build-info.json -Raw | ConvertFrom-Json
+          if ($Info.source_commit -ne $env:PAGIC_BUILD_SHA -or $Info.package_version -ne $env:PAGIC_STORE_VERSION) {
+            throw 'MSIX source or version does not match the release plan'
           }
-
-          ./packaging/windows/test-font-notices.ps1
-          . ./packaging/windows/font-notices.ps1
-          Copy-PagicFontNotices $PWD.Path (Join-Path $PWD.Path 'target/font-licences')
-          iscc "/DMyAppVersion=$VERSION" packaging/windows/setup.iss
-          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-
-          New-Item -ItemType Directory -Force -Path dist-windows
-          Copy-Item target/release/pagic.exe dist-windows/
-          Copy-Item target/font-licences/*.txt dist-windows/
-          7z a -tzip Pagic-windows-x64.zip ./dist-windows/*
-
-      - name: Package Linux archive
-        if: matrix.os == 'ubuntu-latest'
+          Get-Content dist/msix/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pagic-desktop-msix
+          path: dist/msix/Pagic-${{ needs.plan.outputs.store_version }}-x64.msix
+          overwrite: true
+          if-no-files-found: error
+          compression-level: 0
+      - name: Build standalone EXE from the verified Windows payload
+        id: setup
         run: |
-          bash packaging/test-font-notices.sh
-          mkdir -p dist-linux/bin
-          cp target/release/pagic dist-linux/bin/
-          chmod +x dist-linux/bin/*
-          . packaging/font-notices.sh
-          copy_font_licences dist-linux/share/doc/pagic
-          tar -czvf Pagic-linux-x64.tar.gz -C dist-linux .
-
-      - name: Package macOS application bundle
-        if: matrix.os == 'macos-14'
+          $Work = @(Get-ChildItem dist/msix -Directory -Filter 'work-*')
+          if ($Work.Count -ne 1) { throw 'Expected exactly one MSIX work directory' }
+          $Payload = (Resolve-Path (Join-Path $Work[0].FullName 'unpacked')).Path
+          $ISCC = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if (-not (Test-Path -LiteralPath $ISCC)) {
+            choco install innosetup --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+          }
+          $Output = (New-Item -ItemType Directory -Force dist/release).FullName
+          $Name = "Pagic-$env:PAGIC_RELEASE_VERSION-x64-setup"
+          & $ISCC "/DMyAppVersion=$env:PAGIC_RELEASE_VERSION" "/DReleasePayload=$Payload" "/O$Output" "/F$Name" packaging/windows/setup.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed' }
+          Get-FileHash (Join-Path $Output "$Name.exe") -Algorithm SHA256 | Format-List
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pagic-desktop-exe
+          path: dist/release/Pagic-${{ needs.plan.outputs.version }}-x64-setup.exe
+          overwrite: true
+          if-no-files-found: error
+          compression-level: 0
+      - name: Test Store MSIX installation, activation and PDF opening
+        if: '!cancelled() && steps.msix.outcome == ''success'''
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
-            VERSION="0.14.0"
-          fi
-          SHORT_VERSION="${VERSION%%-*}"
-          
-          APP="Pagic.app"
-          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-          cp "target/release/pagic" "$APP/Contents/MacOS/pagic"
-          chmod +x "$APP/Contents/MacOS/pagic"
-          
-          if [ -f "assets/app-icon/pagic.icns" ]; then
-            cp "assets/app-icon/pagic.icns" "$APP/Contents/Resources/pagic.icns"
-          fi
-          
-          sed -e "s/@VERSION@/$VERSION/g" \
-              -e "s/@SHORT_VERSION@/$SHORT_VERSION/g" \
-              -e "s/@BUILD_SHA@/${GITHUB_SHA}/g" \
-              "packaging/macos/Info.plist.in" > "$APP/Contents/Info.plist"
-              
-          printf 'APPL????' > "$APP/Contents/PkgInfo"
-          
-          for notice in NOTICE LICENSE LICENSE-MIT LICENSE-APACHE; do
-            if [ -f "$notice" ]; then
-              cp "$notice" "$APP/Contents/Resources/$notice"
-            fi
-          done
-          
-          . packaging/font-notices.sh
-          copy_font_licences "$APP/Contents/Resources"
-
-          codesign --force --options runtime --entitlements packaging/macos/entitlements.plist --deep --sign - "$APP"
-          ditto -c -k --keepParent "$APP" "Pagic-macos-arm64.zip"
-
-      - name: Upload artifact
+          ./packaging/windows/msix/test-install.ps1 -Package "dist/msix/Pagic-$env:PAGIC_STORE_VERSION-x64.msix" -ReportDirectory dist/msix
+      - name: Test standalone installer and GUI launch
+        if: '!cancelled() && steps.setup.outcome == ''success'''
+        run: |
+          ./packaging/windows/test-setup.ps1 -Installer "dist/release/Pagic-$env:PAGIC_RELEASE_VERSION-x64-setup.exe" -LogPath dist/release/setup-install.log
+      - name: Retain Windows validation reports
+        if: '!cancelled()'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}-archive
+          name: Pagic-Windows-validation
           path: |
-            ${{ matrix.artifact }}
-            Pagic-windows-x64-setup.exe
+            dist/msix/*.json
+            dist/msix/AppxManifest.xml
+            dist/release/setup-install.log
+          overwrite: true
           if-no-files-found: ignore
 
-  release:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    name: Publish Release
-    needs: build
-    runs-on: ubuntu-latest
+  macos:
+    name: macOS Apple silicon DMG
+    needs: plan
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      PAGIC_BUILD_SHA: ${{ needs.plan.outputs.source }}
+      PAGIC_FONTS_REQUIRED: '1'
+      PAGIC_VERSION: ${{ needs.plan.outputs.version }}
+      MACOS_SIGN_IDENTITY: '-'
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          path: artifacts
-          merge-multiple: true
+          ref: ${{ needs.plan.outputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - name: Validate identity, fonts and assets
+        run: |
+          test "$(uname -m)" = arm64
+          python3 packaging/test-identity.py
+          bash packaging/test-font-notices.sh
+          cargo xtask assets
+      - name: Build and verify production DMG (ad-hoc app, no notarization)
+        run: |
+          bash packaging/macos/package.sh --arch aarch64
+          hdiutil verify "dist/release/pagic-$PAGIC_VERSION-macos-aarch64.dmg"
+          shasum -a 256 "dist/release/pagic-$PAGIC_VERSION-macos-aarch64.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pagic-desktop-dmg
+          path: dist/release/pagic-${{ needs.plan.outputs.version }}-macos-aarch64.dmg
+          overwrite: true
+          if-no-files-found: error
+          compression-level: 0
 
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2
+  collect:
+    name: Collect desktop artifacts and SHA-256
+    needs: [plan, windows, macos]
+    runs-on: ubuntu-latest
+    env:
+      PAGIC_VERSION: ${{ needs.plan.outputs.version }}
+      PAGIC_STORE_VERSION: ${{ needs.plan.outputs.store_version }}
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          generate_release_notes: true
-          files: |
-            artifacts/Pagic-windows-x64-setup.exe
-            artifacts/Pagic-windows-x64.zip
-            artifacts/Pagic-linux-x64.tar.gz
-            artifacts/Pagic-macos-arm64.zip
+          pattern: Pagic-desktop-*
+          merge-multiple: true
+          path: release
+      - name: Check release contents and write checksums
+        working-directory: release
+        run: |
+          files=("pagic-$PAGIC_VERSION-macos-aarch64.dmg" "Pagic-$PAGIC_STORE_VERSION-x64.msix" "Pagic-$PAGIC_VERSION-x64-setup.exe")
+          shopt -s dotglob nullglob
+          actual=(*)
+          test "${#actual[@]}" -eq "${#files[@]}"
+          for file in "${files[@]}"; do test -f "$file" && test -s "$file" || exit 1; done
+          sha256sum -- "${files[@]}" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pagic-${{ needs.plan.outputs.version }}-desktop-release
+          path: release/
+          overwrite: true
+          if-no-files-found: error
+          compression-level: 0
+
+  draft:
+    name: Create private draft release
+    needs: [plan, collect]
+    if: github.event_name == 'workflow_dispatch' && inputs.create_draft && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: pagic-draft-${{ github.ref }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Pagic-${{ needs.plan.outputs.version }}-desktop-release
+          path: release
+      - name: Attach verified artifacts to a new draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGIC_BUILD_SHA: ${{ needs.plan.outputs.source }}
+          PAGIC_VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          cd release
+          sha256sum --check SHA256SUMS.txt
+          tagged_commit=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_REF_NAME" --jq .sha)
+          if [[ "$tagged_commit" != "$PAGIC_BUILD_SHA" ]]; then
+            echo "The tag no longer points at the built commit" >&2
+            exit 1
+          fi
+          existing=$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[] | .tag_name')
+          if grep -Fxq -- "$GITHUB_REF_NAME" <<<"$existing"; then
+            echo "A release or draft already exists for $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" ./* --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
+            --title "Pagic v$PAGIC_VERSION" \
+            --notes 'Private testing builds. The EXE is unsigned, the MSIX is an unsigned Store submission candidate, and the macOS app is ad-hoc signed without notarization.'

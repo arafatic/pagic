@@ -19,11 +19,13 @@ A focused desktop PDF reader and editor built with Rust.
 
 ### Windows
 
-Pagic is available from the Microsoft Store.
+Pagic is available from the Microsoft Store. The unsigned standalone EXE is
+provided for testing in [private repository releases](https://github.com/arafatic/pagic/releases).
 
 ### macOS
 
-Pagic for macOS is in preparation.
+The Apple silicon DMG is provided in private repository releases. These builds
+may be unnotarized and may trigger Gatekeeper warnings.
 
 - [Official website](https://arafatul.com/pagic)
 - [Privacy](https://arafatul.com/pagic/privacy)
@@ -32,5 +34,5 @@ Pagic for macOS is in preparation.
 ## License
 
 Pagic is an independent continuation of Recto. The project is available under
-[MIT](LICENSE-MIT) or [Apache 2.0](https://github.com/arafatic/pagic/blob/36b76e74c6d197ea48a53b2a023ee7f747ec2e53/LICENSE-APACHE). Dependencies and artwork
-retain their own terms. See [verified license sources](https://github.com/arafatic/pagic/blob/36b76e74c6d197ea48a53b2a023ee7f747ec2e53/licenses/README.md).
+[MIT](LICENSE-MIT) or [Apache 2.0](LICENSE-APACHE). Dependencies and artwork
+retain their own terms. See [verified license sources](licenses/README.md).
