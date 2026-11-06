@@ -818,21 +818,21 @@ fn mode_tab(h: &Harness<'static, PagicApp>, label: &str) -> egui::Rect {
 }
 
 /// Scroll the page until `what` (on screen) lies across the mode bar, then the cursor over each
-/// tab it lies under: with the All tools panel closed, every tab: All tools, Edit, Convert and E-Sign.
+/// tab it lies under: with the All tools panel closed, every tab: All tools, Edit, Export and Fill & Sign.
 fn mode_tab_cursors(
     h: &mut Harness<'static, PagicApp>,
     what: impl Fn(&Harness<'static, PagicApp>) -> egui::Rect,
 ) -> [(&'static str, egui::CursorIcon); 4] {
     let page = |h: &Harness<'static, PagicApp>| h.state().views[0].page_screen_rect(0).expect("on screen");
     let y = what(h).center().y - page(h).top();
-    let tabs = mode_tab(h, "Convert").center().y;
+    let tabs = mode_tab(h, "Export").center().y;
     h.state_mut().views[0].goto = Some((0, 0.0));
     h.run_steps(4);
     let top = page(h).top();
     h.state_mut().views[0].goto = Some((0, (top - (tabs - y)) / page(h).height()));
     h.run_steps(4);
     let under = what(h);
-    ["All tools", "Edit", "Convert", "E-Sign"].map(|label| {
+    ["All tools", "Edit", "Export", "Fill & Sign workspace"].map(|label| {
         let at = mode_tab(h, label).center();
         assert!(under.contains(at), "{under:?} lies under {label} at {at:?}");
         h.hover_at(at);
@@ -844,8 +844,8 @@ fn mode_tab_cursors(
 const HAND_ON_EVERY_TAB: [(&str, egui::CursorIcon); 4] = [
     ("All tools", egui::CursorIcon::PointingHand),
     ("Edit", egui::CursorIcon::PointingHand),
-    ("Convert", egui::CursorIcon::PointingHand),
-    ("E-Sign", egui::CursorIcon::PointingHand),
+    ("Export", egui::CursorIcon::PointingHand),
+    ("Fill & Sign workspace", egui::CursorIcon::PointingHand),
 ];
 
 /// Add text, with the page scrolled up under the mode bar, leaves its tabs the hand (#2755): the
@@ -879,7 +879,7 @@ fn mode_tabs_keep_the_hand_over_added_text_scrolled_under_them() {
     // The second box, still being typed.
     let draft = |h: &Harness<'static, PagicApp>| item_on_screen(h, h.state().views[0].content.draft.as_ref().expect("the open box").rect);
     assert_eq!(mode_tab_cursors(&mut h, draft), HAND_ON_EVERY_TAB, "the open box under the tabs");
-    let convert = mode_tab(&h, "Convert").center();
+    let convert = mode_tab(&h, "Export").center();
     click(&mut h, convert);
     assert_eq!(h.state().mode, pagic_ui_egui::Mode::Convert, "the tab takes the click, not the box");
 }

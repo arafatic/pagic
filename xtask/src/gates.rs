@@ -602,9 +602,13 @@ mod tests {
     // The bundle id must match the app id the binary uses; renames change both (#174).
     #[test]
     fn macos_bundle_id_matches_app_id() {
-        assert!(read("packaging/macos/Info.plist.in").contains("<string>local.pagic.desktop</string>"), "bundle id");
+        let plist = read("packaging/macos/Info.plist.in");
+        let (_, bundle_id) = plist.split_once("<key>CFBundleIdentifier</key>").expect("CFBundleIdentifier");
+        assert!(bundle_id.trim_start().starts_with("<string>local.pagic.desktop</string>"), "bundle id");
+        let identity = read("crates/engine/src/identity.rs");
+        assert!(identity.contains(r#"pub const APP_ID: &str = "local.pagic.desktop";"#), "APP_ID drifted from the bundle id");
         let main = read("apps/pagic/src/main.rs");
-        assert!(main.contains(r#"const APP_ID: &str = "local.pagic.desktop""#), "APP_ID drifted from the bundle id");
+        assert!(main.contains("const APP_ID: &str = pagic_engine::identity::APP_ID;"), "the app must use the shared APP_ID");
     }
 
     // Committed file with `<!-- -->` comments stripped, so a commented-out claim cannot pass.

@@ -1710,21 +1710,21 @@ fn mode_tab(h: &Harness<'static, PagicApp>, label: &str) -> egui::Rect {
 }
 
 /// Scroll the page until `what` (on screen) lies across the mode bar, then the cursor over each
-/// tab it lies under: with the All tools panel closed, every tab: All tools, Edit, Convert and E-Sign.
+/// tab it lies under: with the All tools panel closed, every tab: All tools, Edit, Export and Fill & Sign.
 fn mode_tab_cursors(
     h: &mut Harness<'static, PagicApp>,
     what: impl Fn(&Harness<'static, PagicApp>) -> egui::Rect,
 ) -> [(&'static str, egui::CursorIcon); 4] {
     let page = |h: &Harness<'static, PagicApp>| h.state().views[0].page_screen_rect(0).expect("on screen");
     let y = what(h).center().y - page(h).top();
-    let tabs = mode_tab(h, "Convert").center().y;
+    let tabs = mode_tab(h, "Export").center().y;
     h.state_mut().views[0].goto = Some((0, 0.0));
     h.run_steps(4);
     let top = page(h).top();
     h.state_mut().views[0].goto = Some((0, (top - (tabs - y)) / page(h).height()));
     h.run_steps(4);
     let under = what(h);
-    ["All tools", "Edit", "Convert", "E-Sign"].map(|label| {
+    ["All tools", "Edit", "Export", "Fill & Sign workspace"].map(|label| {
         let at = mode_tab(h, label).center();
         assert!(under.contains(at), "{under:?} lies under {label} at {at:?}");
         h.hover_at(at);
@@ -1736,8 +1736,8 @@ fn mode_tab_cursors(
 const HAND_ON_EVERY_TAB: [(&str, egui::CursorIcon); 4] = [
     ("All tools", egui::CursorIcon::PointingHand),
     ("Edit", egui::CursorIcon::PointingHand),
-    ("Convert", egui::CursorIcon::PointingHand),
-    ("E-Sign", egui::CursorIcon::PointingHand),
+    ("Export", egui::CursorIcon::PointingHand),
+    ("Fill & Sign workspace", egui::CursorIcon::PointingHand),
 ];
 
 /// The Fill & Sign text box scrolled up under the mode bar leaves its tabs the hand (#2755): it
@@ -1755,7 +1755,7 @@ fn mode_tabs_keep_the_hand_over_a_type_box_scrolled_under_them() {
     h.event(egui::Event::Text("Ada Lovelace, Countess of Lovelace".into()));
     h.run_steps(3);
     assert_eq!(mode_tab_cursors(&mut h, type_box_rect), HAND_ON_EVERY_TAB);
-    let convert = mode_tab(&h, "Convert").center();
+    let convert = mode_tab(&h, "Export").center();
     h.hover_at(convert);
     h.run_steps(1);
     h.drag_at(convert);

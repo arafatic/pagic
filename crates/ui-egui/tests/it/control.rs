@@ -924,7 +924,7 @@ fn japanese_controls_and_search_keep_command_ids() {
     let (mut h, c) = harness();
     ok(&mut h, &c, "ui.set", json!({ "key": "language", "value": "ja" }));
     assert_eq!(ok(&mut h, &c, "ui.state", json!({}))["language"], "ja");
-    ok(&mut h, &c, "ui.click", json!({ "label": "変換" }));
+    ok(&mut h, &c, "ui.click", json!({ "label": "書き出し" }));
     assert_eq!(ok(&mut h, &c, "ui.state", json!({}))["mode"], "Convert");
 
     ok(&mut h, &c, "ui.command", json!({ "id": "app.preferences" }));
@@ -952,7 +952,7 @@ fn japanese_controls_and_search_keep_command_ids() {
 fn german_preferences_and_search_keep_command_ids() {
     let (mut h, c) = harness();
     ok(&mut h, &c, "ui.set", json!({ "key": "language", "value": "de" }));
-    ok(&mut h, &c, "ui.click", json!({ "label": "Konvertieren" }));
+    ok(&mut h, &c, "ui.click", json!({ "label": "Exportieren" }));
     assert_eq!(ok(&mut h, &c, "ui.state", json!({}))["mode"], "Convert");
     ok(&mut h, &c, "ui.command", json!({ "id": "app.preferences" }));
     h.run_steps(2);
@@ -999,12 +999,18 @@ fn ukrainian_preferences_and_search_keep_command_ids() {
         ok(&mut h, &c, "ui.key", json!({ "key": "Escape" }));
         h.state_mut().palette_query.clear();
     }
-    for (dialog, label) in [("properties", "Властивості документа"), ("protect", "Захистити паролем"), ("about", "Учасники")]
+    let version = format!("Версія {}", pagic_engine::build_info::version());
+    for (dialog, label) in [("properties", "Властивості документа"), ("protect", "Захистити паролем"), ("about", version.as_str())]
     {
         ok(&mut h, &c, "ui.set", json!({ "key": "dialog", "value": dialog }));
         let found = ok(&mut h, &c, "ui.inspect", json!({ "query": label }));
         assert!(found["count"].as_u64().unwrap() > 0, "{dialog}: {found}");
     }
+    ok(&mut h, &c, "ui.command", json!({ "id": "help.credits" }));
+    settle(&mut h);
+    assert_eq!(h.state().dialog, Some(pagic_ui_egui::Dialog::CreditsLicenses));
+    let found = ok(&mut h, &c, "ui.inspect", json!({ "query": "Учасники" }));
+    assert!(found["count"].as_u64().unwrap() > 0, "credits: {found}");
     ok(&mut h, &c, "ui.set", json!({ "key": "dialog", "value": "none" }));
     assert!(!h.state_mut().apply_edit(pagic_engine::Edit::DeletePages { pages: vec![0, 1, 2, 3, 4] }));
     let state = ok(&mut h, &c, "ui.state", json!({}));

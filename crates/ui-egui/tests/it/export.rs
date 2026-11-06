@@ -12,6 +12,14 @@ const FIXTURE: &[u8] = b"%PDF-1.7
 trailer << /Root 1 0 R >>
 %%EOF";
 
+fn click_dialog_export(h: &Harness<'_, PagicApp>) {
+    let card = h.ctx.data(|d| d.get_temp::<egui::Rect>(egui::Id::unique("dialog").with("card"))).expect("export dialog card");
+    h.get_all_by_role_and_label(egui::accesskit::Role::Button, "Export")
+        .find(|button| card.contains(button.rect().center()))
+        .expect("Export button inside the dialog")
+        .click();
+}
+
 #[test]
 fn export_dialogs_write_images_and_text() {
     let dir = std::env::temp_dir().join(format!("pagic-export-ui-{}", std::process::id()));
@@ -29,20 +37,20 @@ fn export_dialogs_write_images_and_text() {
     assert!(h.state_mut().execute("export.image"));
     h.run_steps(2);
     h.get_by_label("Export to Image");
-    h.get_by_label("Export").click();
+    click_dialog_export(&h);
     h.run_steps(4);
     assert!(dir.join("doc_page_1.png").exists() && dir.join("doc_page_2.png").exists());
     h.get_by_label_contains("Exported 2 images");
     assert!(h.state_mut().execute("export.text"));
     h.run_steps(2);
-    h.get_by_label("Export").click();
+    click_dialog_export(&h);
     h.run_steps(4);
     assert!(dir.join("doc.txt").exists());
     // Export all images: this document has none, and says so.
     assert!(h.state_mut().execute("export.all_images"));
     h.run_steps(2);
     h.get_by_label("Export All Images");
-    h.get_by_label("Export").click();
+    click_dialog_export(&h);
     h.run_steps(4);
     h.get_by_label_contains("Exported 0 images");
 }

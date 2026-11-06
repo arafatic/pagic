@@ -1370,7 +1370,7 @@ fn mode_tab(h: &Harness<'static, PagicApp>, label: &str) -> egui::Rect {
 }
 
 /// Scroll the page until `what` (on screen) lies across the mode bar, then the cursor over each
-/// tab it lies under: with the All tools panel closed, Edit, Convert and E-Sign (the name field
+/// tab it lies under: with the All tools panel closed, Edit, Export and Fill & Sign (the name field
 /// starts right of All tools).
 fn mode_tab_cursors(
     h: &mut Harness<'static, PagicApp>,
@@ -1378,14 +1378,14 @@ fn mode_tab_cursors(
 ) -> [(&'static str, egui::CursorIcon); 3] {
     let page = |h: &Harness<'static, PagicApp>| h.state().views[0].page_screen_rect(0).expect("on screen");
     let y = what(h).center().y - page(h).top();
-    let tabs = mode_tab(h, "Convert").center().y;
+    let tabs = mode_tab(h, "Export").center().y;
     h.state_mut().views[0].goto = Some((0, 0.0));
     h.run_steps(4);
     let top = page(h).top();
     h.state_mut().views[0].goto = Some((0, (top - (tabs - y)) / page(h).height()));
     h.run_steps(4);
     let under = what(h);
-    ["Edit", "Convert", "E-Sign"].map(|label| {
+    ["Edit", "Export", "Fill & Sign workspace"].map(|label| {
         let at = mode_tab(h, label).center();
         assert!(under.contains(at), "{under:?} lies under {label} at {at:?}");
         h.hover_at(at);
@@ -1395,7 +1395,7 @@ fn mode_tab_cursors(
 }
 
 const HAND_ON_EVERY_TAB: [(&str, egui::CursorIcon); 3] =
-    [("Edit", egui::CursorIcon::PointingHand), ("Convert", egui::CursorIcon::PointingHand), ("E-Sign", egui::CursorIcon::PointingHand)];
+    [("Edit", egui::CursorIcon::PointingHand), ("Export", egui::CursorIcon::PointingHand), ("Fill & Sign workspace", egui::CursorIcon::PointingHand)];
 
 /// A text field scrolled up under the mode bar leaves its tabs the hand (#2755). The field gave
 /// them its I-beam, and its open editor floated over them and took their clicks.
@@ -1418,7 +1418,7 @@ fn mode_tabs_keep_the_hand_over_a_text_field_scrolled_under_them() {
     click_field(&mut h, "name", 0);
     assert!(h.state().views[0].forms.focus.is_some(), "the editor opened");
     assert_eq!(mode_tab_cursors(&mut h, name), HAND_ON_EVERY_TAB, "the open field under the tabs");
-    let convert = mode_tab(&h, "Convert").center();
+    let convert = mode_tab(&h, "Export").center();
     click_at(&mut h, convert);
     assert_eq!(h.state().mode, pagic_ui_egui::Mode::Convert, "the tab takes the click, not the field's editor");
 }
