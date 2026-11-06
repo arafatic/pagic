@@ -1,36 +1,38 @@
 # Pagic
 
-A fast, lightweight, and open-source PDF editor built with Rust and egui.
+A focused desktop PDF reader and editor built with Rust.
 
 ## Features
-- Clean-room modern UI
-- Fast document viewing and editing
-- Open-source and privacy-focused
 
-## Distribution status
+- Fast PDF reading and navigation
+- Edit existing PDF text
+- Move images inside PDF pages
+- Save and Save As
+- Compress PDFs
+- Export and conversion tools
+- Print PDFs
+- Recent files and multi-document tabs
+- Light and dark themes
+- Local-first core PDF workflows
 
-Pagic is an independent continuation of Recto. Original attribution and third-party licenses
-are retained. Release/installer packaging is disabled pending final Pagic artwork and native
-installation, association and uninstall validation. No Microsoft Store package is published.
+## Download
 
-## Getting Started
+### Windows
 
-### Prerequisites
-Make sure you have Rust and Cargo installed:
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+Pagic is available from the Microsoft Store. The unsigned standalone EXE is
+provided for testing in [private repository releases](https://github.com/arafatic/pagic/releases).
 
-### Building & Running
-```bash
-# Run in development mode
-cargo run -p pagic
+### macOS
 
-# Or build for release
-cargo build --release -p pagic
-```
+The Apple silicon DMG is provided in private repository releases. These builds
+may be unnotarized and may trigger Gatekeeper warnings.
+
+- [Official website](https://arafatul.com/pagic)
+- [Privacy](https://arafatul.com/pagic/privacy)
+- [Support](https://arafatul.com/pagic/support)
 
 ## License
-This project retains the upstream `MIT OR Apache-2.0` license declaration: see the original
-[MIT License](LICENSE-MIT) and [Apache License 2.0](LICENSE-APACHE). Dependencies and artwork
-retain their own terms; see [verified license sources](licenses/README.md).
+
+Pagic is an independent continuation of Recto. The project is available under
+[MIT](LICENSE-MIT) or [Apache 2.0](LICENSE-APACHE). Dependencies and artwork
+retain their own terms. See [verified license sources](licenses/README.md).

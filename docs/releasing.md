@@ -1,68 +1,62 @@
 # Releasing Pagic
 
-Every push to the `release` branch runs `.github/workflows/release.yml`. It builds installers for
-macOS, Windows, Linux, FreeBSD and the web, signs the ones it has certificates for, and creates or
-updates a **draft** GitHub Release named `Pagic v<version>`. Nobody sees a draft until a
-maintainer publishes it.
+Pagic for Windows is available through the Microsoft Store. Use the [MSIX notes](windows-msix.md)
+for Store package maintenance. macOS is coming soon. See the [official site](https://arafatul.com/pagic)
+for availability.
 
-User-facing names say **Pagic**; files, binaries and
-ids stay lowercase (`pagic-<version>-<platform>-<arch>.<ext>`).
+The macOS production DMG recipe runs directly on macOS:
 
-## Cutting a release
+```sh
+packaging/macos/package.sh --arch aarch64
+```
 
-1. **Bump the version** on `main`. It lives only in `[workspace.package] version` in the root
-   `Cargo.toml`:
+First-party ownership was confirmed by the project owner. The macOS recipe uses the
+`macos_release_packaging_enabled` gate and still requires the root notice, current artwork,
+font notices, and a pinned dependency notice inventory. The shared gate remains closed.
+macOS dependency sources are recorded in `packaging/macos/notices/manifest.json`; original
+upstream metadata is included where a crate declares its license without a standalone notice.
+The current checkout lacks an approved OCR model inventory, so the DMG omits models.
+Use `MACOS_SIGN_IDENTITY` with a Developer ID Application identity and the configured Apple
+notarization credentials for public distribution. Without an identity the same recipe seals
+the app with an ad-hoc signature and produces an unsigned DMG.
 
-   ```sh
-   cargo xtask version                 # prints the current version
-   cargo xtask version set 0.3.0       # or 0.3.0-rc.1; updates Cargo.toml and Cargo.lock
-   ```
+## Unified private desktop release
 
-   Commit the change through the normal review flow (see the `Release: Pagic v0.2.1` PR).
-2. **Merge `main` into `release`** (or fast-forward it) and push. The workflow starts by itself.
-3. **Wait for the draft.** When every job has finished (notarization is the slow part), the
-   Releases page has a draft `Pagic v0.3.0` targeting the pushed commit, with every artifact
-   and `SHA256SUMS.txt`. The notes are generated from the merged PRs.
-4. **Check it.** Download an installer or two and read the job summaries. A `::warning::` there
-   means a signing secret was missing and that artifact is unsigned.
-5. **Publish** the draft in the GitHub UI. Publishing creates the `v0.3.0` tag. Versions with a
-   pre-release suffix (`-rc.1`) are marked as pre-releases.
+The **Pagic Desktop Release** workflow (`release.yml`) builds Windows x64 and Apple silicon
+macOS from the same commit. Run it manually on the branch you want to test:
 
-Pushing to `release` again before you publish rebuilds the same draft and replaces its assets.
-Once the draft is published, the workflow refuses to touch that version again, so bump it first.
+```sh
+gh workflow run release.yml --repo arafatic/pagic --ref <branch>
+```
 
-**Test runs:** *Actions ▸ Release ▸ Run workflow* runs the whole pipeline by hand. The optional
-`version` input (such as `0.3.0-rc.1`) overrides `Cargo.toml` for that run only; each job applies it
-with `cargo xtask version set` before building, so the binaries report it too. The signing jobs
-(macOS, Windows) and the draft-release job use the `release` environment, so pick the `release`
-branch in the dialog for a full run. On any other branch the same dispatch is a **dry run**: the
-Linux, Flatpak, FreeBSD and web jobs build and check everything, the signing jobs are refused by the
-environment's branch rule, and the draft-release job (which needs them) is skipped, so nothing is
-published (`gh workflow run release.yml --ref <branch>`).
+The workflow must be present on the default branch before it can be dispatched. It also
+builds pushed version tags such as `v0.14.0`, which must match `[workspace.package].version`
+in the root `Cargo.toml`. The existing MSIX mapping converts Cargo `0.14.0` to `1.14.0.0`.
 
-## What gets built
+| File at 0.14.0 | Purpose |
+|---|---|
+| `Pagic-1.14.0.0-x64.msix` | Unsigned Store submission candidate from the existing MSIX recipe |
+| `Pagic-0.14.0-x64-setup.exe` | Unsigned standalone Inno Setup installer using the verified Windows binaries and notices |
+| `pagic-0.14.0-macos-aarch64.dmg` | Apple silicon DMG with an ad-hoc signed app and no notarization |
+| `SHA256SUMS.txt` | SHA-256 for all three files |
 
-| Platform | Artifacts | Built on |
-|---|---|---|
-| macOS 11+ (universal: Apple silicon + Intel) | `pagic-<v>-macos-universal.dmg`, `pagic-cli-<v>-macos-universal.zip` | `macos-15` |
-| Windows 10+ x64 | `pagic-<v>-windows-x64.msi`, `pagic-<v>-windows-x64-portable.zip` | `windows-latest` |
-| Windows 10+ x86 (32-bit) | `pagic-<v>-windows-x86.msi`, `pagic-<v>-windows-x86-portable.zip` | `windows-latest` |
-| Windows 11 on ARM64 | `pagic-<v>-windows-arm64.msi`, `pagic-<v>-windows-arm64-portable.zip` | `windows-latest` (cross-compiled) |
-| Linux x86_64 | `pagic-<v>-linux-x86_64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}`, `pagic-cli-<v>-linux-x86_64.tar.gz` | `ubuntu-22.04` |
-| Linux aarch64 | `pagic-<v>-linux-aarch64.{AppImage,AppImage.zsync,deb,rpm,tar.gz}`, `pagic-cli-<v>-linux-aarch64.tar.gz` | `ubuntu-22.04-arm` |
-| Linux riscv64 | `pagic-<v>-linux-riscv64.tar.gz`, `pagic-cli-<v>-linux-riscv64.tar.gz` (glibc 2.39+) | `ubuntu-24.04` (cross-compiled; CLI smoke-tested under QEMU) |
-| Flatpak x86_64 | `pagic-<v>-linux-x86_64.flatpak` | `ubuntu-24.04` (repackages the Linux tarball) |
-| Flatpak aarch64 | `pagic-<v>-linux-aarch64.flatpak` | `ubuntu-24.04-arm` (repackages the Linux tarball) |
-| FreeBSD 14 x86_64 | `pagic-<v>-freebsd-x86_64.tar.gz` | FreeBSD VM on `ubuntu-latest` |
-| Web | `pagic-web-<v>.zip` (a static site; see [`packaging/web/README.md`](../packaging/web/README.md)) | `ubuntu-latest` |
+Download **Pagic-0.14.0-desktop-release** from the Actions run to get all four files.
+Individual platform uploads remain available if another job fails. A manual run without
+`create_draft`, or a pushed tag, only uploads Actions artifacts. To build and attach the
+complete set to a new private draft, dispatch on an existing matching tag:
 
-The ARM64 Windows build is cross-compiled on the x64 runner, so signing and WiX work as for the
-other Windows builds; `.github/workflows/windows-arm64.yml` installs and runs it on ARM64 hardware.
+```sh
+gh workflow run release.yml --repo arafatic/pagic --ref v0.14.0 -f create_draft=true
+```
 
-Every binary reports its version (`pagic --version`, `pagic-cli --version`, *Help ▸ About*).
-The workflow sets `PAGIC_BUILD_SHA` and `PAGIC_BUILD_DATE` (`packaging/env.sh` fills them in
-for local builds): the commit is recorded in the macOS `Info.plist` (`PagicBuildCommit`) and the
-date in the AppStream metadata. The binaries don't embed the commit yet.
+The draft step requires both platform jobs to pass and refuses an existing release or draft
+for the tag. Store submission remains a separate, manual process. These unsigned or
+unnotarized builds are for private testing.
+
+## Legacy packaging reference
+
+The following sections describe older platform recipes. Platform entries describe build
+targets and do not indicate available downloads. They are outside the unified workflow.
 
 **Fonts:** builds embed font assets from `crates/fonts/assets/fonts/` (or from `PAGIC_FONTS_DIR` when overridden), embedding Japanese and other international fallback fonts directly. Packaging stages the OFL notices of embedded font families.
 
@@ -83,7 +77,7 @@ The web build does not include these models, and OCR remains limited to the Lati
 
 ### macOS
 
-`packaging/macos/package.sh` builds both architectures, joins them with `lipo`, and assembles
+`packaging/macos/package.sh` builds the requested architecture (both for `--arch universal`) and assembles
 `Pagic.app` from `Info.plist.in` (bundle id `local.pagic.desktop`, macOS 11+, PDF declared
 as a document type with rank Alternate, so Pagic is offered under Open With without taking over
 from Preview). Files opened from Finder arrive as Apple events, which

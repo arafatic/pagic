@@ -40,13 +40,20 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "..\..\target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\assets\app-icon\pagic.ico"; DestDir: "{app}"; Flags: ignoreversion
+#ifdef ReleasePayload
+Source: "{#ReleasePayload}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ReleasePayload}\pagic-cli.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ReleasePayload}\Legal\*"; DestDir: "{app}\Legal"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
+#else
+Source: "..\..\target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\LICENSE-MIT"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\..\LICENSE-APACHE"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\..\README.md"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 
 Source: "..\..\target\font-licences\OFL-*.txt"; DestDir: "{app}"; Flags: ignoreversion
+#endif
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\pagic.ico"
