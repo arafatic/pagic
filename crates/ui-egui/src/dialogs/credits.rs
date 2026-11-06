@@ -215,8 +215,6 @@ fn day(iso: &str) -> &str {
     if iso.is_empty() { "—" } else { iso.get(..10).unwrap_or(iso) }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;

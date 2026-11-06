@@ -1,7 +1,7 @@
 # Vietnamese (vi) catalog. Columns, separated by a TAB: context <TAB> source <TAB> translation
 #
-# Clean-room translations from Recto's English UI labels.
-# Product and format names (Recto, PDF, PDF/A, OCR, XFA, Word…) remain names where appropriate.
+# Clean-room translations from Pagic's English UI labels.
+# Product and format names (Pagic, PDF, PDF/A, OCR, XFA, Word…) remain names where appropriate.
 # Plural rule: `plural_none` — every @plural row lists exactly one form.
 # Context-sensitive wording and intentional unchanged strings are regression-tested in i18n/mod.rs.
 #

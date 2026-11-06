@@ -225,7 +225,7 @@ pub fn build(doc: &mut Document, annotator: &mut Annotator, inputs: FormInputs<'
 fn draw_page_chrome(c: &mut Content, folio: &str) {
     c.fill_color(colors::PAPER).rect(0.0, 0.0, PAGE_W, PAGE_H).fill();
     c.fill_color(colors::INK_3);
-    c.tracked_text(Font::Helv, 6.5, LEFT, 757.0, 1.2, "RECTO SHOWCASE");
+    c.tracked_text(Font::Helv, 6.5, LEFT, 757.0, 1.2, "PAGIC SHOWCASE");
     let right = "10  \u{00b7}  INTERACTIVE FORM";
     let w = Font::Helv.width(right, 6.5) + 1.2 * (right.chars().count() as f32 - 1.0);
     c.tracked_text(Font::Helv, 6.5, RIGHT - w, 757.0, 1.2, right);

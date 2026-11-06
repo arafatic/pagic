@@ -2,7 +2,7 @@
 # (context <TAB> source <TAB> translation; @id, @plural and other contexts; escapes \n \t \\).
 # Plural forms (see `plural_none` in i18n/mod.rs): one form.
 #
-# Clean-room: clean-room translations of Recto's English UI labels, no proprietary localisation resources.
+# Clean-room: clean-room translations of Pagic's English UI labels, no proprietary localisation resources.
 
 	Menu	Menü
 	File	Dosya

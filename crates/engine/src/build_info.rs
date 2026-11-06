@@ -1,5 +1,5 @@
-//! What this build calls itself. A local or patched build sets `RECTO_BUILD_LABEL` at compile
-//! time (`RECTO_BUILD_LABEL=titlebar cargo build`, or through `packaging/linux/package.sh`), so
+//! What this build calls itself. A local or patched build sets `PAGIC_BUILD_LABEL` at compile
+//! time (`PAGIC_BUILD_LABEL=titlebar cargo build`, or through `packaging/linux/package.sh`), so
 //! it can be told from the release of the same version. The version itself stays the release's:
 //! the update check compares it with published releases.
 

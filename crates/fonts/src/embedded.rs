@@ -1,7 +1,7 @@
 //! Embedded font assets for Pagic (`crates/fonts/assets/fonts/`).
 //!
 //! `build.rs` embeds fonts from the local `crates/fonts/assets/` directory or from
-//! `RECTO_FONTS_DIR=<path>` when specified.
+//! `PAGIC_FONTS_DIR=<path>` when specified.
 //!
 //! Callers handle empty or missing font subsets gracefully.
 
@@ -341,7 +341,7 @@ mod tests {
 
     /// The bundled Inter faces carry the Latin, Greek and Cyrillic letters the bundled font faces
     /// lack: Uzbek қ ғ ҳ, Kazakh ә ө ү ұ һ, Ukrainian ї є ґ, Greek. This one runs with or without
-    /// RECTO_FONTS_DIR (#2593).
+    /// PAGIC_FONTS_DIR (#2593).
     #[test]
     fn latin_faces_carry_the_letters_the_japanese_faces_lack() {
         for face in document_latin_fonts(false).into_iter().chain(document_latin_fonts(true)) {
@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn craft_fonts_are_optional_and_consistent() {
-        // Holds with or without RECTO_FONTS_DIR.
+        // Holds with or without PAGIC_FONTS_DIR.
         assert_eq!(SHIPPORI_MINCHO.is_some(), PAGIC_FONTS.iter().any(|f| f.family == "Shippori Mincho" && f.style == "Regular"));
         assert_eq!(document_japanese_font().is_some(), PAGIC_FONTS.iter().any(|f| f.covers("Jpan")));
         let ui = ui_japanese_fonts();

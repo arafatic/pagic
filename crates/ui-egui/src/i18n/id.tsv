@@ -1,7 +1,7 @@
 # Indonesian (id) catalog. Columns, separated by a TAB:  context <TAB> source <TAB> translation
 #
-# Clean-room translations of Recto's English UI labels. Use standard Indonesian computing
-# terms; keep product and format names (Recto, PDF, PDF/A, OCR, XFA, Word...) unchanged.
+# Clean-room translations of Pagic's English UI labels. Use standard Indonesian computing
+# terms; keep product and format names (Pagic, PDF, PDF/A, OCR, XFA, Word...) unchanged.
 # Indonesian does not inflect nouns for number, so @plural entries list one form.
 	Menu	Menu
 	Edit	Edit

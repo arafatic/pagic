@@ -239,7 +239,7 @@ impl TextDevice {
     }
 }
 
-/// Whether `RECTO_TEXT_DEBUG` is set. `draw_glyph` runs once per glyph and `getenv` scans the
+/// Whether `PAGIC_TEXT_DEBUG` is set. `draw_glyph` runs once per glyph and `getenv` scans the
 /// whole environment under a lock, so read it once.
 fn text_debug() -> bool {
     static DEBUG: std::sync::OnceLock<bool> = std::sync::OnceLock::new();

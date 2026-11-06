@@ -84,15 +84,14 @@ Existing artifacts are not overwritten. Generated `work-<GUID>` directories rema
 for diagnosing local SDK failures; they can be removed after reviewing outputs. They contain
 no source inputs that cannot be recreated. Do not commit build outputs or certificate material.
 
-## GitHub Actions (requires approval to push first)
+## Private GitHub Actions validation
 
 The workflow `.github/workflows/msix.yml` accepts `workflow_dispatch` and pushes only to
 `codex/pagic-msix-validation`, with read-only repository permissions and artifact upload.
 It has no release/push/tag/submission steps and uses no signing secrets. Artifacts stay in this private repository's Actions storage for 14 days.
 
-After reviewing these changes, approval is required to commit and push the verified HEAD
-to the dedicated validation branch. This triggers the first Windows run without merging
-untested packaging into `main`:
+A reviewed push to the dedicated validation branch triggers Windows validation. Keep CI artifacts
+internal and use the Microsoft Store as the public Windows distribution channel:
 
 ```sh
 # Only after explicit commit/push approval; never force-push or target main.

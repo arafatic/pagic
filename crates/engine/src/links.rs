@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 pub const APP: &str = "pagic";
 
 pub const DISCORD: &str = "https://github.com/arafatic/pagic/discussions";
-pub const WEBSITE: &str = "https://github.com/arafatic/pagic";
-pub const APP_PAGE: &str = "https://github.com/arafatic/pagic";
+pub const WEBSITE: &str = "https://arafatul.com/pagic";
+pub const APP_PAGE: &str = WEBSITE;
 pub const GITHUB: &str = "https://github.com/arafatic/pagic";
 
 /// A link and the registry command that opens it.

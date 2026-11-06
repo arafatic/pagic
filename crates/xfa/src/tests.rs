@@ -1555,7 +1555,7 @@ fn assert_choice_fields_and_picture_streams() {
     assert_eq!(report.fields, 7, "country, langs, other, pin, sign, photo, summary");
     let bytes = write_incremental(&doc, &SaveOptions::default()).unwrap();
     let doc = Document::open(Arc::new(bytes)).unwrap();
-    let fields = recto_forms_free_fields(&doc);
+    let fields = pagic_forms_free_fields(&doc);
     let field = |n: &str| fields.iter().find(|(name, _)| name == n).map(|(_, d)| d.clone()).unwrap_or_else(|| panic!("no field {n}"));
     let country = field("country");
     assert_eq!(country.name(b"FT"), Some(b"Ch".as_slice()));
@@ -1595,7 +1595,7 @@ fn assert_choice_fields_and_picture_streams() {
 }
 
 /// The terminal field dictionaries by name (one level: this fixture has no hierarchy).
-fn recto_forms_free_fields(doc: &Document) -> Vec<(String, pagic_cos::Dict)> {
+fn pagic_forms_free_fields(doc: &Document) -> Vec<(String, pagic_cos::Dict)> {
     let root = doc.get(doc.root().unwrap());
     let acro = doc.resolve(root.as_dict().unwrap().get(b"AcroForm").unwrap());
     let fields = doc.resolve(acro.as_dict().unwrap().get(b"Fields").unwrap()).as_array().unwrap().clone();
@@ -1622,7 +1622,7 @@ fn choice_values_come_from_the_data_as_saved_values_and_several_for_lists() {
     render_into(&mut doc).unwrap();
     let bytes = write_incremental(&doc, &SaveOptions::default()).unwrap();
     let doc = Document::open(Arc::new(bytes)).unwrap();
-    let fields = recto_forms_free_fields(&doc);
+    let fields = pagic_forms_free_fields(&doc);
     let langs = &fields.iter().find(|(n, _)| n == "langs").unwrap().1;
     let v = doc.resolve(langs.get(b"V").unwrap()).as_array().unwrap().clone();
     assert_eq!(v.iter().map(|s| s.as_string().unwrap().to_text()).collect::<Vec<_>>(), vec!["English", "Spanish"]);
@@ -1702,7 +1702,7 @@ fn choice_values_are_saved_values_first_deduplicated_and_defaults_are_saved_valu
     let mut doc = Document::open(Arc::new(shell(&tpl))).unwrap();
     render_into(&mut doc).unwrap();
     let doc = Document::open(Arc::new(write_incremental(&doc, &SaveOptions::default()).unwrap())).unwrap();
-    let fields = recto_forms_free_fields(&doc);
+    let fields = pagic_forms_free_fields(&doc);
     let langs = &fields.iter().find(|(n, _)| n == "langs").unwrap().1;
     let i = doc.resolve(langs.get(b"I").unwrap()).as_array().unwrap().clone();
     assert_eq!(i.iter().map(|o| o.as_int().unwrap()).collect::<Vec<_>>(), vec![0, 2]);
@@ -3067,7 +3067,7 @@ fn signature_fields_are_named_by_their_som_path() {
     assert_eq!(report.fields, 4, "name and the three signature fields");
     let doc = Document::open(Arc::new(write_incremental(&doc, &SaveOptions::default()).unwrap())).unwrap();
     let check = |doc: &Document| {
-        let top: Vec<String> = recto_forms_free_fields(doc).into_iter().map(|(name, _)| name).collect();
+        let top: Vec<String> = pagic_forms_free_fields(doc).into_iter().map(|(name, _)| name).collect();
         assert_eq!(top.iter().filter(|n| *n == "form[0]").count(), 1, "one field for the root subform: {top:?}");
         assert!(top.iter().any(|n| n == "name"), "other fields keep their names: {top:?}");
         let named = full_names(doc);
@@ -3095,7 +3095,7 @@ fn signature_fields_are_named_by_their_som_path() {
     strip(&mut doc).unwrap();
     let named = full_names(&doc);
     assert!(named.iter().any(|(name, _)| name == "form[0].end[0].last[0]"), "{named:?}");
-    let top = recto_forms_free_fields(&doc);
+    let top = pagic_forms_free_fields(&doc);
     let node = top.iter().find(|(name, _)| name == "form[0]").map(|(_, d)| d.clone()).expect("the root subform's field");
     assert!(!node.contains(NODE_KEY));
 }
@@ -3151,7 +3151,7 @@ fn a_signature_on_a_laid_out_box_survives_a_new_layout() {
     assert!(matches!(&*doc.get(picture), Object::Stream(_)), "which is still in the file");
     assert!(matches!(&*doc.get(sig), Object::Dict(_)), "as is the signature");
     assert_eq!(d.int(b"Ff").unwrap_or(0) & 1, 1, "a signed box is not signed again");
-    let top = recto_forms_free_fields(&doc);
+    let top = pagic_forms_free_fields(&doc);
     assert_eq!(top.iter().filter(|(name, _)| name == "form[0]").count(), 1, "the old fields are gone");
 }
 
@@ -3210,7 +3210,7 @@ fn a_signature_field_does_not_repeat_a_name_another_field_has() {
         );
         let mut doc = Document::open(Arc::new(shell(&xdp))).unwrap();
         render_into(&mut doc).unwrap();
-        let mut top: Vec<String> = recto_forms_free_fields(&doc).into_iter().map(|(name, _)| name).collect();
+        let mut top: Vec<String> = pagic_forms_free_fields(&doc).into_iter().map(|(name, _)| name).collect();
         assert!(top.iter().any(|n| n == "sign"), "the box keeps its own name: {top:?}");
         top.sort();
         let len = top.len();
@@ -3314,7 +3314,7 @@ fn data_exports_as_datasets_xml_or_an_xdp_and_imports_from_any_of_them() {
         // Laid out again, the form shows the imported value.
         let (t, _) = parse(&with_desc).unwrap();
         rerender(&mut doc, &t).unwrap();
-        let fields = recto_forms_free_fields(&doc);
+        let fields = pagic_forms_free_fields(&doc);
         let c = &fields.iter().find(|(n, _)| n == "country").unwrap().1;
         assert_eq!(c.get(b"V").and_then(|v| v.as_string()).map(|s| s.to_text()).as_deref(), Some("CA"), "{file}");
     }
@@ -3379,7 +3379,7 @@ fn a_picture_chosen_for_an_image_field_is_kept_in_the_data_with_its_content_type
     // The image field is a push button marked as one, with no action and nothing drawn.
     let bytes = write_incremental(&doc, &SaveOptions::default()).unwrap();
     let doc = Document::open(Arc::new(bytes)).unwrap();
-    let fields = recto_forms_free_fields(&doc);
+    let fields = pagic_forms_free_fields(&doc);
     let photo = &fields.iter().find(|(n, _)| n == "photo").unwrap().1;
     assert_eq!(photo.name(b"FT"), Some(b"Btn".as_slice()));
     assert_eq!(photo.int(b"Ff"), Some(1 << 16));
@@ -3593,7 +3593,7 @@ fn assert_stripping_leaves_ordinary_document() {
     let acro = acro.as_dict().unwrap();
     assert!(!acro.contains(b"XFA") && !acro.contains(b"PCXfaLayout") && !acro.contains(b"PCXfaOverrides"));
     // The fields stay, with their values, and without the private keys.
-    let fields = recto_forms_free_fields(&doc);
+    let fields = pagic_forms_free_fields(&doc);
     assert_eq!(fields.len(), 7);
     let country = &fields.iter().find(|(n, _)| n == "country").unwrap().1;
     assert_eq!(country.get(b"V").and_then(|v| v.as_string()).map(|s| s.to_text()).as_deref(), Some("JP"));

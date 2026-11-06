@@ -5213,7 +5213,7 @@ fn the_caret_on_a_small_row_is_as_tall_as_that_row() {
 }
 
 /// Opt-in private-document regression. This never captures images or saves the source file.
-/// Run with RECTO_TEXT_REGRESSION_PDF=/path/to/document.pdf and --ignored.
+/// Run with PAGIC_TEXT_REGRESSION_PDF=/path/to/document.pdf and --ignored.
 #[test]
 #[ignore = "requires an explicitly supplied local PDF"]
 fn private_document_regions_open_as_one_editor() {

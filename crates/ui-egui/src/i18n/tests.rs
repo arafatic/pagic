@@ -329,7 +329,7 @@ fn signature_appearance_labels_keep_their_separator() {
 fn japanese_labels_have_glyphs() {
     let craft = pagic_fonts::ui_japanese_fonts();
     let Some(web) = craft.iter().find(|f| f.family == "BIZ UDPGothic" && f.style == "Regular") else {
-        eprintln!("skipping Japanese glyph checks: build with RECTO_FONTS_DIR to run them");
+        eprintln!("skipping Japanese glyph checks: build with PAGIC_FONTS_DIR to run them");
         return;
     };
     let (entries, _) = parse_entries(JA().0.source, 1);
@@ -511,7 +511,7 @@ fn contextual_labels_fall_back_to_the_plain_translation() {
 fn telugu_labels_have_glyphs() {
     let telugu: Vec<String> = pagic_fonts::ui_telugu_fonts().iter().map(|f| f.name()).collect();
     if telugu.is_empty() {
-        eprintln!("skipping Telugu glyph checks: build with RECTO_FONTS_DIR and a Telugu face to run them");
+        eprintln!("skipping Telugu glyph checks: build with PAGIC_FONTS_DIR and a Telugu face to run them");
         return;
     }
     let te = Lang::from_code("te").expect("te registered");
@@ -1084,7 +1084,7 @@ fn persian_is_registered_and_persists() {
 fn arabic_labels_have_glyphs() {
     let faces: Vec<String> = pagic_fonts::ui_arabic_fonts().iter().map(|f| f.name()).collect();
     if faces.is_empty() {
-        eprintln!("skipping Arabic glyph checks: build with RECTO_FONTS_DIR and an Arabic face to run them");
+        eprintln!("skipping Arabic glyph checks: build with PAGIC_FONTS_DIR and an Arabic face to run them");
         return;
     }
     let ar = arabic();

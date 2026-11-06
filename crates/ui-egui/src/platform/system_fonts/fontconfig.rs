@@ -163,7 +163,7 @@ mod tests {
                 .args(["--exact", &format!("platform::system_fonts::fontconfig::tests::{test}"), "--nocapture"])
                 .env("FONTCONFIG_PATH", &self.0)
                 .env("FONTCONFIG_FILE", "fonts.conf")
-                .env("RECTO_FONTCONFIG_TEST_ROOT", &self.0)
+                .env("PAGIC_FONTCONFIG_TEST_ROOT", &self.0)
                 .output()
                 .unwrap();
             assert!(output.status.success(), "{}\n{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));

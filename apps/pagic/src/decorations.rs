@@ -6,7 +6,7 @@
 //! a header bar like GNOME's own apps (`pagic_ui_egui::window_controls`), with the window
 //! buttons GNOME's `button-layout` names. X11 window managers always draw the frame.
 //!
-//! `RECTO_TITLEBAR=app` or `=system` overrides the choice.
+//! `PAGIC_TITLEBAR=app` or `=system` overrides the choice.
 
 use pagic_ui_egui::window_controls::Layout;
 

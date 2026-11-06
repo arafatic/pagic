@@ -14,7 +14,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/windows_manifest.rs");
     println!("cargo:rerun-if-env-changed=RECTO_REQUIRE_WINRES");
     println!("cargo:rerun-if-env-changed=PAGIC_REQUIRE_WINRES");
-    // Artwork is supplied separately. Never relabel or embed the archived Recto logo.
+    // Use the approved Pagic artwork when it is available.
     let root = std::path::PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap_or_default());
     let mac = std::env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "macos");
     let icon =

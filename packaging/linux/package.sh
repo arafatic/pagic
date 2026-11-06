@@ -48,7 +48,7 @@ case "$ARCH" in
   aarch64 | arm64) ARCH=aarch64; DEB_ARCH=arm64 ;;
   *) echo "unsupported architecture $ARCH" >&2; exit 2 ;;
 esac
-export RECTO_MAINTAINER="${RECTO_MAINTAINER:-Arafat <typearaf@gmail.com>}"
+export PAGIC_MAINTAINER="${PAGIC_MAINTAINER:-${RECTO_MAINTAINER:-Arafat <typearaf@gmail.com>}}"
 LABEL_SUFFIX="${PAGIC_BUILD_LABEL:+-$PAGIC_BUILD_LABEL}"
 BASENAME="pagic-$VERSION$LABEL_SUFFIX-linux-$ARCH"
 

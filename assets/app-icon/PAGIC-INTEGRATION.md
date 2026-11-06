@@ -22,6 +22,7 @@ Do not relabel archived Recto artwork.
 | Platform/use | Destination | Current generator output |
 | --- | --- | --- |
 | Windows executable/application | `assets/app-icon/pagic.ico` | PNG-compressed 32-bit entries: 16, 20, 24, 32, 40, 48, 64, 128, 256 px square |
+| macOS PDF association | `assets/app-icon/pagic-document.icns` | Generated from the approved document master; bundled separately from the app icon |
 | Windows PDF association | `assets/app-icon/pagic-document.ico` | Same sizes, executable resource ID 2; application icon is first/default |
 | macOS runtime Dock | `assets/app-icon/pagic-1024.png` | 1024 px transparent canvas, 824 px body centered with 100 px inset |
 | macOS bundle | `assets/app-icon/pagic.icns` | iconset 16/32/128/256/512 px, each at 1x and 2x, including 1024 px |

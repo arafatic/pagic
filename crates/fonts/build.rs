@@ -1,6 +1,6 @@
-//! Embeds bundled fonts from `assets/`, or the `RECTO_FONTS_DIR` override, without network access.
+//! Embeds bundled fonts from `assets/`, or the `PAGIC_FONTS_DIR` override, without network access.
 //! Wasm embeds only the selected UI faces to stay within hosting size limits. Native builds also
-//! read `fonts/simplified-chinese-manifest.txt`; `RECTO_FONTS_REQUIRED` makes that manifest required.
+//! read `fonts/simplified-chinese-manifest.txt`; `PAGIC_FONTS_REQUIRED` makes that manifest required.
 
 use std::fmt::Write as _;
 use std::path::PathBuf;
@@ -8,8 +8,8 @@ use std::path::PathBuf;
 #[path = "src/cjk_scripts.rs"]
 mod cjk_scripts;
 
-/// Build-script entry point: embed bundled fonts from `RECTO_FONTS_DIR`, make a missing or invalid input fatal
-/// when `RECTO_FONTS_REQUIRED` is set, and write `embedded_fonts.rs` to `OUT_DIR`.
+/// Build-script entry point: embed bundled fonts from `PAGIC_FONTS_DIR`, make a missing or invalid input fatal
+/// when `PAGIC_FONTS_REQUIRED` is set, and write `embedded_fonts.rs` to `OUT_DIR`.
 fn main() {
     println!("cargo::rerun-if-env-changed=RECTO_FONTS_DIR");
     println!("cargo::rerun-if-env-changed=PAGIC_FONTS_DIR");
@@ -39,7 +39,7 @@ fn main() {
 }
 
 /// The main manifest, plus the native-only Simplified Chinese manifest. The latter is optional
-/// for ordinary builds and required when `RECTO_FONTS_REQUIRED` is set, so a required build can
+/// for ordinary builds and required when `PAGIC_FONTS_REQUIRED` is set, so a required build can
 /// never pass the Chinese UI tests only by skipping them.
 fn craft_fonts(dir: &std::path::Path, required: bool) -> Result<String, String> {
     let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|a| a == "wasm32");
@@ -75,7 +75,7 @@ fn manifest(dir: &std::path::Path, manifest: &std::path::Path, wasm: bool, stric
     let text = std::fs::read_to_string(manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
     let mut out = String::new();
     // A required native Chinese manifest must add the Hans face itself, not merely some other
-    // CJK face that happens to fit: otherwise RECTO_FONTS_REQUIRED would pass while the promised
+    // CJK face that happens to fit: otherwise PAGIC_FONTS_REQUIRED would pass while the promised
     // Simplified Chinese fallback is still absent.
     let mut has_hans = false;
     for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {

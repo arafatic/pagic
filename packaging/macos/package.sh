@@ -15,7 +15,9 @@
 set -euo pipefail
 # shellcheck source=../env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/../env.sh"
-python3 "$ROOT/packaging/check-identity.py" --require-release-ready
+python3 "$ROOT/packaging/check-identity.py" --require-release-ready --macos
+python3 "$ROOT/packaging/check-icons.py"
+export PAGIC_FONTS_REQUIRED=1
 HERE="$ROOT/packaging/macos"
 
 ARCH=universal
@@ -46,7 +48,7 @@ CLI_ZIP="$DIST/pagic-cli-$VERSION-macos-$ARCH.zip"
 
 NOTARIZE=0
 if [[ "$IDENTITY" = "-" ]]; then
-  warn "macOS: ad-hoc signing (no MACOS_SIGN_IDENTITY); artifacts are not notarized"
+  warn "macOS: app will be ad-hoc signed; DMG will be unsigned and artifacts will not be notarized"
 elif [[ -n "${APPLE_ID:-}" ]] && [[ -n "${APPLE_PASSWORD:-}" ]] && [[ -n "${APPLE_TEAM_ID:-}" ]]; then
   NOTARIZE=1
 else
@@ -104,20 +106,25 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 # Executable and icon carry the display name (CFBundleExecutable / CFBundleIconFile).
 cp "$WORK/bin/pagic" "$APP/Contents/MacOS/pagic"
 cp "$ROOT/assets/app-icon/pagic.icns" "$APP/Contents/Resources/pagic.icns"
+cp "$ROOT/assets/app-icon/pagic-document.icns" "$APP/Contents/Resources/pagic-document.icns"
 # Required embedded-font notices are independent of optional font inputs.
 for notice in NOTICE LICENSE LICENSE-MIT LICENSE-APACHE ATTRIBUTION.md; do
   if [[ -f "$ROOT/$notice" ]]; then
     cp "$ROOT/$notice" "$APP/Contents/Resources/$notice"
   fi
 done
-cp "$ROOT/assets/app-icon/LICENSE-recto.txt" "$APP/Contents/Resources/LICENSE-recto.txt"
+cp "$ROOT/assets/app-icon/LICENSE-recto.txt" "$APP/Contents/Resources/LICENSE-historical-artwork.txt"
 # The standard About panel (Pagic menu > About Pagic) shows Credits.rtf under the version:
 # legal attribution for this modified build.
 cp "$HERE/Credits.rtf" "$APP/Contents/Resources/Credits.rtf"
 copy_font_licences "$APP/Contents/Resources"
-# OCR models: the app finds them at Contents/MacOS/../Resources/models. Before signing, so the
-# bundle's seal covers them.
-stage_models "$APP/Contents/Resources/models"
+python3 "$HERE/stage-notices.py" "$APP/Contents/Resources" "${TARGETS[@]}"
+# Bundle OCR only when the verified model inventory is available.
+if [[ -f "$ROOT/ATTRIBUTION.toml" ]]; then
+  stage_models "$APP/Contents/Resources/models"
+else
+  warn "macOS: OCR models are not bundled; text recognition requires separately installed models"
+fi
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/$SHORT_VERSION/g" \
   -e "s/@BUILD_SHA@/${PAGIC_BUILD_SHA:-unknown}/g" \
   "$HERE/Info.plist.in" >"$APP/Contents/Info.plist"
@@ -166,8 +173,10 @@ hdiutil_retry() {
   done
 }
 hdiutil_retry create create -srcfolder "$STAGE" -volname "Pagic" -fs HFS+ -format UDZO -imagekey zlib-level=9 -ov "$DMG"
-sign "$DMG"
-codesign --verify --strict --verbose=2 "$DMG"
+if [[ "$IDENTITY" != "-" ]]; then
+  sign "$DMG"
+  codesign --verify --strict --verbose=2 "$DMG"
+fi
 # The app inside the image must still pass --strict, so a makehybrid-style regression can't ship.
 MOUNT="$WORK/dmg-check"
 rm -rf "$MOUNT"
@@ -191,6 +200,7 @@ CLI_DIR="$WORK/pagic-cli-$VERSION-macos-$ARCH"
 mkdir -p "$CLI_DIR"
 cp "$WORK/bin/pagic-cli" "$CLI_DIR/"
 copy_docs "$CLI_DIR"
+ditto "$APP/Contents/Resources/Legal" "$CLI_DIR/Legal"
 sign --options runtime "$CLI_DIR/pagic-cli"
 codesign --verify --strict --verbose=2 "$CLI_DIR/pagic-cli"
 rm -f "$CLI_ZIP"

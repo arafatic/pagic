@@ -71,7 +71,7 @@ fn saving_a_pdf_keeps_the_destinations_extended_attributes() {
     let dir = workdir("save-xattrs");
     let target = dir.join("a.pdf");
     let tags = b"<plist version=\"1.0\"><array><string>Pagic\n6</string></array></plist>";
-    let binary = b"\0\xffrecto\0";
+    let binary = b"\0\xffpagic\0";
     let attributes: &[(&str, &[u8])] = &[("com.apple.metadata:_kMDItemUserTags", tags), ("com.pagic.test", binary)];
     for (name, value) in attributes {
         setxattr(&target, *name, value, XattrFlags::empty()).unwrap();
@@ -3199,7 +3199,7 @@ fn styled_cyrillic_fallback_is_batched_through_tools_and_reopen() {
 
 /// #2593: a paragraph whose own font cannot show a character is written from Pagic's fallback
 /// faces. The Cyrillic the bundled font faces lack (Uzbek қ ғ ҳ, Kazakh ә ө ү ұ һ) comes from the
-/// bundled Inter face, so the edit is not refused even without `RECTO_FONTS_DIR`, and the words
+/// bundled Inter face, so the edit is not refused even without `PAGIC_FONTS_DIR`, and the words
 /// survive a save and a reopen. (`crates/edit/src/tests.rs::uzbek_and_kazakh_cyrillic_use_the_bundled_latin_face`
 /// pins which face drew them.)
 #[test]
@@ -5212,9 +5212,9 @@ fn links_through_tools() {
     assert_eq!(list["count"], 3);
     let added = list["links"].as_array().unwrap().iter().find(|l| l["to_page"] == 1).unwrap().clone();
     assert_eq!(added["rect"], json!([72.0, 300.0, 200.0, 320.0]));
-    ok(&mut a, "link_edit", json!({ "doc": doc, "page": 1, "index": added["index"], "url": "https://recto.dev" }));
+    ok(&mut a, "link_edit", json!({ "doc": doc, "page": 1, "index": added["index"], "url": "https://example.com/edited-pdf" }));
     let list = ok(&mut a, "link_list", json!({ "doc": doc }));
-    assert!(list["links"].as_array().unwrap().iter().any(|l| l["url"] == "https://recto.dev"));
+    assert!(list["links"].as_array().unwrap().iter().any(|l| l["url"] == "https://example.com/edited-pdf"));
     ok(&mut a, "link_delete", json!({ "doc": doc, "page": 1, "index": added["index"] }));
     let r = ok(&mut a, "links_remove", json!({ "doc": doc, "pages": [1] }));
     assert_eq!(r["removed"], 2);

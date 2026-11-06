@@ -33,10 +33,10 @@ use std::process::Command;
 /// Setting this environment variable to any value turns a missing oracle from a skip into a
 /// failure. CI sets it on the runners that install the tools.
 ///
-/// Any value counts, including `0` — the same convention as `RECTO_FONTS_REQUIRED`, which this
+/// Any value counts, including `0` — the same convention as `PAGIC_FONTS_REQUIRED`, which this
 /// deliberately mirrors. The surprising half of that convention errs toward *requiring* an oracle,
 /// which is the safe direction for a gate whose whole purpose is to stop absence passing quietly.
-pub const REQUIRED_VAR: &str = "RECTO_ORACLES_REQUIRED";
+pub const REQUIRED_VAR: &str = "PAGIC_ORACLES_REQUIRED";
 
 /// An external program found on `PATH`, ready to run.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -125,7 +125,7 @@ impl fmt::Display for Absent {
 /// Presence is decided by whether the program could be started at all, not by its exit status: a
 /// tool that runs but reports its version oddly is still an oracle.
 pub fn find(program: &'static str, version_arg: &str) -> Result<Oracle, Absent> {
-    let required = std::env::var_os(REQUIRED_VAR).is_some();
+    let required = std::env::var_os(REQUIRED_VAR).or_else(|| std::env::var_os("RECTO_ORACLES_REQUIRED")).is_some();
     match Command::new(program).arg(version_arg).output() {
         Ok(out) => {
             // Poppler's tools print their version to stderr, qpdf to stdout.

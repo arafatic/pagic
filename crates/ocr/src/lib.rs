@@ -57,7 +57,7 @@ impl Models {
         })
     }
 
-    /// Look for the models: `$RECTO_MODELS`, then where the release packages install them
+    /// Look for the models: `$PAGIC_MODELS`, then where the release packages install them
     /// beside the executable ([`Models::dirs_beside_exe`]), then the source tree's `assets/models/`.
     pub fn find() -> Option<Models> {
         Self::search_dirs().iter().find_map(|d| Self::in_dir(d))
@@ -372,7 +372,7 @@ mod tests {
         }
     }
 
-    /// Existing source builds and RECTO_MODELS overrides retain their complete RTEN pair.
+    /// Existing source builds and PAGIC_MODELS overrides retain their complete RTEN pair.
     #[test]
     fn model_discovery_keeps_legacy_only_installations() {
         let dir = tempfile::tempdir().unwrap();

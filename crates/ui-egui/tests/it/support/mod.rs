@@ -81,7 +81,7 @@ pub fn outside_menus<'h>(h: &'h Harness<'static, PagicApp>, label: &str) -> egui
 /// switch to Chinese installs its fonts for the next frame, so the first frame in Chinese draws
 /// with the fonts of the language before it.
 ///
-/// A build that requires bundled fonts (`RECTO_FONTS_REQUIRED=1`, when strict font validation is requested) never skips:
+/// A build that requires bundled fonts (`PAGIC_FONTS_REQUIRED=1`, when strict font validation is requested) never skips:
 /// a missing glyph there is a failure.
 pub fn skip_without_glyphs(name: &str, language: &str, text: &str) -> bool {
     if std::env::var("PAGIC_FONTS_REQUIRED").or_else(|_| std::env::var("RECTO_FONTS_REQUIRED")).as_deref() == Ok("1") {

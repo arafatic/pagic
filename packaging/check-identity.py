@@ -64,6 +64,14 @@ def validate(identity, files):
     mac = plistlib.loads(files["packaging/macos/Info.plist.in"].encode())
     if mac["CFBundleIdentifier"] != identity["application_id"] or mac["CFBundleExecutable"] != "pagic":
         errors.append("macOS bundle identity disagrees with contract")
+    if (mac.get("CFBundleDisplayName"), mac.get("CFBundleName"), mac.get("CFBundleIconFile")) != (
+        identity["data_name"], identity["data_name"], "pagic",
+    ):
+        errors.append("macOS bundle display name or application icon disagrees with contract")
+    documents = mac.get("CFBundleDocumentTypes", [])
+    if not any("com.adobe.pdf" in entry.get("LSItemContentTypes", []) and
+               entry.get("CFBundleTypeIconFile") == "pagic-document" for entry in documents):
+        errors.append("macOS PDF association must reference the Pagic document icon")
     desktop = dict(line.split("=", 1) for line in files["packaging/linux/local.pagic.desktop.desktop"].splitlines() if "=" in line)
     if desktop["StartupWMClass"] != identity["application_id"] or desktop["Icon"] != identity["application_id"] or desktop["Exec"] != "pagic %U":
         errors.append("Linux launcher identity disagrees with contract")
@@ -73,11 +81,12 @@ def validate(identity, files):
     return errors
 
 
-def release_blockers(identity, root=ROOT):
+def release_blockers(identity, root=ROOT, *, macos=False):
     blockers = []
-    if identity.get("release_packaging_enabled") is not True:
+    gate = "macos_release_packaging_enabled" if macos else "release_packaging_enabled"
+    if identity.get(gate) is not True:
         blockers.append("Pagic release/installer packaging is disabled pending native ownership review")
-    for asset in ["pagic.svg", "pagic-document.svg", "pagic-1024.png", "pagic.ico", "pagic-document.ico", "pagic.icns"]:
+    for asset in ["pagic.svg", "pagic-document.svg", "pagic-1024.png", "pagic.ico", "pagic-document.ico", "pagic.icns", "pagic-document.icns"]:
         if not (root / "assets/app-icon" / asset).is_file():
             blockers.append("final artwork missing: " + asset)
     for notice in ["NOTICE", "LICENSE-APACHE"]:
@@ -89,11 +98,12 @@ def release_blockers(identity, root=ROOT):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--require-release-ready", action="store_true")
+    parser.add_argument("--macos", action="store_true", help="Use the macOS production release gate")
     args = parser.parse_args()
     identity = json.loads((ROOT / "packaging/pagic-identity.json").read_text(encoding="utf-8"))
     errors = validate(identity, sources())
     if args.require_release_ready:
-        errors += release_blockers(identity)
+        errors += release_blockers(identity, macos=args.macos)
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1

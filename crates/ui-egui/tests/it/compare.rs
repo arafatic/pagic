@@ -160,7 +160,7 @@ fn compare_filters_hide_text_or_visual_changes() {
     assert_eq!(kinds(&h, old_i), (text_old, 0));
 }
 
-/// Writes a screenshot of the Compare panel when RECTO_SHOT is set (for review).
+/// Writes a screenshot of the Compare panel when PAGIC_SHOT is set (for review).
 #[test]
 fn compare_panel_screenshot() {
     let Ok(out) = std::env::var("PAGIC_SHOT").or_else(|_| std::env::var("RECTO_SHOT")) else { return };

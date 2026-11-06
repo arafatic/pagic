@@ -15,7 +15,7 @@
 # localisation or any other product's translation. Terminology: annotations are "komentáře",
 # pages are "stránky", form fields are "formulářová pole", redaction is "začernění", flattening is
 # "sloučení se stránkou", tags are "tagy" (to tag = "označkovat"). Product and format names
-# (Recto, PDF, PDF/A, OCR, XFA, Word, HTML…) stay in Latin letters; the trailing "…" of dialog
+# (Pagic, PDF, PDF/A, OCR, XFA, Word, HTML…) stay in Latin letters; the trailing "…" of dialog
 # commands is kept. Messages with a count but no `@plural` entry use count-neutral wording
 # ("Vybráno stránek: {n}"), because Czech has three plural forms.
 

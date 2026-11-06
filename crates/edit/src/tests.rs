@@ -1085,7 +1085,7 @@ fn added_arabic_text_is_shaped_in_display_order_and_stays_searchable() {
     if pagic_fonts::document_arabic_font().is_none() {
         eprintln!("skipping the Arabic drawing checks: built without a bundled Arabic face (set PAGIC_FONTS_DIR)");
         let err = add_content(&mut doc, 0, &Content::Text(text)).unwrap_err();
-        assert!(matches!(&err, EditError::Invalid(m) if m.contains("RECTO_FONTS_DIR")), "{err:?}");
+        assert!(matches!(&err, EditError::Invalid(m) if m.contains("PAGIC_FONTS_DIR")), "{err:?}");
         assert!(!doc.is_modified(), "nothing is written when the font is missing");
         return;
     }
@@ -1722,7 +1722,7 @@ fn rewriting_japanese_twice_keeps_only_the_fallback_fonts_it_shows() {
     let mut doc = text_page("BT /F1 12 Tf 72 700 Td (Hello) Tj ET");
     if text::rewrite_block(&mut doc, 0, 0, Some("日本語の文章"), &text::BlockStyle::default()).is_err() {
         assert!(pagic_fonts::document_japanese_font().is_none());
-        eprintln!("built without a bundled Japanese face: the Type 3 path is checked with RECTO_FONTS_DIR");
+        eprintln!("built without a bundled Japanese face: the Type 3 path is checked with PAGIC_FONTS_DIR");
         return;
     }
     let first: Vec<_> = fallback_fonts(&doc).into_iter().map(|(_, f)| f).collect();
@@ -1758,7 +1758,7 @@ fn japanese_replacement_over_240_unique_glyphs_is_split_across_fallback_fonts() 
     if without_craft_fonts("japanese_replacement_over_240_unique_glyphs_is_split_across_fallback_fonts") {
         // Without bundled fonts the long text gets the clear error, not the old limit message.
         let err = text::replace_line(&mut doc, 0, 0, &replacement).unwrap_err().to_string();
-        assert!(err.contains("RECTO_FONTS_DIR"), "{err}");
+        assert!(err.contains("PAGIC_FONTS_DIR"), "{err}");
         return;
     }
     text::replace_line(&mut doc, 0, 0, &replacement).unwrap();
@@ -1894,7 +1894,7 @@ fn styled_fallback_budget_is_enforced_before_objects_are_written() {
     assert_eq!(write_incremental(&doc, &SaveOptions::default()).unwrap(), original, "refusal must add no objects");
     assert_eq!(write_incremental(&snapshot, &SaveOptions::default()).unwrap(), original);
     if without_craft_fonts("styled_fallback_budget_is_enforced_before_objects_are_written") {
-        assert!(err.contains("RECTO_FONTS_DIR"), "{err}");
+        assert!(err.contains("PAGIC_FONTS_DIR"), "{err}");
         return;
     }
     assert!(err.contains("more than 64 fallback glyphs"), "{err}");
@@ -2208,7 +2208,7 @@ fn japanese_edit_without_craft_fonts_is_a_clear_error() {
     }
     for result in [line.map(|_| ()), block.map(|_| ())] {
         let Err(EditError::Invalid(msg)) = result else { panic!("expected a clear error, got {result:?}") };
-        assert!(msg.contains("Japanese fallback font") && msg.contains("RECTO_FONTS_DIR"), "{msg}");
+        assert!(msg.contains("Japanese fallback font") && msg.contains("PAGIC_FONTS_DIR"), "{msg}");
     }
     assert_eq!(page_content_bytes(&doc, 0), before);
     let latin = text::replace_line(&mut doc, 0, 0, "Hello").unwrap();
@@ -3615,7 +3615,7 @@ fn justified_text_in_the_type3_fallback_stretches_its_spaces() {
     let rewritten = text::rewrite_block(&mut doc, 0, 0, Some(typed), &style);
     if pagic_fonts::document_japanese_font().is_none() {
         assert!(rewritten.is_err());
-        eprintln!("built without a bundled Japanese face: the Type 3 path is checked with RECTO_FONTS_DIR");
+        eprintln!("built without a bundled Japanese face: the Type 3 path is checked with PAGIC_FONTS_DIR");
         return;
     }
     rewritten.unwrap();
@@ -3645,9 +3645,9 @@ fn hebrew_letters_the_page_font_lacks_use_the_hebrew_face() {
     let line = text::replace_line(&mut doc, 0, 0, typed);
     if pagic_fonts::document_hebrew_font(false).is_none() {
         let Err(EditError::Invalid(msg)) = line else { panic!("expected a clear error, got {line:?}") };
-        assert!(msg.contains("Hebrew fallback font") && msg.contains("RECTO_FONTS_DIR"), "{msg}");
+        assert!(msg.contains("Hebrew fallback font") && msg.contains("PAGIC_FONTS_DIR"), "{msg}");
         assert_eq!(page_content_bytes(&doc, 0), before);
-        eprintln!("built without a bundled Hebrew face: the Type 3 path is checked with RECTO_FONTS_DIR");
+        eprintln!("built without a bundled Hebrew face: the Type 3 path is checked with PAGIC_FONTS_DIR");
         return;
     }
     assert_eq!(line.unwrap().substituted.as_deref(), Some("Noto Sans Hebrew Type3"));
@@ -3758,7 +3758,7 @@ fn page_text_the_standard_fonts_cant_draw_is_refused() {
     } else {
         // #403's own refusal says what's missing; the Add-text editor still keeps the draft.
         let err = add_content(&mut doc, 0, &Content::Text(arabic("مرحبا Hello"))).unwrap_err().to_string();
-        assert!(err.contains("RECTO_FONTS_DIR"), "{err}");
+        assert!(err.contains("PAGIC_FONTS_DIR"), "{err}");
         assert_eq!(first_undrawable(&arabic("مرحبا Hello")), Some('م'));
         // An existing item may still take Arabic (#403 keeps it movable), but nothing else that
         // the standard font would write as `?`.
@@ -4070,7 +4070,7 @@ fn added_thai_text_wraps_clusters_and_survives_reopen() {
         assert_eq!(first_undrawable(&t), Some('ส'));
         let before = list_added(&doc);
         let err = add_content(&mut doc, 0, &Content::Text(t)).unwrap_err().to_string();
-        assert!(err.contains("Thai") && err.contains("RECTO_FONTS_DIR"), "{err}");
+        assert!(err.contains("Thai") && err.contains("PAGIC_FONTS_DIR"), "{err}");
         assert_eq!(list_added(&doc), before);
         return;
     }

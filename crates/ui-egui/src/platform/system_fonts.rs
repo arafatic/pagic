@@ -6,7 +6,7 @@
 //! few more installed faces, [`devanagari_fallback`], [`telugu_fallback`], [`sinhala_fallback`],
 //! [`tamil_fallback`], [`hebrew_fallback`] and [`hangul_fallback`], draw Hindi, Telugu, Sinhala,
 //! Tamil, Hebrew and Korean when one is installed. It is read at runtime and never embedded or
-//! shipped (AGENTS.md §1.4), and `RECTO_SYSTEM_FONTS=0` turns it off (published screenshots do).
+//! shipped (AGENTS.md §1.4), and `PAGIC_SYSTEM_FONTS=0` turns it off (published screenshots do).
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
@@ -511,7 +511,7 @@ mod tests {
         // different face and nobody would notice. Two bundled faces both cover 'A' and differ in
         // size, so the winner is identifiable by length alone.
         if installed_faces_switched_off() {
-            eprintln!("skipping: RECTO_SYSTEM_FONTS=0 turns the loader off before order matters");
+            eprintln!("skipping: PAGIC_SYSTEM_FONTS=0 turns the loader off before order matters");
             return;
         }
         let dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts"));
@@ -529,7 +529,7 @@ mod tests {
         // This one calls `script_fallback` too, so it fails under the documented switch that
         // published screenshots use — skip with a reason, as tests/it/fonts.rs does.
         if installed_faces_switched_off() {
-            eprintln!("skipping: RECTO_SYSTEM_FONTS=0 turns the loader off");
+            eprintln!("skipping: PAGIC_SYSTEM_FONTS=0 turns the loader off");
             return;
         }
         let inter = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/Inter-Regular.ttf"));
@@ -635,7 +635,7 @@ mod tests {
     #[test]
     fn every_installed_devanagari_face_is_reachable_on_this_mac() {
         if installed_faces_switched_off() {
-            eprintln!("skipping on this machine: RECTO_SYSTEM_FONTS=0 turns installed faces off");
+            eprintln!("skipping on this machine: PAGIC_SYSTEM_FONTS=0 turns installed faces off");
             return;
         }
         let list = devanagari_candidates();

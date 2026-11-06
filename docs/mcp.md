@@ -149,6 +149,7 @@ harmlessly ignored; the server does not provide background export progress or ca
 
 ## Resources and protocol versions
 
+Pagic retains the legacy `recto://` resource scheme for compatibility with existing MCP clients.
 `recto://document` returns the session's document information (as `doc_inspect` without
 arguments), including an empty `documents` array before any PDF is opened. `recto://commands`
 returns the command catalog (as `command_list`). Existing per-document info, text and page-image

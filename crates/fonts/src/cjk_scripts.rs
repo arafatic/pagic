@@ -49,7 +49,7 @@ pub fn cjk_cap_bytes(family: &str, wasm: bool) -> u64 {
 /// Decide whether a CJK face is embedded, skipped, or rejected.
 ///
 /// The Japanese document/UI families are embedded whole. Every other CJK family uses its cap;
-/// `required` marks the native Simplified Chinese manifest of a `RECTO_FONTS_REQUIRED` build,
+/// `required` marks the native Simplified Chinese manifest of a `PAGIC_FONTS_REQUIRED` build,
 /// where an over-cap face must fail instead of quietly disappearing.
 pub fn cjk_size_decision(family: &str, bytes: u64, wasm: bool, required: bool) -> CjkSizeDecision {
     if WHOLE_CJK_FAMILIES.contains(&family) {

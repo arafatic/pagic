@@ -30,9 +30,9 @@ short="${short%%+*}"
 sed -e "s/@VERSION@/$version/g" -e "s/@SHORT_VERSION@/$short/g" \
   -e "s/@BUILD_SHA@/development/g" "$ROOT/packaging/macos/Info.plist.in" >"$TEMP_PLIST"
 mv -f "$TEMP_PLIST" "$APP/Contents/Info.plist"
-if [[ -f "$ROOT/assets/app-icon/pagic.icns" ]]; then
-  cp "$ROOT/assets/app-icon/pagic.icns" "$APP/Contents/Resources/pagic.icns"
-fi
+for icon in pagic.icns pagic-document.icns; do
+  cp "$ROOT/assets/app-icon/$icon" "$APP/Contents/Resources/$icon"
+done
 for notice in NOTICE LICENSE LICENSE-MIT LICENSE-APACHE ATTRIBUTION.md; do
   if [[ -f "$ROOT/$notice" ]]; then
     cp "$ROOT/$notice" "$APP/Contents/Resources/$notice"

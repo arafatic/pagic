@@ -513,8 +513,8 @@ fn printer_option_defaults_and_job_arguments() {
 mod cups_options {
     use crate::spool;
 
-    const RECORD: &str = "RECTO_LPOPTIONS_TEST_RECORD";
-    const ANSWER: &str = "RECTO_LPOPTIONS_TEST_ANSWER";
+    const RECORD: &str = "PAGIC_LPOPTIONS_TEST_RECORD";
+    const ANSWER: &str = "PAGIC_LPOPTIONS_TEST_ANSWER";
     /// Generous: these tests are about what is read, not how long it takes.
     const LIMIT: std::time::Duration = std::time::Duration::from_secs(60);
 
@@ -866,7 +866,7 @@ fn imposed_pages_preserve_large_user_unit_matrices() {
 /// `output_within` (#1818): the bounded wait every platform's `lpoptions` call goes through.
 #[cfg(not(target_arch = "wasm32"))]
 mod bounded_commands {
-    const MODE: &str = "RECTO_COMMAND_TEST_MODE";
+    const MODE: &str = "PAGIC_COMMAND_TEST_MODE";
 
     /// The child process stands in for a command: it answers, or it never does.
     #[test]

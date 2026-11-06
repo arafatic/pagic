@@ -479,7 +479,7 @@ impl Annotator {
         let size = 22.0;
         let tw = Font::HelvBold.width(title, size) + 3.0 * (title.len() as f32 - 1.0);
         c.tracked_text(Font::HelvBold, size, (w - tw) / 2.0, h * 0.42, 3.0, title);
-        let date = format!("RECTO QA  \u{2022}  {}", &self.now.iso[..10]);
+        let date = format!("PAGIC QA  \u{2022}  {}", &self.now.iso[..10]);
         let dw = Font::Helv.width(&date, 7.0) + 1.0 * (date.chars().count() as f32 - 1.0);
         c.tracked_text(Font::Helv, 7.0, (w - dw) / 2.0, h * 0.2, 1.0, &date);
         let res = self.fonts.resources();

@@ -271,7 +271,7 @@ fn main() -> eframe::Result {
     }
 }
 
-/// Which renderer to start with, from `RECTO_RENDERER`.
+/// Which renderer to start with, from `PAGIC_RENDERER`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum RendererChoice {
     /// wgpu, then OpenGL if wgpu can't start (unset, or anything unrecognised).
@@ -322,7 +322,7 @@ fn native_options(integrated: bool, app_frame: bool, renderer: eframe::Renderer)
     let persistence_path = settings_dir().map(|d| d.join("app.ron"));
     // Set explicitly, so the renderer never depends on which one eframe defaults to.
     let mut native = eframe::NativeOptions { viewport, persistence_path, renderer, ..Default::default() };
-    // Pagic installs its own last-resort system face (`RECTO_SYSTEM_FONTS`); eframe's
+    // Pagic installs its own last-resort system face (`PAGIC_SYSTEM_FONTS`); eframe's
     // provider would read every installed face, including proprietary ones, into every UI pass.
     native.system_font_fallback = false;
     if renderer == eframe::Renderer::Wgpu {

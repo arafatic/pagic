@@ -115,26 +115,27 @@ def validate():
             offset += length
         assert offset == len(data)
         files.append(path)
-    icns = ICONS / 'pagic.icns'
-    data = icns.read_bytes()
-    assert data[:4] == b'icns' and struct.unpack_from('>I', data, 4)[0] == len(data)
-    offset, types = 8, set()
-    while offset < len(data):
-        kind, length = struct.unpack_from('>4sI', data, offset)
-        assert length >= 8 and offset + length <= len(data)
-        types.add(kind)
-        offset += length
-    assert offset == len(data)
-    assert {b'ic04', b'ic05', b'ic07', b'ic08', b'ic09', b'ic10', b'ic11', b'ic12', b'ic13', b'ic14'} <= types
-    if shutil.which('iconutil'):
-        with tempfile.TemporaryDirectory(prefix='pagic-icon-check-') as temp:
-            out = Path(temp) / 'pagic.iconset'
-            subprocess.run(['iconutil', '-c', 'iconset', '-o', str(out), str(icns)], check=True)
-            for size in (16, 32, 128, 256, 512):
-                for scale in (1, 2):
-                    suffix = '@2x' if scale == 2 else ''
-                    png((out / ('icon_{0}x{0}{1}.png'.format(size, suffix))).read_bytes(), size * scale, mac=True, rounded=True)
-    files.append(icns)
+    for name in ('pagic.icns', 'pagic-document.icns'):
+        icns = ICONS / name
+        data = icns.read_bytes()
+        assert data[:4] == b'icns' and struct.unpack_from('>I', data, 4)[0] == len(data)
+        offset, types = 8, set()
+        while offset < len(data):
+            kind, length = struct.unpack_from('>4sI', data, offset)
+            assert length >= 8 and offset + length <= len(data)
+            types.add(kind)
+            offset += length
+        assert offset == len(data)
+        assert {b'ic04', b'ic05', b'ic07', b'ic08', b'ic09', b'ic10', b'ic11', b'ic12', b'ic13', b'ic14'} <= types
+        if shutil.which('iconutil'):
+            with tempfile.TemporaryDirectory(prefix='pagic-icon-check-') as temp:
+                out = Path(temp) / 'pagic.iconset'
+                subprocess.run(['iconutil', '-c', 'iconset', '-o', str(out), str(icns)], check=True)
+                for size in (16, 32, 128, 256, 512):
+                    for scale in (1, 2):
+                        suffix = '@2x' if scale == 2 else ''
+                        png((out / ('icon_{0}x{0}{1}.png'.format(size, suffix))).read_bytes(), size * scale, mac=(name == "pagic.icns"), rounded=(name == "pagic.icns"))
+        files.append(icns)
     for scale in (100, 200, 400):
         for name, size in (('Square44x44Logo', 44), ('Square150x150Logo', 150), ('StoreLogo', 50)):
             path = MSIX / '{}.scale-{}.png'.format(name, scale)
@@ -147,7 +148,7 @@ def validate():
             png(path.read_bytes(), size, rounded=True)
             assert path.read_bytes() == base.read_bytes(), 'theme files must preserve the approved background'
             files.append(path)
-    assert len(files) == 67
+    assert len(files) == 68
     references = {
         'packaging/icons.sh': ('SVG="$DIR/pagic-app-icon.svg"', 'source="$DIR/pagic-document.svg"'),
         'apps/pagic/build.rs': ('pagic.ico', 'pagic-document.ico', 'pagic-1024.png', 'local.pagic.desktop.png'),
@@ -169,4 +170,4 @@ if __name__ == '__main__':
     if args.write_manifest:
         MANIFEST.write_text(json.dumps(hashes, indent=2, sort_keys=True) + '\n')
     assert json.loads(MANIFEST.read_text()) == hashes, 'asset manifest is stale'
-    print('PASS: 67 source/generated assets; PNG alpha/dimensions/CRC, ICO entries, ICNS representations, references and hashes')
+    print(f'PASS: {len(hashes)} source/generated assets; PNG alpha/dimensions/CRC, ICO entries, ICNS representations, references and hashes')

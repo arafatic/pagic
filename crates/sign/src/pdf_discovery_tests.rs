@@ -297,7 +297,7 @@ fn overlay_cache_is_bounded_and_new_documents_take_the_fallback() {
 fn real_file_discovery_cache_diagnostic() {
     let path = std::env::var_os("PAGIC_SIGNATURE_PROBE_SOURCE")
         .or_else(|| std::env::var_os("RECTO_SIGNATURE_PROBE_SOURCE"))
-        .expect("RECTO_SIGNATURE_PROBE_SOURCE");
+        .expect("PAGIC_SIGNATURE_PROBE_SOURCE");
     let bytes = Arc::new(std::fs::read(path).unwrap());
     let doc = Document::open(bytes.clone()).unwrap();
     let mut objects = 0usize;

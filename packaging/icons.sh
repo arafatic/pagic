@@ -86,15 +86,19 @@ done
 
 # macOS .icns.
 if command -v iconutil >/dev/null; then
-  SET="$TMP/pagic.iconset"
-  mkdir -p "$SET"
-  for s in 16 32 128 256 512; do
-    render "$MAC" "$s" "$SET/icon_${s}x${s}.png"
-    render "$MAC" $((s * 2)) "$SET/icon_${s}x${s}@2x.png"
+  for name in pagic pagic-document; do
+    source="$MAC"
+    if [[ "$name" = pagic-document ]]; then source="$DIR/pagic-document.svg"; fi
+    SET="$TMP/$name.iconset"
+    mkdir -p "$SET"
+    for s in 16 32 128 256 512; do
+      render "$source" "$s" "$SET/icon_${s}x${s}.png"
+      render "$source" $((s * 2)) "$SET/icon_${s}x${s}@2x.png"
+    done
+    iconutil -c icns -o "$DIR/$name.icns" "$SET"
   done
-  iconutil -c icns -o "$DIR/pagic.icns" "$SET"
 else
-  echo "warning: iconutil not found (macOS only); pagic.icns not regenerated" >&2
+  echo "warning: iconutil not found (macOS only); macOS icons not regenerated" >&2
 fi
 # MSIX image resources only: no manifest, package, identity or signing is created.
 MSIX="$ROOT/packaging/windows/msix/Assets"

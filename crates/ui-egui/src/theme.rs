@@ -266,7 +266,7 @@ fn installed_fallback_need(cjk: CjkPreference, has_embedded_hans: bool) -> crate
 /// Korean text, such as a file name or a tab title, and Hebrew file names (#586) draw in a build
 /// without such faces.
 ///
-/// `RECTO_SYSTEM_FONTS=0` leaves them out.
+/// `PAGIC_SYSTEM_FONTS=0` leaves them out.
 pub fn installed_font_definitions(cjk: CjkPreference) -> FontDefinitions {
     #[cfg_attr(target_arch = "wasm32", expect(unused_mut))]
     let mut fonts = font_definitions_for(cjk == CjkPreference::SimplifiedChinese);

@@ -181,3 +181,12 @@ and never suppresses notices. No external font repository is needed.
 
 Validate notice staging with `bash packaging/test-font-notices.sh` on macOS/Linux and
 `pwsh -NoProfile -File packaging/windows/test-font-notices.ps1` on Windows.
+
+## Legacy compatibility
+
+Use `PAGIC_*` environment variables in new scripts. Existing `RECTO_*` aliases remain accepted
+where supported, with the Pagic value taking precedence. The `recto://` MCP resource scheme
+and `recto:*` web embedding messages are retained wire contracts for existing clients.
+The PDF writer retains the historical `%Recto` wrappers and private keys for round-trip
+compatibility. Frozen PDF and preference fixtures, and tests that verify data isolation
+from Recto, intentionally retain their original names and data.

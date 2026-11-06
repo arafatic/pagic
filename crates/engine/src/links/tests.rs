@@ -111,7 +111,7 @@ fn remote_document_paths_to_other_computers_and_devices_are_refused() {
 }
 
 #[test]
-fn urls_follow_the_recto_scheme() {
+fn product_links_use_the_pagic_identity() {
     assert_eq!(super::APP_PAGE, super::WEBSITE);
     assert_eq!(super::GITHUB, "https://github.com/arafatic/pagic");
     for l in super::LINKS {

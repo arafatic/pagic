@@ -2817,7 +2817,7 @@ fn extract_still_prunes_separate_resources_when_many_pages_share_a_type3_font() 
 
 // Both sides of the comparison go through the same pdftoppm, so the assertion is about our two
 // documents rather than about Poppler's output, and no Poppler version can change the verdict.
-// It skips where pdftoppm is absent and fails where RECTO_ORACLES_REQUIRED is set.
+// It skips where pdftoppm is absent and fails where PAGIC_ORACLES_REQUIRED is set.
 #[test]
 fn extract_type3_shared_xobjects_matches_poppler_pixels() {
     let pdftoppm = pagic_oracle::or_skip!(pagic_oracle::pdftoppm());

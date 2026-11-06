@@ -1,4 +1,4 @@
-//! The interface fonts with and without the local embedded font assets (`RECTO_FONTS_DIR`).
+//! The interface fonts with and without the local embedded font assets (`PAGIC_FONTS_DIR`).
 
 use egui::epaint::text::{Fonts, TextOptions};
 use egui::{Color32, FontFamily, FontId};
@@ -17,7 +17,7 @@ fn families() -> Vec<FontId> {
 
 /// The bundled faces, with no bundled fonts and no installed system face: 0.37 gates its emoji
 /// fonts behind `monochrome_emoji_fonts`, which the app and this test crate explicitly enable.
-/// Text symbols must keep working with `RECTO_SYSTEM_FONTS=0`.
+/// Text symbols must keep working with `PAGIC_SYSTEM_FONTS=0`.
 #[test]
 fn bundled_monochrome_symbols_have_glyphs() {
     let mut fonts = Fonts::new(TextOptions::default(), theme::font_definitions());
@@ -167,7 +167,7 @@ fn system_fallback_covers_devanagari() {
     assert!(!theme::font_definitions().font_data.contains_key(theme::SYSTEM_DEVANAGARI_FALLBACK));
     let defs = theme::installed_font_definitions(theme::CjkPreference::Default);
     if !defs.font_data.contains_key(theme::SYSTEM_DEVANAGARI_FALLBACK) {
-        eprintln!("skipping system_fallback_covers_devanagari: no installed Devanagari fallback font (or RECTO_SYSTEM_FONTS=0)");
+        eprintln!("skipping system_fallback_covers_devanagari: no installed Devanagari fallback font (or PAGIC_SYSTEM_FONTS=0)");
         assert!(defs.families.values().all(|stack| !stack.iter().any(|n| n == theme::SYSTEM_DEVANAGARI_FALLBACK)));
         return;
     }
@@ -215,7 +215,7 @@ fn system_fallback_covers_telugu() {
     let defs = theme::installed_font_definitions(theme::CjkPreference::Default);
     let off = std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0");
     if !defs.font_data.contains_key(theme::SYSTEM_TELUGU_FALLBACK) && (off || !cfg!(target_os = "macos")) {
-        eprintln!("skipping system_fallback_covers_telugu: no installed Telugu fallback font (or RECTO_SYSTEM_FONTS=0)");
+        eprintln!("skipping system_fallback_covers_telugu: no installed Telugu fallback font (or PAGIC_SYSTEM_FONTS=0)");
         assert!(defs.families.values().all(|stack| !stack.iter().any(|n| n == theme::SYSTEM_TELUGU_FALLBACK)));
         return;
     }
@@ -240,7 +240,7 @@ fn system_fallback_covers_sinhala_and_tamil() {
         let defs = theme::installed_font_definitions(theme::CjkPreference::Default);
         let off = std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0");
         if !defs.font_data.contains_key(name) && (off || !cfg!(target_os = "macos")) {
-            eprintln!("skipping {name}: no installed fallback font (or RECTO_SYSTEM_FONTS=0)");
+            eprintln!("skipping {name}: no installed fallback font (or PAGIC_SYSTEM_FONTS=0)");
             assert!(defs.families.values().all(|stack| !stack.iter().any(|n| n == name)));
             continue;
         }
@@ -264,7 +264,7 @@ fn system_fallback_covers_hebrew() {
     let defs = theme::installed_font_definitions(theme::CjkPreference::Default);
     let off = std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0");
     if !defs.font_data.contains_key(theme::SYSTEM_HEBREW_FALLBACK) && (off || !cfg!(target_os = "macos")) {
-        eprintln!("skipping system_fallback_covers_hebrew: no installed Hebrew fallback font (or RECTO_SYSTEM_FONTS=0)");
+        eprintln!("skipping system_fallback_covers_hebrew: no installed Hebrew fallback font (or PAGIC_SYSTEM_FONTS=0)");
         assert!(defs.families.values().all(|stack| !stack.iter().any(|n| n == theme::SYSTEM_HEBREW_FALLBACK)));
         return;
     }
@@ -301,7 +301,7 @@ fn catalog_han(catalog: &str) -> String {
 fn installed_chinese_face_covers(cjk: theme::CjkPreference, catalog: &str, name: &str) -> bool {
     let defs = theme::installed_font_definitions(cjk);
     if !defs.font_data.contains_key(theme::SYSTEM_FALLBACK) {
-        eprintln!("skipping {name}: no installed Chinese face for {cjk:?} (or RECTO_SYSTEM_FONTS=0)");
+        eprintln!("skipping {name}: no installed Chinese face for {cjk:?} (or PAGIC_SYSTEM_FONTS=0)");
         return false;
     }
     for (family, stack) in &defs.families {
@@ -435,7 +435,7 @@ fn system_fallback_covers_hangul() {
     let defs = theme::installed_font_definitions(theme::CjkPreference::Default);
     let off = std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0");
     if !defs.font_data.contains_key(theme::SYSTEM_HANGUL_FALLBACK) && (off || cfg!(all(unix, not(target_os = "macos")))) {
-        eprintln!("skipping system_fallback_covers_hangul: no installed Korean fallback font (or RECTO_SYSTEM_FONTS=0)");
+        eprintln!("skipping system_fallback_covers_hangul: no installed Korean fallback font (or PAGIC_SYSTEM_FONTS=0)");
         assert!(defs.families.values().all(|stack| !stack.iter().any(|n| n == theme::SYSTEM_HANGUL_FALLBACK)));
         return;
     }
