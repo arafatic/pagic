@@ -13,8 +13,8 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet};
 use std::sync::Arc;
 
-use recto_cos::{Dict, Document, ObjRef, Object};
-use recto_model::Page;
+use pagic_cos::{Dict, Document, ObjRef, Object};
+use pagic_model::Page;
 
 use crate::{Finding, MAX_FINDINGS, Rule};
 

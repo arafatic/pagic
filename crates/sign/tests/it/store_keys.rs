@@ -3,8 +3,8 @@
 //! the one a CMS signature carries.
 
 use p256::ecdsa::signature::hazmat::PrehashSigner;
-use recto_sign::keys::{DigestAlg, Scheme, StoreKey};
-use recto_sign::{PublicKey, SignError};
+use pagic_sign::keys::{DigestAlg, Scheme, StoreKey};
+use pagic_sign::{PublicKey, SignError};
 
 /// One key of every kind, with what the store must hold to sign for it.
 fn every_kind() -> Vec<(PublicKey, Option<StoreKey>)> {

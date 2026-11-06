@@ -5,7 +5,7 @@ use egui::{Align, Color32, CornerRadius, Layout, Rect, Sense, Stroke, vec2};
 
 use crate::canvas::{DocView, Fit, PageLayout};
 use crate::theme::{self, ThemePreference, Tokens};
-use crate::{Dialog, Mode, RectoApp, PropsTab, RightPanel, icons, widgets, window_controls};
+use crate::{Dialog, Mode, PagicApp, PropsTab, RightPanel, icons, widgets, window_controls};
 
 /// Height of the tab strip when it doubles as the macOS title bar. AppKit draws the traffic
 /// lights itself, centred in the standard 28 pt title-bar band at the top of the window, and moving
@@ -28,7 +28,7 @@ const STRIP_BUTTON: f32 = 28.0;
 
 /// Draw the window's tab strip: home and open controls, shrinkable and scrollable document tabs with drag
 /// reordering, and platform window controls.
-pub fn tab_strip(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     // macOS: the strip is the 28 pt title bar, so the traffic lights are centred in it; tabs and
     // buttons shrink to keep a margin above and below.
@@ -101,7 +101,7 @@ pub fn tab_strip(app: &mut RectoApp, ui: &mut egui::Ui) {
                 let state = (app.active_ids().map(|(_, id)| id), app.views.len(), app.combine_showing());
                 let changed = ui.data_mut(|data| {
                     let id = ui.scope_id().with("active_tab");
-                    let changed = data.get_temp::<(Option<recto_engine::DocId>, usize, bool)>(id) != Some(state);
+                    let changed = data.get_temp::<(Option<pagic_engine::DocId>, usize, bool)>(id) != Some(state);
                     data.insert_temp(id, state);
                     changed
                 });
@@ -307,7 +307,7 @@ pub fn tab_strip(app: &mut RectoApp, ui: &mut egui::Ui) {
 }
 
 /// The right-click menu on the title bar's theme button.
-fn appearance_menu(app: &mut RectoApp, ui: &mut egui::Ui) {
+fn appearance_menu(app: &mut PagicApp, ui: &mut egui::Ui) {
     if ui.button(tl!("Appearance settings…")).clicked() {
         app.dialog = Some(Dialog::Preferences);
         ui.close();
@@ -443,17 +443,22 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
             15.0,
             if active { t.accent } else { t.text_muted },
         );
-        ui.painter().galley(rect.min + vec2(28.0, (rect.height() - label_galley.size().y) / 2.0), label_galley.clone(), label_color);
+        let title_pos = rect.min + vec2(28.0, (rect.height() - label_galley.size().y) / 2.0);
+        ui.painter().galley(title_pos, label_galley.clone(), label_color);
+        if dirty {
+            let dot_pos = egui::pos2(title_pos.x + text_w + 6.0, rect.center().y);
+            ui.painter().circle_filled(dot_pos, 3.0, if active { t.accent } else { t.text_muted });
+        }
     });
     let x_rect = Rect::from_center_size(rect.right_center() - vec2(16.0, 0.0), vec2(20.0, 20.0));
     let x = ui.interact(x_rect, id.with("close"), Sense::click());
     let x_press = theme::Press::track(ui, &x);
     x_press.wash(ui, x_rect, 4, false);
-    // Unsaved changes: a dot where the close button sits, until the tab is hovered.
-    if dirty && !resp.hovered() && !x.hovered() {
-        ui.painter().circle_filled(x_rect.center(), 4.0, if active { t.text } else { t.text_muted });
-    } else if active || resp.hovered() || x.hovered() {
+    // Unsaved changes: close button or dot when idle; persistent dot beside title stays visible.
+    if active || resp.hovered() || x.hovered() {
         icons::paint(ui, x_rect.translate(x_press.offset()), "x", 13.0, t.text_muted);
+    } else if dirty {
+        ui.painter().circle_filled(x_rect.center(), 4.0, if active { t.text } else { t.text_muted });
     }
     if theme::hand(x).clicked() {
         *close = Some(index);
@@ -465,7 +470,7 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
     theme::hand(resp).on_hover_text(if dirty { crate::i18n::fmt(tl!("{name} — unsaved changes"), &[("name", &shown)]) } else { shown })
 }
 
-pub fn mode_bar(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn mode_bar(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     egui::Panel::top("mode_bar")
         .exact_size(44.0)
@@ -482,8 +487,14 @@ pub fn mode_bar(app: &mut RectoApp, ui: &mut egui::Ui) {
                 }
                 // Acrobat's mode bar has no Read tab: reading is what the viewer does with no tool
                 // in use. Read mode (the panes hidden) stays a View command and a default workspace.
-                for (mode, label) in [(Mode::AllTools, "All tools"), (Mode::Edit, "Edit"), (Mode::Convert, "Convert"), (Mode::Sign, "E-Sign")] {
-                    if widgets::mode_tab(ui, tl!(label), app.mode == mode).clicked() {
+                for (mode, label) in [(Mode::AllTools, "All tools"), (Mode::Edit, "Edit"), (Mode::Convert, "Export"), (Mode::Sign, "Fill & Sign")] {
+                    let response = widgets::mode_tab(ui, tl!(label), app.mode == mode);
+                    if mode == Mode::Sign {
+                        // Distinguish the workspace from the same-named All tools entry.
+                        let name = crate::i18n::fmt(tl!("{name} workspace"), &[("name", tl!(label))]);
+                        response.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, ui.is_enabled(), app.mode == mode, name.clone()));
+                    }
+                    if response.clicked() {
                         app.switch_mode(mode, true);
                     }
                 }
@@ -493,7 +504,7 @@ pub fn mode_bar(app: &mut RectoApp, ui: &mut egui::Ui) {
                     ui.add_enabled_ui(has_doc, |ui| {
                         let tip = crate::commands::command_tip(ui.ctx(), tl!("Print ({key})"), "print.dialog");
                         // A document that forbids printing says so here, before the dialog (#2669).
-                        let may_print = !has_doc || recto_engine::commands::command("print.dialog").is_some_and(|c| app.command_enabled(c));
+                        let may_print = !has_doc || pagic_engine::commands::command("print.dialog").is_some_and(|c| app.command_enabled(c));
                         let mut print = ui.add_enabled_ui(may_print, |ui| icons::button(ui, "printer", 32.0, false, &tip)).inner;
                         if !may_print {
                             print = print.on_disabled_hover_text(crate::print_refused());
@@ -511,8 +522,16 @@ pub fn mode_bar(app: &mut RectoApp, ui: &mut egui::Ui) {
                         }
                     });
                     ui.add_space(8.0);
-                    if widgets::search_box(ui, tl!("Find tools and commands"), ui.available_width().clamp(40.0, 220.0)).clicked() {
-                        app.palette_open = true;
+                    let avail = ui.available_width();
+                    if avail >= 110.0 {
+                        if widgets::search_box(ui, tl!("Find tools and commands"), avail.clamp(40.0, 220.0)).clicked() {
+                            app.palette_open = true;
+                        }
+                    } else if avail >= 32.0 {
+                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Find tools and commands ({key})"), "view.palette");
+                        if icons::button(ui, "search", 32.0, false, &tip).clicked() {
+                            app.palette_open = true;
+                        }
                     }
                 });
             });
@@ -521,7 +540,7 @@ pub fn mode_bar(app: &mut RectoApp, ui: &mut egui::Ui) {
 
 /// Draw the right tool rail with page navigation, history, zoom, rotation and page-display controls for the
 /// active view.
-pub fn right_rail(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn right_rail(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let Some((index, id)) = app.active_ids() else { return };
     let Some(doc) = app.session.get(id) else { return };

@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
-use crate::RectoApp;
+use crate::PagicApp;
 
 /// How often unsaved changes are written to the recovery folder.
 pub const AUTOSAVE_SECS: f64 = 60.0;
@@ -164,21 +164,13 @@ impl RecoveryStore {
     }
 
     /// `Recovery` in the portable data folder in portable mode ([`crate::portable`]), otherwise
-    /// the platform's per-user data folder: `~/Library/Application Support/Recto/Recovery`
-    /// (macOS), `%LOCALAPPDATA%\Recto\Recovery` (Windows), or
-    /// `$XDG_DATA_HOME/recto/recovery` / `~/.local/share/recto/recovery` (others).
+    /// the platform's per-user data folder: `~/Library/Application Support/Pagic/Recovery`
+    /// (macOS), `%LOCALAPPDATA%\Pagic\Recovery` (Windows), or
+    /// `$XDG_DATA_HOME/pagic/recovery` / `~/.local/share/pagic/recovery` (others).
     pub fn default_dir() -> Option<PathBuf> {
-        if let Some(dir) = crate::portable::data_dir() {
-            return Some(dir.join("Recovery"));
-        }
-        let env = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from);
-        if cfg!(target_os = "macos") {
-            env("HOME").map(|h| h.join("Library/Application Support/Recto/Recovery"))
-        } else if cfg!(windows) {
-            env("LOCALAPPDATA").map(|d| d.join("Recto").join("Recovery"))
-        } else {
-            env("XDG_DATA_HOME").or_else(|| env("HOME").map(|h| h.join(".local/share"))).map(|d| d.join("recto/recovery"))
-        }
+        recovery_directory(std::env::consts::OS, crate::portable::data_dir(), |key| {
+            std::env::var_os(key).filter(|v| !v.is_empty()).map(PathBuf::from)
+        })
     }
 
     pub fn dir(&self) -> &Path {
@@ -280,7 +272,7 @@ fn now_secs() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Turn on autosave into `store`, and look for documents a previous session left behind.
     pub fn enable_recovery(&mut self, store: RecoveryStore) {
         store.claim();
@@ -305,7 +297,7 @@ impl RectoApp {
     }
 
     /// Drop a document's recovery entry (it was saved, discarded or closed).
-    pub(crate) fn forget_recovery(&mut self, doc: recto_engine::DocId) {
+    pub(crate) fn forget_recovery(&mut self, doc: pagic_engine::DocId) {
         if let (Some(store), Some(key)) = (&self.recovery, self.recovery_keys.remove(&doc)) {
             store.remove(&key);
         }
@@ -441,7 +433,7 @@ mod idle_tests {
             static NEXT: AtomicU64 = AtomicU64::new(0);
             let n = NEXT.fetch_add(1, Ordering::Relaxed);
             let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-            let path = std::env::temp_dir().join(format!("recto-idle-recovery-{}-{nonce}-{n}", std::process::id()));
+            let path = std::env::temp_dir().join(format!("pagic-idle-recovery-{}-{nonce}-{n}", std::process::id()));
             std::fs::create_dir(&path).unwrap();
             Self(path)
         }
@@ -479,7 +471,7 @@ mod idle_tests {
         assert_eq!(distinct.len(), 200);
     }
 
-    fn frame(app: &mut RectoApp, ctx: &egui::Context, now: web_time::Instant) -> Duration {
+    fn frame(app: &mut PagicApp, ctx: &egui::Context, now: web_time::Instant) -> Duration {
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
             app.autosave_tick(ui.ctx(), now);
         });
@@ -494,7 +486,7 @@ mod idle_tests {
     fn idle_dirty_document_requests_its_deadline_and_writes_without_input() {
         let dir = TestDir::new();
         let store = RecoveryStore::new(dir.path());
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.enable_recovery(store.clone());
         let bytes = app.session.create_blank(200.0, 300.0, 1).unwrap();
         let id = app.session.open_new("Untitled.pdf", bytes).unwrap();
@@ -523,7 +515,7 @@ mod idle_tests {
     fn second_edit_after_autosave_schedules_next_deadline_and_updates_snapshot() {
         let dir = TestDir::new();
         let store = RecoveryStore::new(dir.path());
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.enable_recovery(store.clone());
         let bytes = app.session.create_blank(200.0, 300.0, 1).unwrap();
         let id = app.session.open_new("Untitled.pdf", bytes).unwrap();
@@ -542,7 +534,7 @@ mod idle_tests {
         }
         assert_eq!(delay, Duration::MAX);
 
-        app.session.apply(id, recto_engine::Edit::SetInfo { key: "Title".into(), value: "Second edit".into() }).unwrap();
+        app.session.apply(id, pagic_engine::Edit::SetInfo { key: "Title".into(), value: "Second edit".into() }).unwrap();
         assert!(app.session.has_pending_autosave());
         for _ in 0..4 {
             delay = frame(&mut app, &ctx, base + Duration::from_secs(75));
@@ -557,7 +549,7 @@ mod idle_tests {
         assert_eq!(entries[0].key, key);
         let second = store.read(&key).unwrap();
         assert_ne!(second, first);
-        let mut recovered = recto_engine::Session::new();
+        let mut recovered = pagic_engine::Session::new();
         let restored = recovered.open("Snapshot.pdf", None, second.into(), None).unwrap();
         assert_eq!(recovered.get(restored).unwrap().info_value("Title"), Some("Second edit".into()));
         assert!(app.session.get(id).unwrap().dirty);
@@ -573,7 +565,7 @@ mod idle_tests {
     fn clean_documents_and_disabled_recovery_do_not_schedule_autosave() {
         for recovery_enabled in [false, true] {
             let dir = TestDir::new();
-            let mut app = RectoApp::new();
+            let mut app = PagicApp::new();
             if recovery_enabled {
                 app.enable_recovery(RecoveryStore::new(dir.path()));
             }
@@ -591,5 +583,50 @@ mod idle_tests {
             }
             assert_eq!(delay, Duration::MAX);
         }
+    }
+}
+
+/// Pure path selection: resolving a Pagic location must not scan or claim a Pagic store.
+fn recovery_directory(os: &str, portable: Option<&Path>, env: impl Fn(&str) -> Option<PathBuf>) -> Option<PathBuf> {
+    if let Some(dir) = portable {
+        return Some(dir.join("Recovery"));
+    }
+    if os == "macos" {
+        env("HOME").map(|h| h.join("Library/Application Support").join(pagic_engine::identity::DATA_NAME).join("Recovery"))
+    } else if os == "windows" {
+        env("LOCALAPPDATA").map(|d| d.join(pagic_engine::identity::DATA_NAME).join("Recovery"))
+    } else {
+        env("XDG_DATA_HOME")
+            .or_else(|| env("HOME").map(|h| h.join(".local/share")))
+            .map(|d| d.join(pagic_engine::identity::DATA_SLUG).join("recovery"))
+    }
+}
+
+#[cfg(test)]
+mod identity_tests {
+    use super::*;
+    #[test]
+    fn recovery_paths_are_isolated_on_all_desktop_platforms() {
+        let env = |key: &str| match key {
+            "HOME" => Some(PathBuf::from("/sandbox/home")),
+            "LOCALAPPDATA" => Some(PathBuf::from("/sandbox/local")),
+            "XDG_DATA_HOME" => Some(PathBuf::from("/sandbox/data")),
+            _ => None,
+        };
+        for (os, expected) in [
+            ("macos", "/sandbox/home/Library/Application Support/Pagic/Recovery"),
+            ("windows", "/sandbox/local/Pagic/Recovery"),
+            ("linux", "/sandbox/data/pagic/recovery"),
+        ] {
+            assert_eq!(recovery_directory(os, None, env), Some(PathBuf::from(expected)));
+        }
+        assert_eq!(
+            recovery_directory("linux", None, |k| (k == "HOME").then(|| PathBuf::from("/sandbox/home"))),
+            Some(PathBuf::from("/sandbox/home/.local/share/pagic/recovery"))
+        );
+        assert_eq!(
+            recovery_directory("windows", Some(Path::new("/portable/PagicData")), |_| None),
+            Some(PathBuf::from("/portable/PagicData/Recovery"))
+        );
     }
 }

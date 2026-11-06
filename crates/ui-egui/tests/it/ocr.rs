@@ -3,8 +3,8 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_engine::{AddedText, Edit, Session, export};
-use recto_ui_egui::RectoApp;
+use pagic_engine::{AddedText, Edit, Session, export};
+use pagic_ui_egui::PagicApp;
 
 /// A one-page PDF that is only a picture of a sentence.
 fn scan() -> Vec<u8> {
@@ -18,7 +18,7 @@ fn scan() -> Vec<u8> {
 #[test]
 fn recognize_text_dialog_adds_searchable_text() {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("scan.pdf", None, scan()).unwrap();
         app.run_inline = true;
@@ -29,7 +29,7 @@ fn recognize_text_dialog_adds_searchable_text() {
     h.run_steps(2);
     h.get_by_label("Document language");
     h.get_by_label("Output");
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
@@ -45,18 +45,18 @@ fn recognize_text_dialog_adds_searchable_text() {
 
 #[test]
 fn recognize_text_in_multiple_files_writes_searchable_copies() {
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
-    let dir = std::env::temp_dir().join(format!("recto-ocr-ui-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pagic-ocr-ui-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.set_option("language", "en").unwrap();
     app.run_inline = true;
     app.export_dir_override = Some(dir.to_string_lossy().into_owned());
-    app.use_files(recto_ui_egui::FilePurpose::Ocr, vec![("one.pdf".into(), scan()), ("two.pdf".into(), scan())]);
+    app.use_files(pagic_ui_egui::FilePurpose::Ocr, vec![("one.pdf".into(), scan()), ("two.pdf".into(), scan())]);
     assert!(app.ocr_batch.is_none(), "finished");
     let toast = app.toast.clone().unwrap().0;
     assert!(toast.starts_with("Recognized ") && toast.ends_with("in 2 files"), "{toast}");
@@ -83,7 +83,7 @@ fn recognize_text_can_read_pictures_on_pages_with_text() {
         s.save_bytes(id).unwrap().to_vec()
     };
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("hybrid.pdf", None, hybrid).unwrap();
         app.run_inline = true;
@@ -96,7 +96,7 @@ fn recognize_text_can_read_pictures_on_pages_with_text() {
     h.get_by_label("Also recognize pages that already have text").click();
     h.run_steps(2);
     assert!(!h.state().ocr_draft.settings().skip_text_pages);
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
@@ -109,8 +109,8 @@ fn recognize_text_can_read_pictures_on_pages_with_text() {
     let id = app.active_ids().unwrap().1;
     let doc = app.session.get(id).unwrap();
     assert_eq!(doc.can_undo(), Some("Recognize text"));
-    let mut r = recto_render::PageRenderer::new(doc.bytes.clone(), Default::default());
-    let text = r.render(recto_render::RenderRequest { page: 0, kind: recto_render::RequestKind::Text, scale: 1.0, ..Default::default() });
+    let mut r = pagic_render::PageRenderer::new(doc.bytes.clone(), Default::default());
+    let text = r.render(pagic_render::RenderRequest { page: 0, kind: pagic_render::RequestKind::Text, scale: 1.0, ..Default::default() });
     let text = text.text.unwrap().plain_text().to_lowercase();
     assert_eq!((text.matches("invoice").count(), text.matches("scanned").count()), (1, 1), "{text}");
 }
@@ -120,9 +120,9 @@ fn recognize_text_can_read_pictures_on_pages_with_text() {
 /// word instead of showing it through.
 #[test]
 fn an_ocr_word_opens_for_editing_and_stays_open() {
-    use recto_engine::ocr::PlacedWord;
+    use pagic_engine::ocr::PlacedWord;
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("scan.pdf", None, scan()).unwrap();
         let id = app.views[0].id;
@@ -149,7 +149,7 @@ fn an_ocr_word_opens_for_editing_and_stays_open() {
         h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() });
     }
     h.run_steps(4);
-    let opened = |h: &Harness<'_, RectoApp>| h.state().views[0].line_editor.as_ref().map(|e| e.text.clone());
+    let opened = |h: &Harness<'_, PagicApp>| h.state().views[0].line_editor.as_ref().map(|e| e.text.clone());
     assert_eq!(opened(&h).as_deref(), Some("Recognize"));
     assert!(h.state().views[0].image_selection.is_none(), "the scan under the word isn't selected");
     h.hover_at(r.min + egui::vec2(300.0, 400.0) * k);
@@ -163,9 +163,9 @@ fn text_page() -> Vec<u8> {
     s.create_from_text("t", "This page already has its own text").unwrap().to_vec()
 }
 
-fn edit_harness(pdf: Vec<u8>) -> Harness<'static, RectoApp> {
+fn edit_harness(pdf: Vec<u8>) -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("doc.pdf", None, pdf).unwrap();
         app.run_inline = true;
@@ -180,7 +180,7 @@ fn edit_harness(pdf: Vec<u8>) -> Harness<'static, RectoApp> {
 /// is not undone again by the next frame.
 #[test]
 fn editing_a_scanned_page_recognizes_its_text_first_and_only_once() {
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
@@ -203,7 +203,7 @@ fn editing_a_scanned_page_recognizes_its_text_first_and_only_once() {
 /// conversion happens there too.
 #[test]
 fn the_edit_panel_recognizes_a_scanned_page_too() {
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
@@ -220,7 +220,7 @@ fn the_edit_panel_recognizes_a_scanned_page_too() {
 /// comment's own words are not read into the layer, and it counts as no page text.
 #[test]
 fn editing_a_scan_with_a_comment_over_it_recognizes_the_picture() {
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
@@ -231,9 +231,9 @@ fn editing_a_scan_with_a_comment_over_it_recognizes_the_picture() {
             let p = &s.get(id).unwrap().info.pages[0];
             (p.width as f64, p.height as f64)
         };
-        let shape = recto_engine::Shape::TextBox { rect: [w * 0.1, h * 0.75, w * 0.9, h * 0.85], font_size: 18.0 };
-        let style = recto_engine::Style::default_for(&shape);
-        let note = recto_engine::NewAnnotation { page: 0, shape, style, contents: "Invoice reference 4711".into(), author: "Test".into() };
+        let shape = pagic_engine::Shape::TextBox { rect: [w * 0.1, h * 0.75, w * 0.9, h * 0.85], font_size: 18.0 };
+        let style = pagic_engine::Style::default_for(&shape);
+        let note = pagic_engine::NewAnnotation { page: 0, shape, style, contents: "Invoice reference 4711".into(), author: "Test".into() };
         s.apply(id, Edit::AddAnnotation(note)).unwrap();
         s.save_bytes(id).unwrap().to_vec()
     };
@@ -277,7 +277,7 @@ fn editing_a_page_with_text_over_a_background_picture_changes_nothing() {
 /// so once).
 #[test]
 fn a_page_that_becomes_a_scan_while_edit_is_on_is_recognized() {
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
@@ -307,13 +307,13 @@ fn a_page_that_becomes_a_scan_while_edit_is_on_is_recognized() {
 /// tool picked), and not beneath a dialog. The page is recognized once those are gone.
 #[test]
 fn edit_recognizes_a_scan_only_outside_read_mode_and_beneath_no_dialog() {
-    if !recto_engine::ocr::available() {
+    if !pagic_engine::ocr::available() {
         eprintln!("skipped: OCR models not installed");
         return;
     }
     let mut h = edit_harness(scan());
     let id = h.state().active_ids().unwrap().1;
-    let undo = |h: &Harness<'static, RectoApp>| -> Option<String> { h.state().session.get(id).unwrap().can_undo().map(String::from) };
+    let undo = |h: &Harness<'static, PagicApp>| -> Option<String> { h.state().session.get(id).unwrap().can_undo().map(String::from) };
     // Read mode with the Edit tool still picked.
     assert!(h.state_mut().execute("edit.edit_text"));
     h.state_mut().set_option("mode", "read").unwrap();
@@ -321,7 +321,7 @@ fn edit_recognizes_a_scan_only_outside_read_mode_and_beneath_no_dialog() {
     assert_eq!(undo(&h), None, "not in Read mode");
     // A dialog over the window.
     h.state_mut().set_option("mode", "edit").unwrap();
-    h.state_mut().dialog = Some(recto_ui_egui::Dialog::JsConsole);
+    h.state_mut().dialog = Some(pagic_ui_egui::Dialog::JsConsole);
     h.run_steps(5);
     assert_eq!(undo(&h), None, "not beneath a dialog");
     // Both gone: it is read now.

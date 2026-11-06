@@ -9,14 +9,14 @@
 //! toolbar did, so they run, refuse and undo the same way.
 
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, vec2};
-use recto_engine::Edit;
+use pagic_engine::Edit;
 
 use crate::canvas::ViewAction;
 use crate::theme::{self, Tokens};
-use crate::{LeftPanel, RectoApp, icons, widgets};
+use crate::{LeftPanel, PagicApp, icons, widgets};
 
 /// Whether the left panel is Organize pages: the tool is chosen, or the active view shows the grid.
-pub(crate) fn showing(app: &RectoApp) -> bool {
+pub(crate) fn showing(app: &PagicApp) -> bool {
     app.left == LeftPanel::Tool("organize") || app.active.and_then(|i| app.views.get(i)).is_some_and(|v| v.organize)
 }
 
@@ -39,7 +39,7 @@ enum Act {
     Command(&'static str),
 }
 
-pub(crate) fn panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
+pub(crate) fn panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
     let Some((index, id)) = app.active_ids() else { return };
     let Some(doc) = app.session.get(id) else { return };
     let info = &doc.info;
@@ -71,7 +71,7 @@ pub(crate) fn panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
         widgets::section_title(ui, tl!("Pages selected"));
         let current = view.current;
         let picked = view.organize_range.show(ui, &view.selected, n, current, |ui| {
-            use recto_engine::{PageOrientation as O, PageParity as P, filter_pages};
+            use pagic_engine::{PageOrientation as O, PageParity as P, filter_pages};
             let all: Vec<usize> = (0..n).collect();
             let mut chosen = None;
             for (label, parity, orient) in [
@@ -186,7 +186,7 @@ pub(crate) fn panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Availability {
     Ready,
-    /// Not in Recto yet: shown muted, as Acrobat lists it, and says it is planned when hovered.
+    /// Not in Pagic yet: shown muted, as Acrobat lists it, and says it is planned when hovered.
     Later,
 }
 

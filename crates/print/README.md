@@ -1,4 +1,4 @@
-# recto-print
+# pagic-print
 
 Layer L4: printing (execution plan M10.5).
 
@@ -45,7 +45,7 @@ Headless `doc_print` defaults are unchanged.
 
 `spool` delegates discovery, driver options, preferences and submission to
 [`craft-print`](https://github.com/arafatic/craft-libs/tree/main/crates/print).
-Recto retains page selection, imposition, annotations and print-permission checks.
+Pagic retains page selection, imposition, annotations and print-permission checks.
 CUPS jobs stream through stdin with `fit-to-page=false`. Windows renders sheets through
 `Windows.Data.Pdf` and spools them at their physical PDF size with per-page paper and
 orientation, zero added margins and hardware-edge clipping. Long-edge and short-edge duplex
@@ -58,8 +58,8 @@ The desktop UI discovers printers and submits jobs on workers, so neither operat
 the dialog; the Windows backend starts without a console window. Physical printer output
 still needs hardware validation.
 
-In a browser there is no spooler: the app (`recto-ui-egui`'s `web_print`) draws the print-ready
-PDF's sheets with Recto's renderer and prints them through the browser's print dialog, which
+In a browser there is no spooler: the app (`pagic-ui-egui`'s `web_print`) draws the print-ready
+PDF's sheets with Pagic's renderer and prints them through the browser's print dialog, which
 sets copies, two-sided printing and colour. This crate stays free of web APIs.
 
 Not yet: print as image, poster labels, PostScript output, colour conversion for

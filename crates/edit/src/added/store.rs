@@ -53,7 +53,7 @@ fn with_resolved<T>(doc: &Document, object: &Object, f: impl FnOnce(&Object) -> 
     }
 }
 
-fn for_each_content_entry(doc: &Document, page: &recto_model::Page, mut visit: impl FnMut(&Object)) {
+fn for_each_content_entry(doc: &Document, page: &pagic_model::Page, mut visit: impl FnMut(&Object)) {
     let Some(contents) = page.dict.get(b"Contents") else { return };
     with_resolved(doc, contents, |resolved| match resolved {
         Object::Array(entries) => {
@@ -103,7 +103,7 @@ pub fn scan_markers(doc: &Document) -> MarkerScan {
                             .get(b"UserUnit")
                             .and_then(Object::as_f64)
                             .filter(|u| u.is_finite() && *u >= 1.0)
-                            .map_or(1.0, |u| u.min(recto_model::MAX_USER_UNIT));
+                            .map_or(1.0, |u| u.min(pagic_model::MAX_USER_UNIT));
                         scan.added.push(Added { page: pi, obj, content: content.scaled(page.user_unit(doc) / written) });
                     }
                 });
@@ -134,16 +134,15 @@ fn validate(c: &Content) -> Result<(), EditError> {
             if (r[2] - r[0]).abs() < 1.0 {
                 return Err(EditError::Invalid("the text box is too narrow".into()));
             }
-            if t.text.chars().any(is_thai) && recto_fonts::document_thai_font().is_none() {
+            if t.text.chars().any(is_thai) && pagic_fonts::document_thai_font().is_none() {
                 return Err(thai_error(GlyphError::NoFont, &t.text));
             }
             // Without the Arabic face, `draw` decides for the Arabic letters themselves (#403): a new
             // item is refused with what's missing, and one that already holds Arabic stays movable.
             // Everything else in it is drawn in the standard font, so it still has to fit.
-            let undrawable = if t.text.chars().any(shaped_arabic) && recto_fonts::document_arabic_font().is_none() {
+            let undrawable = if t.text.chars().any(shaped_arabic) && pagic_fonts::document_arabic_font().is_none() {
                 t.text.split('\n').find_map(|line| {
-                    line.chars()
-                        .find(|c| !(shaped_arabic(*c) || is_thai(*c) && recto_fonts::thai_has(*c) || recto_fonts::win_ansi_encodable(*c)))
+                    line.chars().find(|c| !(shaped_arabic(*c) || is_thai(*c) && pagic_fonts::thai_has(*c) || pagic_fonts::win_ansi_encodable(*c)))
                 })
             } else {
                 first_undrawable(t)

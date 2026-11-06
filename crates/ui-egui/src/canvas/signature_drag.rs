@@ -2,8 +2,8 @@
 //! follows each pointer frame, moved or resized, without editing the PDF.
 
 use egui::{ColorImage, TextureHandle, TextureOptions, pos2, vec2};
-use recto_engine::{Document, Edit};
-use recto_render::{PageInfo, RenderPool, RenderRequest, Tile};
+use pagic_engine::{Document, Edit};
+use pagic_render::{PageInfo, RenderPool, RenderRequest, Tile};
 
 use crate::QuickTool;
 use crate::comments::{CommentView, Gesture, PageCx};

@@ -62,10 +62,10 @@ pub fn discover(roots: &[PathBuf]) -> Vec<FontFile> {
             budget = budget.saturating_sub(meta.len());
             let mut bytes = Vec::new();
             let read = std::fs::File::open(&path).and_then(|f| f.take((16 << 20) + 1).read_to_end(&mut bytes));
-            if read.is_err() || recto_fonts::embedding::validate_document_input(&bytes).is_err() {
+            if read.is_err() || pagic_fonts::embedding::validate_document_input(&bytes).is_err() {
                 continue;
             }
-            if let Ok((family, face)) = recto_fonts::embedding::names(&bytes) {
+            if let Ok((family, face)) = pagic_fonts::embedding::names(&bytes) {
                 files.push(FontFile { path, family, face });
             }
         }

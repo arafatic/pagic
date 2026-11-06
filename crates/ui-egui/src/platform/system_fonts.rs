@@ -69,7 +69,7 @@ pub fn fallback(need: Need) -> Option<Arc<FontData>> {
 }
 
 fn load(need: Need) -> Option<Arc<FontData>> {
-    if std::env::var_os("RECTO_SYSTEM_FONTS").is_some_and(|v| v == "0") {
+    if std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0") {
         return None;
     }
     let (probe, max) = match need {
@@ -123,7 +123,7 @@ pub fn hangul_fallback() -> Option<Arc<FontData>> {
 }
 
 fn script_fallback(candidates: &[PathBuf], probe: char) -> Option<Arc<FontData>> {
-    if std::env::var_os("RECTO_SYSTEM_FONTS").is_some_and(|v| v == "0") {
+    if std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0") {
         return None;
     }
     candidates.iter().find_map(|path| read(path, probe, MAX_BYTES))
@@ -397,7 +397,7 @@ fn unix_fonts(files: &'static [&'static str]) -> Vec<PathBuf> {
     // Read once per process, and not at all when installed fonts are turned off.
     let installed = INSTALLED
         .get_or_init(|| {
-            if std::env::var_os("RECTO_SYSTEM_FONTS").is_some_and(|v| v == "0") {
+            if std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0") {
                 return Vec::new();
             }
             fontconfig::font_files(&fontconfig::config_path())
@@ -500,7 +500,7 @@ mod tests {
     /// it is off, the way `tests/it/fonts.rs` skips for the same reason. Without this the suite goes red in exactly the
     /// mode `cargo xtask screenshots` uses.
     fn installed_faces_switched_off() -> bool {
-        std::env::var_os("RECTO_SYSTEM_FONTS").is_some_and(|v| v == "0")
+        std::env::var_os("PAGIC_SYSTEM_FONTS").or_else(|| std::env::var_os("RECTO_SYSTEM_FONTS")).is_some_and(|v| v == "0")
     }
 
     /// Check that the first readable fallback candidate wins, so reversing the preference list reverses the
@@ -607,7 +607,7 @@ mod tests {
     #[test]
     fn a_family_whose_name_has_spaces_is_still_found() {
         let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.subsec_nanos()).unwrap_or(0);
-        let root = std::env::temp_dir().join(format!("recto-macos-fonts-{}-{nanos}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("pagic-macos-fonts-{}-{nanos}", std::process::id()));
         let supplemental = root.join("Supplemental");
         std::fs::create_dir_all(&supplemental).expect("build a temp macOS-shaped font tree");
         let dirs = [root.to_string_lossy().to_string(), supplemental.to_string_lossy().to_string()];

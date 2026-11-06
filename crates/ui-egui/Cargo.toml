@@ -1,6 +1,6 @@
 [package]
-name = "recto-ui-egui"
-description = "The egui shell of Recto"
+name = "pagic-ui-egui"
+description = "The egui shell of Pagic"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -17,12 +17,12 @@ craft-keymap = { workspace = true }
 # Quit from the menus asks the window to close, so the unsaved-changes check runs; on macOS a window
 # close also quits through `terminate:` (the Touch Bar crash, #1136).
 craft-quit = { workspace = true, features = ["egui"] }
-recto-fonts = { workspace = true }
-recto-engine = { workspace = true }
-recto-cos = { workspace = true }
-recto-render = { workspace = true }
-recto-model = { workspace = true }
-recto-platform = { workspace = true }
+pagic-fonts = { workspace = true }
+pagic-engine = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-render = { workspace = true }
+pagic-model = { workspace = true }
+pagic-platform = { workspace = true }
 egui = { workspace = true, features = ["bytemuck", "default_fonts", "monochrome_emoji_fonts"] }
 egui_extras = { workspace = true }
 eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "persistence", "links", "clipboard"] }
@@ -63,7 +63,7 @@ pollster = "1.0"
 fontconfig-parser = "0.5.8"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-# Safe AppKit calls for drag coordinates and repairing an existing per-file Recto binding.
+# Safe AppKit calls for drag coordinates and repairing an existing per-file Pagic binding.
 # The Objective-C wrappers and block support are already in the tree through arboard and rfd.
 objc2 = "0.6"
 objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSEvent", "NSScreen", "NSWorkspace", "block2"] }
@@ -71,7 +71,7 @@ objc2-foundation = { version = "0.3", default-features = false, features = ["std
 block2 = "0.6"
 plist = "1.10"
 # A plain fsync where a volume refuses the full flush `sync_all` asks for (SMB, FUSE); already in
-# the tree through recto-cli.
+# the tree through pagic-cli.
 rustix = { version = "1", features = ["fs"] }
 
 [target.'cfg(windows)'.dependencies]
@@ -90,13 +90,13 @@ web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlE
 
 [dev-dependencies]
 craft-update = { workspace = true }
-recto-xfa = { workspace = true }
+pagic-xfa = { workspace = true }
 egui_kittest = { workspace = true, features = ["eframe", "wgpu"] }
-# Tests draw Recto text without a system provider: the bundled and monochrome emoji faces must
+# Tests draw Pagic text without a system provider: the bundled and monochrome emoji faces must
 # be enabled on the test graph itself (a dependency's dev-features do not propagate).
 egui = { workspace = true, features = ["default_fonts", "monochrome_emoji_fonts"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
-# Glyph-coverage test of the interface fonts; the same skrifa recto-fonts already uses.
+# Glyph-coverage test of the interface fonts; the same skrifa pagic-fonts already uses.
 skrifa = "0.44"
 
 [build-dependencies]

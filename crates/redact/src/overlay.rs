@@ -74,9 +74,9 @@ pub(super) fn content(marks: &[&Mark], remaining: &mut usize) -> Result<Vec<u8>,
         }
         // Keep upstream's standard-14 metrics when preparing the bounded appearance.
         let (res, face) = match look.font {
-            recto_annot::OverlayFont::Helvetica => ("PCHelv", recto_fonts::Std14::Helvetica),
-            recto_annot::OverlayFont::Times => ("PCTimes", recto_fonts::Std14::TimesRoman),
-            recto_annot::OverlayFont::Courier => ("PCCour", recto_fonts::Std14::Courier),
+            pagic_annot::OverlayFont::Helvetica => ("PCHelv", pagic_fonts::Std14::Helvetica),
+            pagic_annot::OverlayFont::Times => ("PCTimes", pagic_fonts::Std14::TimesRoman),
+            pagic_annot::OverlayFont::Courier => ("PCCour", pagic_fonts::Std14::Courier),
         };
         let width = move |s: &str, size: f64| face.text_width(s, size);
         let [cr, cg, cb] = look.color.map(|v| v.clamp(0.0, 1.0));
@@ -100,7 +100,7 @@ pub(super) fn content(marks: &[&Mark], remaining: &mut usize) -> Result<Vec<u8>,
                 (Cow::Borrowed(m.overlay.as_str()), 1)
             };
             // Every row is identical: measure and encode it once, without a Vec of copies.
-            let encoded = recto_fonts::literal(&recto_fonts::win_ansi(&line));
+            let encoded = pagic_fonts::literal(&pagic_fonts::win_ansi(&line));
             if encoded.len().checked_add(4).and_then(|n| n.checked_mul(count)).is_none_or(|n| n > *c.remaining) {
                 return Err(RedactError::OverlayLimit);
             }

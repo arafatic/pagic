@@ -3,9 +3,9 @@
 use egui::{Modifiers, PointerButton, Pos2};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_engine::{AddedText, Edit, Session};
-use recto_render::{PageRenderer, RenderRequest, RequestKind};
-use recto_ui_egui::RectoApp;
+use pagic_engine::{AddedText, Edit, Session};
+use pagic_render::{PageRenderer, RenderRequest, RequestKind};
+use pagic_ui_egui::PagicApp;
 
 fn document(prefix: &str) -> std::sync::Arc<Vec<u8>> {
     // Use the engine's synthetic document builder rather than another PDF serializer.
@@ -26,10 +26,10 @@ fn document(prefix: &str) -> std::sync::Arc<Vec<u8>> {
     session.save_bytes(id).unwrap()
 }
 
-fn organize() -> Harness<'static, RectoApp> {
+fn organize() -> Harness<'static, PagicApp> {
     let bytes = document("Page");
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("pages.pdf", None, bytes.as_ref().clone()).unwrap();
         app.set_option("organize", "on").unwrap();
@@ -40,7 +40,7 @@ fn organize() -> Harness<'static, RectoApp> {
     h
 }
 
-fn page_texts(app: &RectoApp) -> Vec<String> {
+fn page_texts(app: &PagicApp) -> Vec<String> {
     let doc = app.session.get(app.views[0].id).unwrap();
     let mut renderer = PageRenderer::new(doc.bytes.clone(), Default::default());
     (0..renderer.page_count())
@@ -56,7 +56,7 @@ fn page_texts(app: &RectoApp) -> Vec<String> {
         .collect()
 }
 
-fn copy_modifier(h: &Harness<'static, RectoApp>, copying: bool) -> Modifiers {
+fn copy_modifier(h: &Harness<'static, PagicApp>, copying: bool) -> Modifiers {
     if !copying {
         Modifiers::NONE
     } else if h.ctx.os() == egui::os::OperatingSystem::Mac {
@@ -66,7 +66,7 @@ fn copy_modifier(h: &Harness<'static, RectoApp>, copying: bool) -> Modifiers {
     }
 }
 
-fn start_drag(h: &mut Harness<'static, RectoApp>, copying: bool) -> (Pos2, Modifiers) {
+fn start_drag(h: &mut Harness<'static, PagicApp>, copying: bool) -> (Pos2, Modifiers) {
     let from = h.get_by_label("Page 1").rect().center();
     let to = h.get_by_label("Page 3").rect().right_center() - egui::vec2(10.0, 0.0);
     let modifiers = copy_modifier(h, copying);
@@ -82,17 +82,17 @@ fn start_drag(h: &mut Harness<'static, RectoApp>, copying: bool) -> (Pos2, Modif
     (to, modifiers)
 }
 
-fn release(h: &mut Harness<'static, RectoApp>, to: Pos2, modifiers: Modifiers) {
+fn release(h: &mut Harness<'static, PagicApp>, to: Pos2, modifiers: Modifiers) {
     h.event(egui::Event::PointerButton { pos: to, button: PointerButton::Primary, pressed: false, modifiers });
     h.run_steps(4);
     h.event(egui::Event::ModifiersChanged(Modifiers::NONE));
     h.run_steps(1);
 }
 
-fn assert_saved_order(h: &Harness<'static, RectoApp>, expected: &[&str]) {
+fn assert_saved_order(h: &Harness<'static, PagicApp>, expected: &[&str]) {
     let app = h.state();
     let bytes = app.session.save_bytes(app.views[0].id).unwrap();
-    let mut reopened = RectoApp::new();
+    let mut reopened = PagicApp::new();
     reopened.open_bytes("saved.pdf", None, bytes.as_ref().clone()).unwrap();
     assert_eq!(page_texts(&reopened), expected, "save/reopen preserves the post-edit order");
 }

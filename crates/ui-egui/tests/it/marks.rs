@@ -3,8 +3,8 @@
 use crate::support;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_engine::MarkKind;
-use recto_ui_egui::{Dialog, RectoApp};
+use pagic_engine::MarkKind;
+use pagic_ui_egui::{Dialog, PagicApp};
 
 const FIXTURE: &[u8] = b"%PDF-1.7
 1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
@@ -15,13 +15,13 @@ const FIXTURE: &[u8] = b"%PDF-1.7
 trailer << /Root 1 0 R >>
 %%EOF";
 
-fn harness() -> Harness<'static, RectoApp> {
+fn harness() -> Harness<'static, PagicApp> {
     harness_with(FIXTURE.to_vec())
 }
 
-fn harness_with(pdf: Vec<u8>) -> Harness<'static, RectoApp> {
+fn harness_with(pdf: Vec<u8>) -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("doc.pdf", None, pdf.clone()).unwrap();
         app
@@ -30,7 +30,7 @@ fn harness_with(pdf: Vec<u8>) -> Harness<'static, RectoApp> {
     h
 }
 
-fn marks(h: &Harness<'static, RectoApp>) -> Vec<MarkKind> {
+fn marks(h: &Harness<'static, PagicApp>) -> Vec<MarkKind> {
     let s = h.state();
     s.session.get(s.views[0].id).unwrap().marks().to_vec()
 }
@@ -47,7 +47,7 @@ fn header_and_footer_dialog_inserts_tokens_and_applies_to_a_subset() {
     h.get_by_label("Insert Page Number").click();
     h.run_steps(2);
     assert_eq!(h.state().marks_draft.hf.text[4], "<<1>>");
-    h.state_mut().marks_draft.range.subset = recto_ui_egui::marks::Subset::Odd;
+    h.state_mut().marks_draft.range.subset = pagic_ui_egui::marks::Subset::Odd;
     h.run_steps(2);
     h.get_by_label("OK").click();
     h.run_steps(4);
@@ -75,15 +75,15 @@ fn header_and_footer_dialog_draws_in_the_chosen_face() {
     h.run_steps(2);
     h.get_by_label("Times").click();
     h.run_steps(2);
-    assert_eq!(h.state().marks_draft.hf.font, recto_engine::FontFamily::Times);
+    assert_eq!(h.state().marks_draft.hf.font, pagic_engine::FontFamily::Times);
     h.state_mut().marks_draft.hf.text[0] = "Serif".into();
     h.run_steps(2);
     h.get_by_label("OK").click();
     h.run_steps(4);
     assert_eq!(marks(&h), [MarkKind::HeaderFooter]);
     let s = h.state();
-    let doc = recto_cos::Document::open(s.session.get(s.views[0].id).unwrap().bytes.clone()).unwrap();
-    let page = &recto_model::pages(&doc)[0];
+    let doc = pagic_cos::Document::open(s.session.get(s.views[0].id).unwrap().bytes.clone()).unwrap();
+    let page = &pagic_model::pages(&doc)[0];
     let res = doc.resolve(page.dict.get(b"Resources").unwrap());
     let fonts = doc.resolve(res.as_dict().unwrap().get(b"Font").unwrap()).as_dict().cloned().unwrap();
     let face = doc.resolve(fonts.get(b"PCTimes").expect("Times is added")).as_dict().cloned().unwrap();
@@ -167,7 +167,7 @@ trailer << /Root 1 0 R >>
 }
 
 /// The pictures of page `page` (its thumbnail) painted last frame: paint order, bounds, tint.
-fn page_pictures(h: &Harness<'static, RectoApp>, page: usize) -> Vec<(usize, egui::Rect, egui::Color32)> {
+fn page_pictures(h: &Harness<'static, PagicApp>, page: usize) -> Vec<(usize, egui::Rect, egui::Color32)> {
     let Some(tex) = h.state().views[0].thumb(page).map(|t| t.id()) else { return Vec::new() };
     h.output()
         .shapes
@@ -181,7 +181,7 @@ fn page_pictures(h: &Harness<'static, RectoApp>, page: usize) -> Vec<(usize, egu
 }
 
 /// The preview's picture of `page`, once its thumbnail has arrived (it renders off the UI thread).
-fn wait_for_picture(h: &mut Harness<'static, RectoApp>, page: usize) -> (usize, egui::Rect, egui::Color32) {
+fn wait_for_picture(h: &mut Harness<'static, PagicApp>, page: usize) -> (usize, egui::Rect, egui::Color32) {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
     loop {
         h.step();
@@ -195,7 +195,7 @@ fn wait_for_picture(h: &mut Harness<'static, RectoApp>, page: usize) -> (usize, 
 
 /// A text painted on the page last frame (the dialog's text boxes show it too): its paint order
 /// and its laid-out rectangle.
-fn painted(h: &Harness<'static, RectoApp>, text: &str, page: egui::Rect) -> (usize, egui::Rect) {
+fn painted(h: &Harness<'static, PagicApp>, text: &str, page: egui::Rect) -> (usize, egui::Rect) {
     h.output()
         .shapes
         .iter()
@@ -215,7 +215,7 @@ fn near(a: f32, b: f32, what: &str) {
 
 #[test]
 fn the_preview_shows_the_page_the_range_selects_under_the_marks() {
-    use recto_ui_egui::marks::{PageRange, Subset};
+    use pagic_ui_egui::marks::{PageRange, Subset};
     let mut h = harness_with(content_fixture());
     assert!(h.state_mut().execute("edit.header_footer"));
     h.run_steps(2);
@@ -268,7 +268,7 @@ fn the_preview_shows_the_page_the_range_selects_under_the_marks() {
 
 /// The preview's page stepper, beside its "page N of M" label: the dialog's own button, not the
 /// page navigation's of the same name.
-fn preview_step(h: &mut Harness<'static, RectoApp>, label: &str, now: &str) {
+fn preview_step(h: &mut Harness<'static, PagicApp>, label: &str, now: &str) {
     let row = h.get_by_label(now).rect().center().y;
     h.query_all_by_label(label).find(|n| (n.rect().center().y - row).abs() < 15.0).unwrap_or_else(|| panic!("{label} beside {now:?}")).click();
     h.run_steps(2);
@@ -319,9 +319,9 @@ fn page_range_from_one_to_one_selects_only_the_first_page() {
     let doc = s.session.get(s.views[0].id).unwrap();
     assert_eq!(doc.marks(), [MarkKind::Background]);
     // Rendered: page 1 has the (default cream) background, page 2 is still blank.
-    let mut r = recto_render::PageRenderer::new(doc.bytes.clone(), recto_render::RenderConfig::default());
-    let corner = |r: &mut recto_render::PageRenderer, page: usize| {
-        let p = r.render(recto_render::RenderRequest { page, scale: 1.0, ..Default::default() });
+    let mut r = pagic_render::PageRenderer::new(doc.bytes.clone(), pagic_render::RenderConfig::default());
+    let corner = |r: &mut pagic_render::PageRenderer, page: usize| {
+        let p = r.render(pagic_render::RenderRequest { page, scale: 1.0, ..Default::default() });
         assert!(p.error.is_none(), "{:?}", p.error);
         p.rgba[..4].to_vec()
     };

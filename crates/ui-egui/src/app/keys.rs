@@ -1,6 +1,6 @@
 use super::*;
 
-impl RectoApp {
+impl PagicApp {
     pub(super) fn shortcuts(&mut self, ctx: &egui::Context) {
         use egui::Key;
         let pasted = self.paste_key_released(ctx);
@@ -80,7 +80,7 @@ impl RectoApp {
     }
 }
 
-impl RectoApp {
+impl PagicApp {
     /// The quick tools' keys, as in Acrobat: V selects, H pans, and holding Space pans until it
     /// is released. Plain letters, so not while a text field, a form field, a dialog or the
     /// palette has the keyboard.

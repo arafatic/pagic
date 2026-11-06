@@ -1,7 +1,7 @@
 //! Synthetic search microbenchmark, including normalization and glyph-range mapping.
-//! Run with `cargo run -p recto-render --example search_bench --locked` on both revisions
+//! Run with `cargo run -p pagic-render --example search_bench --locked` on both revisions
 //! with the same toolchain/profile. Timings are diagnostic, never a CI deadline.
-use recto_render::{PageText, TextGlyph};
+use pagic_render::{PageText, TextGlyph};
 use std::{hint::black_box, time::Instant};
 
 fn main() {

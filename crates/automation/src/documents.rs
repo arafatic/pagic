@@ -191,7 +191,7 @@ impl Automation {
     }
 
     pub(crate) fn doc_initial_view(&mut self, a: &Args) -> Result<Value> {
-        use recto_engine::{InitialLayout as L, Magnification as M, Navigation as N};
+        use pagic_engine::{InitialLayout as L, Magnification as M, Navigation as N};
         let bad = |m: String| ToolError::InvalidArgs(m);
         let mut v = self.doc(a)?.initial_view();
         let before = v.clone();
@@ -279,7 +279,7 @@ impl Automation {
     }
 
     pub(crate) fn doc_optimize(&mut self, a: &Args) -> Result<Value> {
-        use recto_engine::optimize::{Compatibility, Compression, ImageSettings, Preset};
+        use pagic_engine::optimize::{Compatibility, Compression, ImageSettings, Preset};
         let id = self.doc(a)?.id;
         let before = self.doc(a)?.bytes.len();
         let path = self.resolve(a.str("path")?, true)?;
@@ -333,16 +333,14 @@ impl Automation {
                 *flag = b;
             }
         }
-        let discard: Vec<recto_engine::Hidden> = match a.get("discard") {
+        let discard: Vec<pagic_engine::Hidden> = match a.get("discard") {
             None => Vec::new(),
             Some(v) => v
                 .as_array()
                 .ok_or_else(|| ToolError::InvalidArgs("discard must be an array".into()))?
                 .iter()
                 .map(|x| {
-                    x.as_str()
-                        .and_then(recto_engine::Hidden::from_id)
-                        .ok_or_else(|| ToolError::InvalidArgs(format!("unknown discard category {x}")))
+                    x.as_str().and_then(pagic_engine::Hidden::from_id).ok_or_else(|| ToolError::InvalidArgs(format!("unknown discard category {x}")))
                 })
                 .collect::<Result<_>>()?,
         };
@@ -354,7 +352,7 @@ impl Automation {
         let catalog_version = (settings.compatibility == Compatibility::Retain)
             .then(|| {
                 let pw = self.doc(a).ok().and_then(|d| d.password.as_deref());
-                let doc = recto_cos::Document::open_with_password(bytes.clone(), pw).ok()?;
+                let doc = pagic_cos::Document::open_with_password(bytes.clone(), pw).ok()?;
                 let root = doc.root()?;
                 doc.get(root).as_dict()?.name(b"Version").and_then(valid_version).map(str::to_owned)
             })
@@ -392,12 +390,12 @@ impl Automation {
     }
 
     /// A watermark or background picture: `file` (an image or a PDF) and `file_page` (1-based).
-    fn mark_file(&self, a: &Args) -> Result<Option<recto_engine::MarkFile>> {
+    fn mark_file(&self, a: &Args) -> Result<Option<pagic_engine::MarkFile>> {
         let Some(p) = a.opt_str("file")? else { return Ok(None) };
         let path = self.resolve(p, false)?;
         let bytes = read_input(&path)?;
         let page = a.opt_int("file_page")?.unwrap_or(1).max(1) as usize - 1;
-        Ok(Some(recto_engine::MarkFile {
+        Ok(Some(pagic_engine::MarkFile {
             name: path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
             bytes: Arc::new(bytes),
             page,
@@ -417,7 +415,7 @@ impl Automation {
     }
 
     pub(crate) fn marks(&mut self, tool: &str, a: &Args) -> Result<Value> {
-        use recto_engine::{Background, HeaderFooter, MarkKind, Watermark};
+        use pagic_engine::{Background, HeaderFooter, MarkKind, Watermark};
         let n = self.doc(a)?.info.pages.len();
         let pages = match a.opt_ints("pages")? {
             Some(_) => self.pages(a, "pages")?,
@@ -436,9 +434,9 @@ impl Automation {
                     hf.font_size = s;
                 }
                 hf.font = match a.opt_str("font")? {
-                    None | Some("Helvetica") => recto_engine::FontFamily::Helvetica,
-                    Some("Times") => recto_engine::FontFamily::Times,
-                    Some("Courier") => recto_engine::FontFamily::Courier,
+                    None | Some("Helvetica") => pagic_engine::FontFamily::Helvetica,
+                    Some("Times") => pagic_engine::FontFamily::Times,
+                    Some("Courier") => pagic_engine::FontFamily::Courier,
                     Some(other) => {
                         return Err(ToolError::InvalidArgs(format!("font must be \"Helvetica\", \"Times\" or \"Courier\", not {other:?}")));
                     }
@@ -508,7 +506,7 @@ impl Automation {
             None => (0..doc.info.pages.len()).collect(),
         };
         let stem = doc.name.trim_end_matches(".pdf").trim_end_matches(".PDF").to_string();
-        let mut ex = recto_engine::export::Exporter::new(doc);
+        let mut ex = pagic_engine::export::Exporter::new(doc);
         if tool == "doc_export_text" {
             let path = self.resolve(a.str("path")?, true)?;
             let text = ex.text_of(&pages).map_err(failed)?;
@@ -519,10 +517,10 @@ impl Automation {
         std::fs::create_dir_all(&folder).map_err(|e| failed(format!("{}: {e}", folder.display())))?;
         if tool == "doc_export_all_images" {
             let min = u32::try_from(a.opt_int("min_size")?.unwrap_or(0).max(0)).unwrap_or(u32::MAX);
-            let out = recto_engine::export::extract_images(&doc.export_source(), &pages, min).map_err(failed)?;
+            let out = pagic_engine::export::extract_images(&doc.export_source(), &pages, min).map_err(failed)?;
             let mut files = Vec::new();
             for (k, img) in out.images.iter().enumerate() {
-                let path = child(&folder, &recto_engine::export::image_file_name(&stem, img, k + 1, doc.info.pages.len()));
+                let path = child(&folder, &pagic_engine::export::image_file_name(&stem, img, k + 1, doc.info.pages.len()));
                 write_atomic(&path, &img.data)?;
                 files.push(json!({ "path": path.to_string_lossy(), "page": img.page + 1, "width": img.width, "height": img.height }));
             }
@@ -532,9 +530,9 @@ impl Automation {
         let dpi = a.opt_num("dpi")?.unwrap_or(150.0);
         let quality = a.opt_int("quality")?.unwrap_or(85).clamp(1, 100) as u8;
         let format = match a.opt_str("format")?.unwrap_or("png") {
-            "png" => recto_engine::export::ImageFormat::Png,
-            "jpeg" | "jpg" => recto_engine::export::ImageFormat::Jpeg { quality },
-            "tiff" | "tif" => recto_engine::export::ImageFormat::Tiff,
+            "png" => pagic_engine::export::ImageFormat::Png,
+            "jpeg" | "jpg" => pagic_engine::export::ImageFormat::Jpeg { quality },
+            "tiff" | "tif" => pagic_engine::export::ImageFormat::Tiff,
             f => return Err(ToolError::InvalidArgs(format!("unknown format {f:?} (png, jpeg, tiff)"))),
         };
         let mut files = Vec::new();
@@ -570,7 +568,7 @@ impl Automation {
     }
 
     pub(crate) fn doc_protect(&mut self, a: &Args) -> Result<Value> {
-        use recto_engine::{Algorithm, Changes, Printing, Protection};
+        use pagic_engine::{Algorithm, Changes, Printing, Protection};
         let d = Protection::default();
         // Restrictions only exist behind a permissions password (ISO 32000-2 §7.6.4.4: /P is
         // enforced against the owner password; without one everything stays allowed). Refuse a

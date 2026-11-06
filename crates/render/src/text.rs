@@ -1,4 +1,4 @@
-//! Text extraction (bootstrap for `recto-text`, architecture §8).
+//! Text extraction (bootstrap for `pagic-text`, architecture §8).
 //!
 //! A hayro `Device` that ignores paint and records every glyph: its Unicode value (ToUnicode →
 //! encoding → glyph name fallbacks, handled by hayro) and its box in *page view space*, i.e.

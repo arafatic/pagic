@@ -473,7 +473,7 @@ impl Gestures<'_> {
         true
     }
 
-    fn caret(&self, view: &mut DocView, caret_text: Option<&recto_render::PageText>) -> bool {
+    fn caret(&self, view: &mut DocView, caret_text: Option<&pagic_render::PageText>) -> bool {
         let Self { ui, resp, cx, pointer, over_page, .. } = *self;
         let cv = &mut view.comments;
         if !cx.allowed {

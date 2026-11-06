@@ -5,7 +5,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use recto_engine::{Session, ocr, optimize};
+use pagic_engine::{Session, ocr, optimize};
 use serde_json::{Value, json};
 
 use crate::{Args, Automation, Result, failed};
@@ -59,7 +59,7 @@ impl<'a> Recipe<'a> {
 
     fn accepts(&self, path: &Path) -> bool {
         let extension = path.extension().and_then(std::ffi::OsStr::to_str).unwrap_or("").to_ascii_lowercase();
-        extension == "pdf" || (self.steps.contains(&"convert") && recto_engine::CONVERTIBLE.contains(&extension.as_str()))
+        extension == "pdf" || (self.steps.contains(&"convert") && pagic_engine::CONVERTIBLE.contains(&extension.as_str()))
     }
 
     fn process(&self, path: &Path) -> Result<(Arc<Vec<u8>>, Vec<Value>)> {

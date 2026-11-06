@@ -3,7 +3,7 @@
 use egui::accesskit::Role;
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_ui_egui::RectoApp;
+use pagic_ui_egui::PagicApp;
 
 const FIXTURE: &[u8] = b"%PDF-1.7
 1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
@@ -15,9 +15,9 @@ trailer << /Root 1 0 R >>
 const WIDTH: f32 = 1400.0;
 const NO_BOOKMARKS: &str = "This document has no bookmarks.";
 
-fn harness(setup: impl FnOnce(&mut RectoApp) + 'static) -> Harness<'static, RectoApp> {
+fn harness(setup: impl FnOnce(&mut PagicApp) + 'static) -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(WIDTH, 900.0)).build_eframe(move |_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.open_bytes("doc.pdf", None, FIXTURE.to_vec()).unwrap();
         setup(&mut app);
@@ -27,16 +27,16 @@ fn harness(setup: impl FnOnce(&mut RectoApp) + 'static) -> Harness<'static, Rect
     h
 }
 
-fn rail(h: &Harness<'static, RectoApp>) -> egui::Rect {
+fn rail(h: &Harness<'static, PagicApp>) -> egui::Rect {
     h.get_by_role_and_label(Role::Button, "Bookmarks").rect()
 }
 
-fn side(h: &Harness<'static, RectoApp>) -> egui::Rect {
+fn side(h: &Harness<'static, PagicApp>) -> egui::Rect {
     h.get_by_label(NO_BOOKMARKS).rect()
 }
 
 /// The Tools pane's All tools header button.
-fn tools(h: &Harness<'static, RectoApp>) -> egui::Rect {
+fn tools(h: &Harness<'static, PagicApp>) -> egui::Rect {
     h.get_by_label("Expand all tools").rect()
 }
 
@@ -103,7 +103,7 @@ fn a_dragged_width_is_remembered_across_restarts() {
     // The pointer was pressed 2 pt inside the panel, and the edge follows the pointer.
     assert!((after - (before + 40.0 - 2.0)).abs() <= 1.0, "{before} -> {after}");
     let saved = h.state().persist();
-    let mut restored = RectoApp::new();
+    let mut restored = PagicApp::new();
     restored.restore(&saved);
     assert_eq!(restored.side_panels.side_width, after);
 }

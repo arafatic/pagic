@@ -2,7 +2,7 @@
 
 use egui::{Align2, Color32, CornerRadius, Rect, Response, Sense, Stroke, vec2};
 
-use crate::RectoApp;
+use crate::PagicApp;
 use crate::theme::{self, Tokens};
 
 pub(super) mod icon_data;
@@ -404,7 +404,7 @@ fn wrapped_lines(ui: &egui::Ui, text: &str, font: &egui::FontId, width: f32, tru
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     (text, font, width.to_bits(), ui.ctx().pixels_per_point().to_bits(), truncate).hash(&mut hasher);
     let key = hasher.finish();
-    let cache_id = egui::Id::unique("recto-rtl-wrap-cache");
+    let cache_id = egui::Id::unique("pagic-rtl-wrap-cache");
     if let Some(hit) = ui.ctx().data_mut(|d| d.get_temp_mut_or_default::<WrapCache>(cache_id).lines.get(&key).cloned()) {
         return hit;
     }
@@ -438,7 +438,7 @@ fn wrapped_lines(ui: &egui::Ui, text: &str, font: &egui::FontId, width: f32, tru
 }
 
 /// Transient message at the bottom centre.
-pub fn toast(app: &mut RectoApp, ctx: &egui::Context) {
+pub fn toast(app: &mut PagicApp, ctx: &egui::Context) {
     let Some((msg, start)) = app.toast.clone() else { return };
     let now = ctx.input(|i| i.time);
     let start = if start == 0.0 { now } else { start };
@@ -487,9 +487,9 @@ pub struct ProgressNotice {
 /// Where the progress notice keeps its height this frame, for placing the toast above it.
 const PROGRESS_HEIGHT: &str = "progress-notice-height";
 
-/// Draw [`RectoApp::progress_notice`]: the label, a neutral progress bar, percentage and Cancel.
+/// Draw [`PagicApp::progress_notice`]: the label, a neutral progress bar, percentage and Cancel.
 /// Returns true when Cancel was clicked. With animation effects off the bar steps to the fraction.
-pub fn progress_notice(app: &RectoApp, ctx: &egui::Context) -> bool {
+pub fn progress_notice(app: &PagicApp, ctx: &egui::Context) -> bool {
     let Some(p) = &app.progress_notice else { return false };
     let t = Tokens::get(ctx);
     let screen = ctx.content_rect();
@@ -697,7 +697,7 @@ mod tests {
         output.drop_without_applying_deltas();
     }
 
-    fn toast_rect(app: &mut RectoApp, ctx: &egui::Context, width: f32, now: &mut f64) -> Rect {
+    fn toast_rect(app: &mut PagicApp, ctx: &egui::Context, width: f32, now: &mut f64) -> Rect {
         // Let the Area settle after a notice/viewport change, without advancing to
         // expiry. No native rendering or renderer worker is needed for this layout.
         for _ in 0..3 {
@@ -714,7 +714,7 @@ mod tests {
     #[test]
     fn toast_width_adapts_to_long_notices_and_narrow_viewports() {
         let ctx = egui::Context::default();
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         let mut now = 1.0;
         app.notify("Saved");
         let short = toast_rect(&mut app, &ctx, 1280.0, &mut now);
@@ -759,7 +759,7 @@ mod tests {
         let ctx = egui::Context::default();
         ctx.set_fonts(theme::font_definitions());
         let cache_len =
-            |ctx: &egui::Context| ctx.data_mut(|d| d.get_temp_mut_or_default::<WrapCache>(egui::Id::unique("recto-rtl-wrap-cache")).lines.len());
+            |ctx: &egui::Context| ctx.data_mut(|d| d.get_temp_mut_or_default::<WrapCache>(egui::Id::unique("pagic-rtl-wrap-cache")).lines.len());
         let persian = "این یک نظر طولانی به زبان فارسی است که باید در چند خط شکسته شود";
         let long = persian.repeat(2_000);
         let mut first = None;
@@ -824,7 +824,7 @@ mod tests {
     /// and put `PDF` at the visual left. Assert the actual painted positions instead.
     #[test]
     fn wrapped_rtl_line_starting_with_latin_keeps_its_rtl_base() {
-        if recto_fonts::ui_arabic_fonts().is_empty() {
+        if pagic_fonts::ui_arabic_fonts().is_empty() {
             return;
         }
         let ctx = egui::Context::default();

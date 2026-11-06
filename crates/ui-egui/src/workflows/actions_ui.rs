@@ -1,13 +1,13 @@
-//! Action Wizard: the actions (Recto's and your own), running one over files in the
+//! Action Wizard: the actions (Pagic's and your own), running one over files in the
 //! background, and creating or editing an action's steps. Your actions are remembered.
 
 use std::sync::{Arc, Mutex};
 
 use egui::{Align, Layout};
-use recto_engine::actions::{Action, Step, builtin};
+use pagic_engine::actions::{Action, Step, builtin};
 
 use crate::theme::{self, Tokens};
-use crate::{RectoApp, widgets};
+use crate::{PagicApp, widgets};
 
 /// The Action Wizard's state.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -58,7 +58,7 @@ fn write_result(dir: &std::path::Path, name: &str, bytes: &[u8]) -> std::io::Res
     Err(Error::from(ErrorKind::AlreadyExists))
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Built-in actions, then the user's.
     pub fn all_actions(&self) -> Vec<Action> {
         let mut v = builtin();
@@ -103,7 +103,7 @@ impl RectoApp {
                 if let Ok(mut s) = p.lock() {
                     s.done = i;
                 }
-                let r = recto_engine::actions::run_on(&action, &name, Arc::new(bytes), |_, _| {}).and_then(|r| {
+                let r = pagic_engine::actions::run_on(&action, &name, Arc::new(bytes), |_, _| {}).and_then(|r| {
                     #[cfg(not(target_arch = "wasm32"))]
                     write_result(&dir, &name, &r.bytes).map_err(|e| e.to_string())?;
                     #[cfg(target_arch = "wasm32")]
@@ -130,7 +130,7 @@ impl RectoApp {
         if self.run_inline {
             work();
         } else {
-            std::thread::Builder::new().name("recto-action".into()).spawn(work).ok();
+            std::thread::Builder::new().name("pagic-action".into()).spawn(work).ok();
         }
         #[cfg(target_arch = "wasm32")]
         work();
@@ -230,7 +230,7 @@ pub fn decode(v: &serde_json::Value) -> Vec<Action> {
 }
 
 /// The Action Wizard dialog. Returns `true` to close.
-pub(crate) fn body(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
+pub(crate) fn body(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) -> bool {
     if app.wizard.editing.is_some() {
         return edit_body(ui, app, t);
     }
@@ -303,7 +303,7 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
 
 /// Draw the custom-action editor: name, description and ordered steps; Save stays disabled until the name is
 /// unique and non-empty and at least one step exists.
-fn edit_body(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> bool {
+fn edit_body(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) -> bool {
     let Some((original, a)) = app.wizard.editing.as_mut() else { return false };
     ui.label(egui::RichText::new(if original.is_some() { tl!("Edit Action") } else { tl!("New Action") }).font(theme::semibold(18.0)));
     ui.add_space(8.0);

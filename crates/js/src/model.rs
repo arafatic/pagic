@@ -124,7 +124,7 @@ pub enum Request {
     /// `this.pageNum = n` (0-based).
     GoToPage(usize),
     LaunchUrl(String),
-    /// `this.submitForm(url)`: never sent on Recto's own.
+    /// `this.submitForm(url)`: never sent on Pagic's own.
     Submit(String),
     /// `field.setFocus()`.
     Focus(String),

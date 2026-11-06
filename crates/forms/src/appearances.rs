@@ -166,7 +166,7 @@ fn appearance_inputs(doc: &Document, w: &Widget) -> Vec<std::sync::Arc<Object>> 
 /// miss, never a stale hit.
 #[derive(Clone, Debug, Default)]
 pub struct FieldAppearanceCache {
-    entries: std::collections::HashMap<ObjRef, (Vec<std::sync::Arc<Object>>, recto_cos::Stream)>,
+    entries: std::collections::HashMap<ObjRef, (Vec<std::sync::Arc<Object>>, pagic_cos::Stream)>,
     bytes: usize,
     hits: u64,
     builds: u64,
@@ -181,7 +181,7 @@ impl FieldAppearanceCache {
         *self = Self::default();
     }
 
-    fn get(&mut self, w: ObjRef, inputs: &[std::sync::Arc<Object>]) -> Option<recto_cos::Stream> {
+    fn get(&mut self, w: ObjRef, inputs: &[std::sync::Arc<Object>]) -> Option<pagic_cos::Stream> {
         let (from, stream) = self.entries.get(&w)?;
         if from.len() != inputs.len() || !from.iter().zip(inputs).all(|(a, b)| std::sync::Arc::ptr_eq(a, b)) {
             return None;
@@ -190,7 +190,7 @@ impl FieldAppearanceCache {
         Some(stream.clone())
     }
 
-    fn insert(&mut self, w: ObjRef, inputs: Vec<std::sync::Arc<Object>>, stream: &recto_cos::Stream) {
+    fn insert(&mut self, w: ObjRef, inputs: Vec<std::sync::Arc<Object>>, stream: &pagic_cos::Stream) {
         self.builds += 1;
         if self.bytes.saturating_add(stream.raw.len()) > Self::MAX_BYTES {
             self.clear();
@@ -223,14 +223,14 @@ pub fn declares_pdfa(doc: &Document) -> bool {
     }
 }
 
-/// Every field with a widget whose appearance Recto drew with `?` for a character its font
-/// can't hold (`recto_fonts::UNDRAWN_MARK`): the field's name and that character, once per
+/// Every field with a widget whose appearance Pagic drew with `?` for a character its font
+/// can't hold (`pagic_fonts::UNDRAWN_MARK`): the field's name and that character, once per
 /// field.
 pub fn undrawn_fields(doc: &Document) -> Vec<(String, char)> {
     fields(doc)
         .into_iter()
         .filter_map(|f| {
-            let c = f.widgets.iter().find_map(|w| doc.get(w.obj).as_dict().and_then(recto_fonts::undrawn_mark))?;
+            let c = f.widgets.iter().find_map(|w| doc.get(w.obj).as_dict().and_then(pagic_fonts::undrawn_mark))?;
             Some((f.name, c))
         })
         .collect()

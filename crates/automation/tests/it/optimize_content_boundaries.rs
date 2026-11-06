@@ -2,8 +2,8 @@
 
 use std::sync::Arc;
 
-use recto_automation::{Automation, Content};
-use recto_cos::{Dict, Document, Object, SaveOptions, Stream, write_full};
+use pagic_automation::{Automation, Content};
+use pagic_cos::{Dict, Document, Object, SaveOptions, Stream, write_full};
 use serde_json::{Value, json};
 
 const COLORS: [[u8; 3]; 4] = [[220, 30, 40], [20, 190, 60], [30, 60, 220], [230, 190, 20]];

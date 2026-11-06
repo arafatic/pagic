@@ -5,67 +5,67 @@
        per-machine and skip the existing per-user copy, so an interactive upgrade installs beside it
        (two registered products, and uninstall leaves files behind). Checked with real msiexec runs. -->
   <Property Id="INSTALLFOLDER" Secure="yes" />
-  <Property Id="RECTO_SCOPE" Value="user" Secure="yes" />
-  <Property Id="RECTO_U_DIR" Secure="yes"><RegistrySearch Id="RECTO_U_DIRSearch" Root="HKCU" Key="Software\recto" Name="InstallDir" Type="raw" /></Property>
-  <SetProperty Id="RECTO_USER_DIR" Action="RectoUFromDIR" Value="[RECTO_U_DIR]" After="AppSearch" Sequence="both" Condition="NOT RECTO_USER_DIR AND RECTO_U_DIR" />
-  <Property Id="RECTO_U_FOLDER" Secure="yes"><RegistrySearch Id="RECTO_U_FOLDERSearch" Root="HKCU" Key="Software\recto" Name="InstallFolder" Type="raw" /></Property>
-  <SetProperty Id="RECTO_USER_DIR" Action="RectoUFromFOLDER" Value="[RECTO_U_FOLDER]" After="RectoUFromDIR" Sequence="both" Condition="NOT RECTO_USER_DIR AND RECTO_U_FOLDER" />
-  <Property Id="RECTO_U_PATH" Secure="yes"><RegistrySearch Id="RECTO_U_PATHSearch" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\recto.exe" Name="Path" Type="raw" /></Property>
-  <SetProperty Id="RECTO_USER_DIR" Action="RectoUFromPATH" Value="[RECTO_U_PATH]" After="RectoUFromFOLDER" Sequence="both" Condition="NOT RECTO_USER_DIR AND RECTO_U_PATH" />
-  <Property Id="RECTO_U_EXEFOLDER" Secure="yes"><RegistrySearch Id="RECTO_ULegacyFolder" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\recto.exe" Type="file" /></Property>
-  <Property Id="RECTO_U_EXE" Secure="yes"><RegistrySearch Id="RECTO_ULegacyExe" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\recto.exe" Type="file"><FileSearch Id="RECTO_ULegacyFile" Name="recto.exe" /></RegistrySearch></Property>
-  <SetProperty Id="RECTO_USER_DIR" Action="RectoUFromLegacyExe" Value="[RECTO_U_EXEFOLDER]" After="RectoUFromPATH" Sequence="both" Condition="NOT RECTO_USER_DIR AND RECTO_U_EXEFOLDER AND RECTO_U_EXE" />
-  <Property Id="RECTO_USER_DIR" Secure="yes" />
-  <Property Id="RECTO_M_DIR" Secure="yes"><RegistrySearch Id="RECTO_M_DIRSearch" Root="HKLM" Key="Software\recto" Name="InstallDir" Type="raw" /></Property>
-  <SetProperty Id="RECTO_MACHINE_DIR" Action="RectoMFromDIR" Value="[RECTO_M_DIR]" After="RectoUFromLegacyExe" Sequence="both" Condition="NOT RECTO_MACHINE_DIR AND RECTO_M_DIR" />
-  <Property Id="RECTO_M_FOLDER" Secure="yes"><RegistrySearch Id="RECTO_M_FOLDERSearch" Root="HKLM" Key="Software\recto" Name="InstallFolder" Type="raw" /></Property>
-  <SetProperty Id="RECTO_MACHINE_DIR" Action="RectoMFromFOLDER" Value="[RECTO_M_FOLDER]" After="RectoMFromDIR" Sequence="both" Condition="NOT RECTO_MACHINE_DIR AND RECTO_M_FOLDER" />
-  <Property Id="RECTO_M_PATH" Secure="yes"><RegistrySearch Id="RECTO_M_PATHSearch" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\recto.exe" Name="Path" Type="raw" /></Property>
-  <SetProperty Id="RECTO_MACHINE_DIR" Action="RectoMFromPATH" Value="[RECTO_M_PATH]" After="RectoMFromFOLDER" Sequence="both" Condition="NOT RECTO_MACHINE_DIR AND RECTO_M_PATH" />
-  <Property Id="RECTO_M_EXEFOLDER" Secure="yes"><RegistrySearch Id="RECTO_MLegacyFolder" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\recto.exe" Type="file" /></Property>
-  <Property Id="RECTO_M_EXE" Secure="yes"><RegistrySearch Id="RECTO_MLegacyExe" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\recto.exe" Type="file"><FileSearch Id="RECTO_MLegacyFile" Name="recto.exe" /></RegistrySearch></Property>
-  <SetProperty Id="RECTO_MACHINE_DIR" Action="RectoMFromLegacyExe" Value="[RECTO_M_EXEFOLDER]" After="RectoMFromPATH" Sequence="both" Condition="NOT RECTO_MACHINE_DIR AND RECTO_M_EXEFOLDER AND RECTO_M_EXE" />
-  <Property Id="RECTO_MACHINE_DIR" Secure="yes" />
-  <SetProperty Id="RECTO_SCOPE" Action="RectoPreferMachineScope" Value="machine" After="RectoMFromLegacyExe" Sequence="ui" Condition="ALLUSERS = 1 OR (RECTO_MACHINE_DIR AND NOT RECTO_USER_DIR)" />
-  <SetProperty Id="INSTALLFOLDER" Action="RectoRestoreUserFolder" Value="[RECTO_USER_DIR]" Before="CostInitialize" Sequence="both" Condition="NOT INSTALLFOLDER AND ALLUSERS &lt;&gt; 1 AND RECTO_USER_DIR" />
+  <Property Id="PAGIC_SCOPE" Value="user" Secure="yes" />
+  <Property Id="PAGIC_U_DIR" Secure="yes"><RegistrySearch Id="PAGIC_U_DIRSearch" Root="HKCU" Key="Software\pagic" Name="InstallDir" Type="raw" /></Property>
+  <SetProperty Id="PAGIC_USER_DIR" Action="PagicUFromDIR" Value="[PAGIC_U_DIR]" After="AppSearch" Sequence="both" Condition="NOT PAGIC_USER_DIR AND PAGIC_U_DIR" />
+  <Property Id="PAGIC_U_FOLDER" Secure="yes"><RegistrySearch Id="PAGIC_U_FOLDERSearch" Root="HKCU" Key="Software\pagic" Name="InstallFolder" Type="raw" /></Property>
+  <SetProperty Id="PAGIC_USER_DIR" Action="PagicUFromFOLDER" Value="[PAGIC_U_FOLDER]" After="PagicUFromDIR" Sequence="both" Condition="NOT PAGIC_USER_DIR AND PAGIC_U_FOLDER" />
+  <Property Id="PAGIC_U_PATH" Secure="yes"><RegistrySearch Id="PAGIC_U_PATHSearch" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pagic.exe" Name="Path" Type="raw" /></Property>
+  <SetProperty Id="PAGIC_USER_DIR" Action="PagicUFromPATH" Value="[PAGIC_U_PATH]" After="PagicUFromFOLDER" Sequence="both" Condition="NOT PAGIC_USER_DIR AND PAGIC_U_PATH" />
+  <Property Id="PAGIC_U_EXEFOLDER" Secure="yes"><RegistrySearch Id="PAGIC_ULegacyFolder" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pagic.exe" Type="file" /></Property>
+  <Property Id="PAGIC_U_EXE" Secure="yes"><RegistrySearch Id="PAGIC_ULegacyExe" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pagic.exe" Type="file"><FileSearch Id="PAGIC_ULegacyFile" Name="pagic.exe" /></RegistrySearch></Property>
+  <SetProperty Id="PAGIC_USER_DIR" Action="PagicUFromLegacyExe" Value="[PAGIC_U_EXEFOLDER]" After="PagicUFromPATH" Sequence="both" Condition="NOT PAGIC_USER_DIR AND PAGIC_U_EXEFOLDER AND PAGIC_U_EXE" />
+  <Property Id="PAGIC_USER_DIR" Secure="yes" />
+  <Property Id="PAGIC_M_DIR" Secure="yes"><RegistrySearch Id="PAGIC_M_DIRSearch" Root="HKLM" Key="Software\pagic" Name="InstallDir" Type="raw" /></Property>
+  <SetProperty Id="PAGIC_MACHINE_DIR" Action="PagicMFromDIR" Value="[PAGIC_M_DIR]" After="PagicUFromLegacyExe" Sequence="both" Condition="NOT PAGIC_MACHINE_DIR AND PAGIC_M_DIR" />
+  <Property Id="PAGIC_M_FOLDER" Secure="yes"><RegistrySearch Id="PAGIC_M_FOLDERSearch" Root="HKLM" Key="Software\pagic" Name="InstallFolder" Type="raw" /></Property>
+  <SetProperty Id="PAGIC_MACHINE_DIR" Action="PagicMFromFOLDER" Value="[PAGIC_M_FOLDER]" After="PagicMFromDIR" Sequence="both" Condition="NOT PAGIC_MACHINE_DIR AND PAGIC_M_FOLDER" />
+  <Property Id="PAGIC_M_PATH" Secure="yes"><RegistrySearch Id="PAGIC_M_PATHSearch" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pagic.exe" Name="Path" Type="raw" /></Property>
+  <SetProperty Id="PAGIC_MACHINE_DIR" Action="PagicMFromPATH" Value="[PAGIC_M_PATH]" After="PagicMFromFOLDER" Sequence="both" Condition="NOT PAGIC_MACHINE_DIR AND PAGIC_M_PATH" />
+  <Property Id="PAGIC_M_EXEFOLDER" Secure="yes"><RegistrySearch Id="PAGIC_MLegacyFolder" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pagic.exe" Type="file" /></Property>
+  <Property Id="PAGIC_M_EXE" Secure="yes"><RegistrySearch Id="PAGIC_MLegacyExe" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pagic.exe" Type="file"><FileSearch Id="PAGIC_MLegacyFile" Name="pagic.exe" /></RegistrySearch></Property>
+  <SetProperty Id="PAGIC_MACHINE_DIR" Action="PagicMFromLegacyExe" Value="[PAGIC_M_EXEFOLDER]" After="PagicMFromPATH" Sequence="both" Condition="NOT PAGIC_MACHINE_DIR AND PAGIC_M_EXEFOLDER AND PAGIC_M_EXE" />
+  <Property Id="PAGIC_MACHINE_DIR" Secure="yes" />
+  <SetProperty Id="PAGIC_SCOPE" Action="PagicPreferMachineScope" Value="machine" After="PagicMFromLegacyExe" Sequence="ui" Condition="ALLUSERS = 1 OR (PAGIC_MACHINE_DIR AND NOT PAGIC_USER_DIR)" />
+  <SetProperty Id="INSTALLFOLDER" Action="PagicRestoreUserFolder" Value="[PAGIC_USER_DIR]" Before="CostInitialize" Sequence="both" Condition="NOT INSTALLFOLDER AND ALLUSERS &lt;&gt; 1 AND PAGIC_USER_DIR" />
   <!-- The wizard can change the context after Windows Installer has already resolved Program Files for the first one.
        Give the new-install folder explicitly so Everyone never lands in the profile and Only for me never lands in Program Files. -->
   <?if $(sys.BUILDARCH) = x86 ?>
-  <SetProperty Id="INSTALLFOLDER" Action="RectoDefaultMachineFolder" Value="[%ProgramFiles(x86)]\Recto\" After="RectoRestoreUserFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1 AND VersionNT64" />
-  <SetProperty Id="INSTALLFOLDER" Action="RectoDefaultMachineFolder32" Value="[%ProgramFiles]\Recto\" After="RectoDefaultMachineFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1 AND NOT VersionNT64" />
-  <SetProperty Id="INSTALLFOLDER" Action="RectoDefaultUserFolder" Value="[LocalAppDataFolder]Programs\Recto\" After="RectoDefaultMachineFolder32" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS &lt;&gt; 1" />
+  <SetProperty Id="INSTALLFOLDER" Action="PagicDefaultMachineFolder" Value="[%ProgramFiles(x86)]\Pagic\" After="PagicRestoreUserFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1 AND VersionNT64" />
+  <SetProperty Id="INSTALLFOLDER" Action="PagicDefaultMachineFolder32" Value="[%ProgramFiles]\Pagic\" After="PagicDefaultMachineFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1 AND NOT VersionNT64" />
+  <SetProperty Id="INSTALLFOLDER" Action="PagicDefaultUserFolder" Value="[LocalAppDataFolder]Programs\Pagic\" After="PagicDefaultMachineFolder32" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS &lt;&gt; 1" />
   <?else?>
-  <SetProperty Id="INSTALLFOLDER" Action="RectoDefaultMachineFolder" Value="[%ProgramW6432]\Recto\" After="RectoRestoreUserFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1" />
-  <SetProperty Id="INSTALLFOLDER" Action="RectoDefaultUserFolder" Value="[LocalAppDataFolder]Programs\Recto\" After="RectoDefaultMachineFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS &lt;&gt; 1" />
+  <SetProperty Id="INSTALLFOLDER" Action="PagicDefaultMachineFolder" Value="[%ProgramW6432]\Pagic\" After="PagicRestoreUserFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1" />
+  <SetProperty Id="INSTALLFOLDER" Action="PagicDefaultUserFolder" Value="[LocalAppDataFolder]Programs\Pagic\" After="PagicDefaultMachineFolder" Sequence="ui" Condition="NOT INSTALLFOLDER AND ALLUSERS &lt;&gt; 1" />
   <?endif?>
-  <SetProperty Id="INSTALLFOLDER" Action="RectoRestoreMachineFolder" Value="[RECTO_MACHINE_DIR]" Before="RectoRestoreUserFolder" Sequence="both" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1 AND RECTO_MACHINE_DIR" />
-  <Launch Condition="Installed OR ALLUSERS &lt;&gt; 1 OR NOT RECTO_USER_DIR" Message="This app is already installed for your account. Choose Only for me to update it, or uninstall that copy before changing who it is installed for." />
-  <Launch Condition="Installed OR ALLUSERS = 1 OR NOT RECTO_MACHINE_DIR" Message="This app is already installed for everyone. Choose Everyone to update it, or pass ALLUSERS=1 to msiexec. Uninstall that copy before changing who it is installed for." />
+  <SetProperty Id="INSTALLFOLDER" Action="PagicRestoreMachineFolder" Value="[PAGIC_MACHINE_DIR]" Before="PagicRestoreUserFolder" Sequence="both" Condition="NOT INSTALLFOLDER AND ALLUSERS = 1 AND PAGIC_MACHINE_DIR" />
+  <Launch Condition="Installed OR ALLUSERS &lt;&gt; 1 OR NOT PAGIC_USER_DIR" Message="This app is already installed for your account. Choose Only for me to update it, or uninstall that copy before changing who it is installed for." />
+  <Launch Condition="Installed OR ALLUSERS = 1 OR NOT PAGIC_MACHINE_DIR" Message="This app is already installed for everyone. Choose Everyone to update it, or pass ALLUSERS=1 to msiexec. Uninstall that copy before changing who it is installed for." />
   <UI>
-    <TextStyle Id="RectoScopeText" FaceName="Segoe UI" Size="9" />
-    <TextStyle Id="RectoScopeTitle" FaceName="Segoe UI" Size="12" Bold="yes" />
-    <Dialog Id="RectoScopeDlg" Width="370" Height="220" Title="[ProductName] Setup" NoMinimize="yes">
-      <Control Id="Title" Type="Text" X="20" Y="15" Width="330" Height="30" Text="{\RectoScopeTitle}Who should use [ProductName]?" />
-      <Control Id="Info" Type="Text" X="20" Y="50" Width="330" Height="30" Text="{\RectoScopeText}An update keeps the existing folder. New copies use the Recto folder under Programs." />
-      <Control Id="Scope" Type="RadioButtonGroup" X="20" Y="88" Width="330" Height="60" Property="RECTO_SCOPE">
-        <RadioButtonGroup Property="RECTO_SCOPE">
+    <TextStyle Id="PagicScopeText" FaceName="Segoe UI" Size="9" />
+    <TextStyle Id="PagicScopeTitle" FaceName="Segoe UI" Size="12" Bold="yes" />
+    <Dialog Id="PagicScopeDlg" Width="370" Height="220" Title="[ProductName] Setup" NoMinimize="yes">
+      <Control Id="Title" Type="Text" X="20" Y="15" Width="330" Height="30" Text="{\PagicScopeTitle}Who should use [ProductName]?" />
+      <Control Id="Info" Type="Text" X="20" Y="50" Width="330" Height="30" Text="{\PagicScopeText}An update keeps the existing folder. New copies use the Pagic folder under Programs." />
+      <Control Id="Scope" Type="RadioButtonGroup" X="20" Y="88" Width="330" Height="60" Property="PAGIC_SCOPE">
+        <RadioButtonGroup Property="PAGIC_SCOPE">
           <RadioButton Value="user" X="0" Y="0" Width="330" Height="20" Text="Only for me (no administrator permission needed)" />
           <RadioButton Value="machine" X="0" Y="30" Width="330" Height="20" Text="Everyone on this computer (asks an administrator)" />
         </RadioButtonGroup>
       </Control>
       <Control Id="Next" Type="PushButton" X="214" Y="182" Width="66" Height="20" Default="yes" Text="Next">
-        <Publish Property="ALLUSERS" Value="1" Order="1" Condition="RECTO_SCOPE = &quot;machine&quot;" />
-        <Publish Property="ALLUSERS" Value="{}" Order="2" Condition="RECTO_SCOPE = &quot;user&quot;" />
-        <Publish Property="MSIINSTALLPERUSER" Value="{}" Order="3" Condition="RECTO_SCOPE = &quot;machine&quot;" />
-        <Publish Property="MSIINSTALLPERUSER" Value="1" Order="4" Condition="RECTO_SCOPE = &quot;user&quot;" />
+        <Publish Property="ALLUSERS" Value="1" Order="1" Condition="PAGIC_SCOPE = &quot;machine&quot;" />
+        <Publish Property="ALLUSERS" Value="{}" Order="2" Condition="PAGIC_SCOPE = &quot;user&quot;" />
+        <Publish Property="MSIINSTALLPERUSER" Value="{}" Order="3" Condition="PAGIC_SCOPE = &quot;machine&quot;" />
+        <Publish Property="MSIINSTALLPERUSER" Value="1" Order="4" Condition="PAGIC_SCOPE = &quot;user&quot;" />
         <Publish Event="EndDialog" Value="Return" Order="5" />
       </Control>
       <Control Id="Cancel" Type="PushButton" X="290" Y="182" Width="60" Height="20" Cancel="yes" Text="Cancel"><Publish Event="EndDialog" Value="Exit" /></Control>
     </Dialog>
   </UI>
   <InstallUISequence>
-    <Show Dialog="RectoScopeDlg" After="RectoPreferMachineScope" Condition="NOT Installed AND NOT REMOVE AND UILevel = 5" />
+    <Show Dialog="PagicScopeDlg" After="PagicPreferMachineScope" Condition="NOT Installed AND NOT REMOVE AND UILevel = 5" />
     <!-- Related-product discovery runs once, so full UI must choose its context first. -->
-    <FindRelatedProducts After="RectoScopeDlg" />
+    <FindRelatedProducts After="PagicScopeDlg" />
   </InstallUISequence>
 </Include>

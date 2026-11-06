@@ -1,16 +1,14 @@
-# Recto app icon
+# Pagic application artwork
 
-Original white geometric lowercase `r.` on black, drawn entirely with paths; no fonts or
-upstream brand artwork. Licensed under MIT OR Apache-2.0 (LICENSE-recto.txt).
-Historical licence notices are retained separately and do not describe the current artwork.
+The approved Pagic master inputs, generated platform resources and validation instructions
+are documented in [PAGIC-INTEGRATION.md](PAGIC-INTEGRATION.md).
+See [PAGIC-PROVENANCE.md](PAGIC-PROVENANCE.md) for source hashes and outstanding rights details.
 
-- `recto.svg`: master; `recto-small.svg`: compact copy.
-- `recto-1024.png` and `recto.icns`: macOS runtime and bundle icons.
-- `recto.ico`: Windows application icon.
-- `recto-document.svg` and `recto-document.ico`: Windows PDF document icon.
-- `hicolor/*/apps/local.recto.desktop.*`: Linux/FreeBSD theme icons.
+The 16 unused Recto application/document images were removed from the current tree after
+the Stage 3 reference audit. Their original bytes and provenance remain in Git history.
+`LICENSE-recto.txt` is retained unchanged as historical attribution for that former artwork;
+it does not license or describe the new Pagic logo. The historical Recto trademark guidance
+under `docs/brand/` also remains intact.
 
-The existing icon design and generated resource bytes are preserved.
-`packaging/icons.sh` generates the PNG, ICO and ICNS files when artwork changes.
-Update affected hashes in `ATTRIBUTION.toml`, then run `cargo xtask assets --write`
-and `cargo xtask assets` after any future regeneration.
+Lucide UI icons, font binaries/OFL notices, vendored resources and historical PDF fixtures
+are independent of application branding and are unchanged.

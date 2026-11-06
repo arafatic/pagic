@@ -3,8 +3,8 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Weak};
 
-use recto_engine::DocId;
-use recto_render::{PageText, TextGlyph};
+use pagic_engine::DocId;
+use pagic_render::{PageText, TextGlyph};
 
 const BYTE_BUDGET: usize = 64 * 1024 * 1024;
 // Also bound bookkeeping for documents with thousands of empty pages.

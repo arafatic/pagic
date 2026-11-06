@@ -1,7 +1,7 @@
 use super::tools::row_label;
 use super::{
-    Align2, Availability, Color32, CornerRadius, LeftPanel, RectoApp, Rect, Sense, Stroke, Tokens, ToolGroup, ToolItem, catalog, icons, theme,
-    vec2, widgets,
+    Align2, Availability, Color32, CornerRadius, LeftPanel, PagicApp, Rect, Sense, Stroke, Tokens, ToolGroup, ToolItem, catalog, icons, theme, vec2,
+    widgets,
 };
 
 /// The page operations Edit shows as a row of icon buttons, as Acrobat's Edit panel does.
@@ -18,7 +18,7 @@ const EDIT_OTHER_TOOLS: [&str; 3] = ["combine", "redact", "form"];
 /// Add content with the rarer items under More; and Other options, the neighbouring tools.
 /// Edit text & images itself is on the floating toolbar, and on from the moment Edit opens.
 /// Every item comes from the catalogue, so its label, icon and availability have one source.
-pub(super) fn edit_panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens, g: &'static ToolGroup) {
+pub(super) fn edit_panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, g: &'static ToolGroup) {
     let items = || g.sections.iter().flat_map(|s| s.items.iter());
     let item = |command: &str| items().find(|i| i.command == command);
     let mut run = None;
@@ -35,7 +35,8 @@ pub(super) fn edit_panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens, g: &
         let title_width = (ui.available_width() - 2.0 * (26.0 + ui.spacing().item_spacing.x)).max(1.0);
         ui.add_sized([title_width, 26.0], egui::Label::new(egui::RichText::new(title).font(theme::semibold(15.5)).color(t.text)).truncate())
             .on_hover_text(title);
-        if icons::button(ui, "settings", 26.0, false, tl!("Preferences")).clicked() {
+        let settings = if cfg!(target_os = "macos") { tl!("Settings…") } else { tl!("Preferences") };
+        if icons::button(ui, "settings", 26.0, false, settings).clicked() {
             run = Some("app.preferences");
         }
         if icons::button(ui, "x", 26.0, false, tl!("Close panel")).clicked() {
@@ -45,7 +46,33 @@ pub(super) fn edit_panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens, g: &
     ui.add_space(4.0);
     ui.separator();
     ui.add_space(6.0);
-    // Several objects selected: how many, and how to move them. Acrobat's panel has no idle hint.
+    let mut editing = app.quick_tool == crate::QuickTool::EditText;
+    let may_edit = app.active_ids().and_then(|(_, id)| app.session.get(id)).is_some_and(|doc| doc.allows_modification());
+    if ui.add_enabled(may_edit, egui::Checkbox::new(&mut editing, tl!("Edit text & images active"))).changed() {
+        if editing {
+            app.execute("edit.edit_text");
+        } else {
+            app.put_down_edit_text();
+        }
+    }
+    if !may_edit && app.active.is_some() {
+        ui.label(tl!("The document's security settings don't allow this change"));
+    }
+    if editing {
+        ui.label(tl!("Click text to edit · Drag images to move"));
+        if may_edit
+            && let Some((i, id)) = app.active_ids()
+            && let Some(doc) = app.session.get(id)
+            && app.views[i]
+                .edit_lines
+                .get(&app.views[i].current)
+                .is_some_and(|(generation, lines)| *generation == doc.edit_generation() && lines.is_empty())
+        {
+            ui.label(tl!("The editor could not identify editable text on this page. Text may use unsupported mappings or structures, outlines, or a scan. Try Scan & OCR or Add text."));
+        }
+        ui.add_space(6.0);
+    }
+    // Several objects selected: how many, and how to move them.
     let count = app.active_ids().filter(|_| app.quick_tool == crate::QuickTool::EditText).map_or(0, |(i, _)| app.views[i].objects.count());
     if count > 0 {
         ui.label(crate::i18n::trn(crate::i18n::current(), count as u64, "{n} object selected", "{n} objects selected"));
@@ -60,7 +87,7 @@ pub(super) fn edit_panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens, g: &
             ui.spacing_mut().item_spacing.x = 6.0;
             for i in EDIT_PAGE_BUTTONS.iter().filter_map(|c| item(c)) {
                 // Enabled as the command itself is: a document that forbids page assembly refuses these.
-                let enabled = recto_engine::commands::command(i.command).is_some_and(|spec| app.command_enabled(spec));
+                let enabled = pagic_engine::commands::command(i.command).is_some_and(|spec| app.command_enabled(spec));
                 let resp = ui.add_enabled_ui(enabled, |ui| icons::button(ui, i.icon, 34.0, false, tl!(i.label))).inner;
                 if resp.clicked() {
                     run = Some(i.command);
@@ -130,7 +157,7 @@ pub(super) fn edit_panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens, g: &
 /// A tool entry with further commands (Add / Update / Remove): a caret at `caret` says it opens a
 /// menu, and each command is enabled by its own needs. Returns the command chosen.
 pub(super) fn actions_menu(
-    app: &RectoApp,
+    app: &PagicApp,
     ui: &egui::Ui,
     resp: &egui::Response,
     item: &ToolItem,
@@ -146,7 +173,7 @@ pub(super) fn actions_menu(
     egui::Popup::menu(resp).show(|ui| {
         ui.set_min_width(180.0);
         for (n, id) in item.actions.iter().enumerate() {
-            let Some(spec) = recto_engine::commands::command(id) else { continue };
+            let Some(spec) = pagic_engine::commands::command(id) else { continue };
             // Add stays usable with no document open: it asks for a file first.
             let enabled = (n == 0 && app.active.is_none()) || app.command_enabled(spec);
             let label = crate::i18n::menu_label(spec.id, spec.label);
@@ -181,8 +208,8 @@ fn edit_row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability
 
 /// Add a stamp: Dynamic, Sign Here and Standard Business stamps; click one, then click on the
 /// page to place it.
-pub(super) fn stamp_palette(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
-    use recto_engine::{StampGroup, StampKind};
+pub(super) fn stamp_palette(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
+    use pagic_engine::{StampGroup, StampKind};
     ui.label(egui::RichText::new(tl!("Choose a stamp, then click on the page to place it.")).small().color(t.text_faint));
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         for (group, title) in [
@@ -251,7 +278,7 @@ pub(super) fn stamp_palette(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
 
 /// Edit a PDF ▸ Format text: for the selected added text (one undoable change), or the style
 /// new text gets.
-fn format_section(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
+fn format_section(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
     // Editing a paragraph of existing text: its formatting, applied as it changes.
     if let Some((i, _)) = app.active_ids()
         && let Some(ed) = app.views[i].line_editor.clone()
@@ -298,14 +325,14 @@ fn format_section(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
         let (page, index) = app.views[i].content.selected?;
         let doc = app.session.get(id)?;
         match &doc.added().iter().filter(|a| a.page == page).nth(index)?.content {
-            recto_engine::AddedContent::Image(img) => Some((page, index, img.clone())),
+            pagic_engine::AddedContent::Image(img) => Some((page, index, img.clone())),
             _ => None,
         }
     });
     if let Some((page, index, img)) = image {
         match crate::content_ui::image_panel(ui, t, &img) {
             Some(crate::content_ui::ImageAction::Update(content)) => {
-                app.apply_edit(recto_engine::Edit::UpdateContent { page, index, content });
+                app.apply_edit(pagic_engine::Edit::UpdateContent { page, index, content });
             }
             Some(crate::content_ui::ImageAction::Replace) => app.replace_image_dialog(page, index),
             None => {}
@@ -319,7 +346,7 @@ fn format_section(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
         let doc = app.session.get(id)?;
         let a = doc.added().iter().filter(|a| a.page == page).nth(index)?;
         match &a.content {
-            recto_engine::AddedContent::Text(text) => Some((page, index, text.clone())),
+            pagic_engine::AddedContent::Text(text) => Some((page, index, text.clone())),
             _ => None,
         }
     });
@@ -329,8 +356,8 @@ fn format_section(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
             added_text_format(ui, t, &mut style);
             if style != text {
                 // The reusable style follows the selection only when the edit took, so a refused one adds nothing odd later.
-                if app.apply_edit(recto_engine::Edit::UpdateContent { page, index, content: recto_engine::AddedContent::Text(style.clone()) }) {
-                    app.text_style = recto_engine::AddedText { text: String::new(), rect: [0.0; 4], ..style };
+                if app.apply_edit(pagic_engine::Edit::UpdateContent { page, index, content: pagic_engine::AddedContent::Text(style.clone()) }) {
+                    app.text_style = pagic_engine::AddedText { text: String::new(), rect: [0.0; 4], ..style };
                 }
             }
         }
@@ -345,7 +372,7 @@ fn format_section(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
 }
 
 /// Format text for added text: the standard families, size, colour, style and alignment.
-fn added_text_format(ui: &mut egui::Ui, t: &Tokens, style: &mut recto_engine::AddedText) {
+fn added_text_format(ui: &mut egui::Ui, t: &Tokens, style: &mut pagic_engine::AddedText) {
     let shown = style.family.label().to_string();
     let out = crate::format_text_ui::panel(ui, t, style, None, crate::format_text_ui::Fonts { sources: None, shown });
     if let Some(crate::format_text_ui::FontChoice::Family(family)) = out.font {
@@ -353,10 +380,10 @@ fn added_text_format(ui: &mut egui::Ui, t: &Tokens, style: &mut recto_engine::Ad
     }
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Apply the open paragraph's formatting as one change; the paragraph stays open.
     pub(crate) fn apply_line_format(&mut self, index: usize, mut ed: crate::edit_text_ui::LineEditor, ctx: Option<&egui::Context>) {
-        let edit = recto_engine::Edit::EditTextBlock { page: ed.page, block: ed.block, text: ed.text.clone(), style: ed.style() };
+        let edit = pagic_engine::Edit::EditTextBlock { page: ed.page, block: ed.block, text: ed.text.clone(), style: ed.style() };
         if self.apply_edit(edit) {
             ed.applied();
             if let Some(doc) = self.session.get(self.views[index].id)

@@ -80,3 +80,5 @@ mod updates;
 mod view;
 mod viewer;
 mod xfa;
+
+mod identity_foundation;

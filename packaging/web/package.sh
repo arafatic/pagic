@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
-# Build the browser version and zip it:  $DIST/recto-web-<version>.zip
+# Build the browser version and zip it:  $DIST/pagic-web-<version>.zip
 #
 # Usage: packaging/web/package.sh [--skip-build]
 #
 # Needs: trunk (brew install trunk / cargo install trunk --locked) and the wasm32-unknown-unknown
-# target. The zip holds a self-contained static site in recto-web-<version>/ that works
+# target. The zip holds a self-contained static site in pagic-web-<version>/ that works
 # from any URL path and inside an <iframe>. Hosting notes: packaging/web/README.md.
 set -euo pipefail
 # shellcheck source=../env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/../env.sh"
+python3 "$ROOT/packaging/check-identity.py" --require-release-ready
 HERE="$ROOT/packaging/web"
 
 if [[ "${1:-}" != "--skip-build" ]]; then
   command -v trunk >/dev/null || { echo "error: trunk not found (cargo install trunk --locked)" >&2; exit 1; }
-  (cd "$ROOT/apps/recto-web" && trunk build --release)
+  (cd "$ROOT/apps/pagic-web" && trunk build --release)
 fi
 
 SITE="$ROOT/dist/web"
@@ -24,7 +25,7 @@ if grep -Eq '(src|href)="/[^/]' "$SITE/index.html"; then
   exit 1
 fi
 
-NAME="recto-web-$VERSION"
+NAME="pagic-web-$VERSION"
 WORK="$CARGO_TARGET_DIR/web-package"
 rm -rf "$WORK"
 mkdir -p "$WORK/$NAME"

@@ -1,4 +1,4 @@
-use recto_cos::{Dict, Document, Object, Stream};
+use pagic_cos::{Dict, Document, Object, Stream};
 
 use super::*;
 
@@ -106,7 +106,7 @@ fn font(doc: &mut Document, entries: Vec<(&str, Object)>) -> Dict {
 
 #[test]
 fn embedded_editor_fonts_are_validated_without_installing_or_exporting() {
-    use recto_cos::Stream;
+    use pagic_cos::Stream;
     let mut doc = Document::new_empty();
     let bytes = include_bytes!("../../../../assets/fonts/Inter-Regular.ttf");
     let program = doc.add(Object::Stream(Stream::flate(Dict::new(), bytes)));
@@ -127,7 +127,7 @@ fn embedded_editor_fonts_are_validated_without_installing_or_exporting() {
 /// ("Mono" would mean Courier, 600 units for every glyph).
 #[test]
 fn a_font_without_widths_measures_with_its_embedded_program() {
-    use recto_cos::Stream;
+    use pagic_cos::Stream;
     use skrifa::MetadataProvider as _;
     let mut doc = Document::new_empty();
     let bytes = include_bytes!("../../../../assets/fonts/Inter-Regular.ttf");

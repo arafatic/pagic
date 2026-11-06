@@ -5,7 +5,7 @@ use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use serde_json::{Value, json};
 
-use crate::{RectoApp, control::ControlClient, open_worker};
+use crate::{PagicApp, control::ControlClient, open_worker};
 
 fn fixture(pages: usize) -> Vec<u8> {
     let mut objects = vec!["<< /Type /Catalog /Pages 2 0 R >>".to_string()];
@@ -33,11 +33,11 @@ fn fixture(pages: usize) -> Vec<u8> {
 }
 
 #[allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
-fn harness() -> (Harness<'static, RectoApp>, ControlClient) {
+fn harness() -> (Harness<'static, PagicApp>, ControlClient) {
     let slot: Arc<Mutex<Option<ControlClient>>> = Arc::default();
     let saved = slot.clone();
     let mut harness = Harness::builder().with_size(egui::vec2(1000.0, 700.0)).build_eframe(move |creation| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").expect("language preference");
         *saved.lock().expect("control-client slot") = Some(app.attach_control(&creation.egui_ctx));
         app.open_bytes("existing.pdf", None, fixture(3)).expect("existing document");
@@ -48,7 +48,7 @@ fn harness() -> (Harness<'static, RectoApp>, ControlClient) {
 }
 
 #[allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
-fn request(harness: &mut Harness<'static, RectoApp>, client: &ControlClient, method: &str, params: Value) -> Value {
+fn request(harness: &mut Harness<'static, PagicApp>, client: &ControlClient, method: &str, params: Value) -> Value {
     let reply = client.send(method, params);
     for _ in 0..5 {
         harness.step();
@@ -66,7 +66,7 @@ fn open_prepare_keeps_control_and_existing_tabs_live_until_atomic_commit() {
     let (gate, started, release, finished) = open_worker::prepare_gate();
     harness.state_mut().open_prepare_gate = Some(gate);
 
-    let path = std::env::temp_dir().join(format!("recto-open-worker-{}.pdf", std::process::id()));
+    let path = std::env::temp_dir().join(format!("pagic-open-worker-{}.pdf", std::process::id()));
     std::fs::write(&path, fixture(2)).expect("write test PDF");
     let open_reply = request(&mut harness, &client, "ui.open", json!({ "path": path.to_string_lossy() }));
     assert_eq!(open_reply["pending"], true);
@@ -100,12 +100,12 @@ impl Drop for ToolOpenFile {
 
 #[allow(clippy::expect_used)]
 fn tool_open_file(case: &str, extension: &str, bytes: &[u8]) -> ToolOpenFile {
-    let path = std::env::temp_dir().join(format!("recto-open-tool-{}-{case}.{extension}", std::process::id()));
+    let path = std::env::temp_dir().join(format!("pagic-open-tool-{}-{case}.{extension}", std::process::id()));
     std::fs::write(&path, bytes).expect("write the synthetic tool input");
     ToolOpenFile(path)
 }
 
-fn tool_open_harness() -> Harness<'static, RectoApp> {
+fn tool_open_harness() -> Harness<'static, PagicApp> {
     let (mut harness, _) = harness();
     harness.state_mut().close_tab(0);
     harness.run_steps(2);
@@ -119,7 +119,7 @@ struct HeldToolOpen {
 }
 
 impl HeldToolOpen {
-    fn install(harness: &mut Harness<'static, RectoApp>) -> Self {
+    fn install(harness: &mut Harness<'static, PagicApp>) -> Self {
         let (gate, started, release, finished) = open_worker::prepare_gate();
         harness.state_mut().open_prepare_gate = Some(gate);
         Self { started, release, finished }
@@ -131,14 +131,14 @@ impl HeldToolOpen {
     }
 
     #[allow(clippy::expect_used)]
-    fn complete(&self, harness: &mut Harness<'static, RectoApp>) {
+    fn complete(&self, harness: &mut Harness<'static, PagicApp>) {
         self.release.send(()).expect("release the native preparation");
         self.finished.recv_timeout(Duration::from_secs(5)).expect("the native open returned its result");
         harness.run_steps(2);
     }
 }
 
-fn choose_export_tool(harness: &mut Harness<'static, RectoApp>, file: &ToolOpenFile) {
+fn choose_export_tool(harness: &mut Harness<'static, PagicApp>, file: &ToolOpenFile) {
     harness.state_mut().pick_override = Some(vec![file.0.to_string_lossy().into_owned()]);
     harness.state_mut().run_command("export.text");
     harness.run_steps(2);
@@ -172,8 +172,8 @@ fn chosen_tool_runs_after_preparation(extension: &str, bytes: Vec<u8>) {
     } else {
         assert!(chosen.dirty && chosen.path.is_none(), "conversion produces a new unsaved PDF");
         assert_eq!(chosen.info.pages.len(), 1);
-        let mut renderer = recto_render::PageRenderer::new(chosen.bytes.clone(), Default::default());
-        let output = renderer.render(recto_render::RenderRequest { page: 0, kind: recto_render::RequestKind::Text, ..Default::default() });
+        let mut renderer = pagic_render::PageRenderer::new(chosen.bytes.clone(), Default::default());
+        let output = renderer.render(pagic_render::RenderRequest { page: 0, kind: pagic_render::RequestKind::Text, ..Default::default() });
         let text = output.text.expect("read the converted text").plain_text();
         assert_eq!(text.split_whitespace().collect::<Vec<_>>().join(" "), std::str::from_utf8(&bytes).expect("synthetic input is UTF-8"));
     }
@@ -193,10 +193,10 @@ fn a_chosen_tool_runs_on_converted_text_only_after_native_preparation_commits() 
 
 #[allow(clippy::expect_used)]
 fn encrypted_tool_fixture() -> Vec<u8> {
-    let mut session = recto_engine::Session::new();
+    let mut session = pagic_engine::Session::new();
     let id = session.open("secret.pdf", None, Arc::new(fixture(2)), None).expect("open the synthetic PDF");
     session
-        .apply(id, recto_engine::Edit::Protect(recto_engine::Protection { open_password: Some("tool-password".into()), ..Default::default() }))
+        .apply(id, pagic_engine::Edit::Protect(pagic_engine::Protection { open_password: Some("tool-password".into()), ..Default::default() }))
         .expect("encrypt the synthetic PDF");
     session.save_bytes(id).expect("write the encrypted synthetic PDF").as_ref().clone()
 }
@@ -354,7 +354,7 @@ fn assert_tool_runs_after_background_open(extension: &str, bytes: Vec<u8>, pages
     harness.state_mut().close_tab(0);
     let (gate, started, release, finished) = open_worker::prepare_gate();
     harness.state_mut().open_prepare_gate = Some(gate);
-    let path = std::env::temp_dir().join(format!("recto-tool-worker-{}.{extension}", std::process::id()));
+    let path = std::env::temp_dir().join(format!("pagic-tool-worker-{}.{extension}", std::process::id()));
     std::fs::write(&path, &bytes).expect("write picked document");
     harness.state_mut().pick_override = Some(vec![path.to_string_lossy().into_owned()]);
     harness.state_mut().run_command("export.text");
@@ -392,7 +392,7 @@ fn a_startup_document_waits_for_an_active_document_to_prepare() {
     harness.state_mut().close_tab(0);
     let (gate, started, release, finished) = open_worker::prepare_gate();
     harness.state_mut().open_prepare_gate = Some(gate);
-    let path = std::env::temp_dir().join(format!("recto-startup-worker-{}.pdf", std::process::id()));
+    let path = std::env::temp_dir().join(format!("pagic-startup-worker-{}.pdf", std::process::id()));
     std::fs::write(&path, fixture(2)).expect("write chosen document");
     harness.state_mut().open_path(&path.to_string_lossy());
     started.recv_timeout(Duration::from_secs(5)).expect("chosen document reached preparation");
@@ -578,7 +578,7 @@ struct PickerFiles<'a> {
     original_c: &'a [u8],
 }
 
-fn assert_picker_keeps_a_visible(harness: &mut Harness<'static, RectoApp>, files: &PickerFiles<'_>) -> recto_engine::DocId {
+fn assert_picker_keeps_a_visible(harness: &mut Harness<'static, PagicApp>, files: &PickerFiles<'_>) -> pagic_engine::DocId {
     // Poll admission separately from consuming the picker callback: this reproduces
     // the same ordering as a UI frame, with both worker replies already available.
     harness.state_mut().poll_pending_opens();
@@ -601,12 +601,7 @@ fn assert_picker_keeps_a_visible(harness: &mut Harness<'static, RectoApp>, files
     a_id
 }
 
-fn assert_picker_completion_releases_b(
-    harness: &mut Harness<'static, RectoApp>,
-    a_id: recto_engine::DocId,
-    cancel: bool,
-    files: &PickerFiles<'_>,
-) {
+fn assert_picker_completion_releases_b(harness: &mut Harness<'static, PagicApp>, a_id: pagic_engine::DocId, cancel: bool, files: &PickerFiles<'_>) {
     // Consume the actual native-picker callback (or its empty-path cancellation).
     harness.state_mut().process_picked();
     assert_document_a_after_picker(harness, a_id, cancel);
@@ -631,7 +626,7 @@ fn assert_picker_completion_releases_b(
     assert_picker_files_unchanged(files);
 }
 
-fn assert_document_a_after_picker(harness: &Harness<'static, RectoApp>, a_id: recto_engine::DocId, cancel: bool) {
+fn assert_document_a_after_picker(harness: &Harness<'static, PagicApp>, a_id: pagic_engine::DocId, cancel: bool) {
     let expected_pages = if cancel { 2 } else { 3 };
     let doc = harness.state().session.get(a_id);
     assert!(doc.is_some(), "A after picker completion");
@@ -643,7 +638,7 @@ fn assert_document_a_after_picker(harness: &Harness<'static, RectoApp>, a_id: re
     }
 }
 
-fn assert_document_b_after_picker(harness: &Harness<'static, RectoApp>, active: usize, files: &PickerFiles<'_>) {
+fn assert_document_b_after_picker(harness: &Harness<'static, PagicApp>, active: usize, files: &PickerFiles<'_>) {
     let doc = harness.state().session.get(harness.state().views[active].id);
     assert!(doc.is_some(), "ordinary B document");
     if let Some(doc) = doc {
@@ -653,7 +648,7 @@ fn assert_document_b_after_picker(harness: &Harness<'static, RectoApp>, active: 
     }
 }
 
-fn assert_a_saved_source(harness: &Harness<'static, RectoApp>, a_id: recto_engine::DocId, original: &[u8]) {
+fn assert_a_saved_source(harness: &Harness<'static, PagicApp>, a_id: pagic_engine::DocId, original: &[u8]) {
     let doc = harness.state().session.get(a_id);
     assert!(doc.is_some(), "A retains exactly one insertion or cancellation");
     if let Some(doc) = doc {
@@ -677,9 +672,9 @@ fn inline_tool_open_keeps_its_command_for_pdf_conversion_and_password_retry() {
     for (name, bytes, encrypted) in
         [("plain.pdf", fixture(1), false), ("converted.txt", b"Text to export".to_vec(), false), ("locked.pdf", encrypted_tool_fixture(), true)]
     {
-        let path = std::env::temp_dir().join(format!("recto-inline-tool-{}-{name}", std::process::id()));
+        let path = std::env::temp_dir().join(format!("pagic-inline-tool-{}-{name}", std::process::id()));
         std::fs::write(&path, bytes).expect("write selected file");
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").expect("language preference");
         assert!(app.ctx.is_none(), "this exercises the no-context inline path");
         app.open_path_then(&path.to_string_lossy(), Some("export.text"));
@@ -703,9 +698,9 @@ fn inline_tool_open_keeps_its_command_for_pdf_conversion_and_password_retry() {
 fn startup_files_wait_for_absolute_link_consent_and_preparation() {
     let (mut h, _) = harness();
     let source = h.state().views[0].id;
-    let path = std::env::temp_dir().join(format!("recto-open-consented-startup-{}.pdf", std::process::id()));
+    let path = std::env::temp_dir().join(format!("pagic-open-consented-startup-{}.pdf", std::process::id()));
     std::fs::write(&path, fixture(2)).expect("write linked PDF");
-    h.state_mut().open_remote_link(source, path.to_string_lossy().into_owned(), recto_render::RemoteDestination::Default);
+    h.state_mut().open_remote_link(source, path.to_string_lossy().into_owned(), pagic_render::RemoteDestination::Default);
     h.state().startup_inbox.lock().expect("startup queue").push(("startup.pdf".into(), fixture(1)));
     h.step();
     assert!(h.state().pending_remote_link.is_some());
@@ -741,7 +736,7 @@ fn a_new_file_from_the_os_brings_the_window_forward_before_it_is_prepared() {
     let (mut harness, _client) = harness();
     let (gate, started, release, finished) = open_worker::prepare_gate();
     harness.state_mut().open_prepare_gate = Some(gate);
-    let path = std::env::temp_dir().join(format!("recto-os-open-worker-{}.pdf", std::process::id()));
+    let path = std::env::temp_dir().join(format!("pagic-os-open-worker-{}.pdf", std::process::id()));
     std::fs::write(&path, fixture(2)).expect("write the handed-over PDF");
     let mut queue = vec![crate::OsEvent::Open(vec![path.to_string_lossy().into_owned()])];
     harness.state_mut().os_events = Some(Box::new(move || std::mem::take(&mut queue)));

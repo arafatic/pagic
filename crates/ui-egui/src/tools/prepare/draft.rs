@@ -2,7 +2,7 @@ use super::{Calculate, FieldLook, FieldProps, FormField, FormFieldKind, Format, 
 
 // ───────────────────────────────────────────────────────────────────────── Field Properties
 
-impl crate::RectoApp {
+impl crate::PagicApp {
     /// Open Field Properties for a field of the active document.
     pub fn open_field_props(&mut self, name: &str, widget: usize) {
         let Some((index, id)) = self.active_ids() else { return };
@@ -69,7 +69,7 @@ pub const ACTION_KINDS: [&str; 8] = [
 /// Actions tab: the action being added.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ActionDraft {
-    pub trigger: recto_engine::FieldTrigger,
+    pub trigger: pagic_engine::FieldTrigger,
     pub kind: usize,
     /// The script, URL, field names (comma-separated), menu item or page number.
     pub text: String,
@@ -77,13 +77,13 @@ pub struct ActionDraft {
 
 impl Default for ActionDraft {
     fn default() -> Self {
-        ActionDraft { trigger: recto_engine::FieldTrigger::MouseUp, kind: 0, text: String::new() }
+        ActionDraft { trigger: pagic_engine::FieldTrigger::MouseUp, kind: 0, text: String::new() }
     }
 }
 
 impl ActionDraft {
-    pub fn action(&self) -> Result<recto_engine::FieldAction, String> {
-        use recto_engine::FieldAction as A;
+    pub fn action(&self) -> Result<pagic_engine::FieldAction, String> {
+        use pagic_engine::FieldAction as A;
         let t = self.text.trim();
         let names = || t.split(',').map(str::trim).filter(|s| !s.is_empty()).map(str::to_string).collect::<Vec<_>>();
         Ok(match self.kind {
@@ -136,20 +136,20 @@ pub struct FieldDraft {
     pub rotation: i64,
     pub look: Option<FieldLook>,
     /// Check boxes and radio buttons: the mark when on (Options tab).
-    pub check_style: Option<recto_engine::CheckStyle>,
+    pub check_style: Option<pagic_engine::CheckStyle>,
     pub format: Format,
     pub validate: Validate,
     pub calculate: Calculate,
     /// Every other field's name (the Calculate tab picks from them).
     pub others: Vec<String>,
     /// Actions tab: each trigger's action, and the one being added.
-    pub actions: Vec<(recto_engine::FieldTrigger, recto_engine::FieldAction)>,
+    pub actions: Vec<(pagic_engine::FieldTrigger, pagic_engine::FieldAction)>,
     pub new_action: ActionDraft,
     /// Actions tab: the trigger whose script `new_action` is editing (Edit), if any.
-    pub editing: Option<recto_engine::FieldTrigger>,
+    pub editing: Option<pagic_engine::FieldTrigger>,
     /// Actions tab: how many actions the document chains after each trigger's first one. They are
     /// kept when that first action is replaced.
-    pub chained: Vec<(recto_engine::FieldTrigger, usize)>,
+    pub chained: Vec<(pagic_engine::FieldTrigger, usize)>,
     pub(super) original: Box<Option<FieldDraft>>,
 }
 
@@ -190,8 +190,8 @@ impl FieldDraft {
             tooltip: f.tooltip.clone().unwrap_or_default(),
             caption: f.widgets.get(widget).and_then(|w| w.caption.clone()).unwrap_or_default(),
             read_only: f.read_only(),
-            required: f.has(recto_engine::field_flags::REQUIRED),
-            multiline: f.has(recto_engine::field_flags::MULTILINE),
+            required: f.has(pagic_engine::field_flags::REQUIRED),
+            multiline: f.has(pagic_engine::field_flags::MULTILINE),
             limit: f.max_len.is_some(),
             max_len: f.max_len.unwrap_or(0),
             options: f.options.iter().map(|(_, d)| d.clone()).collect(),
@@ -281,7 +281,7 @@ impl FieldDraft {
 
 /// The `/Ff` bits the Options tab edits.
 const OPTION_FLAGS: [u32; 10] = {
-    use recto_engine::field_flags as ff;
+    use pagic_engine::field_flags as ff;
     [
         ff::DO_NOT_SCROLL,
         ff::RICH_TEXT,

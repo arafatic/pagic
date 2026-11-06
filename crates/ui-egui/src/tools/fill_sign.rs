@@ -1,12 +1,12 @@
 //! Fill & Sign (Acrobat's Fill & Sign tool, execution plan M5.7): type text onto the page, place
 //! ✓ ✕ ● ─ marks and today's date (in Preferences ▸ Date format), and sign with a drawn
-//! signature. Everything is an annotation (typewriter text, Recto-drawn stamps, ink), so it
+//! signature. Everything is an annotation (typewriter text, Pagic-drawn stamps, ink), so it
 //! can be moved, deleted and undone like any comment.
 
 use egui::{Color32, CornerRadius, Pos2, Sense, Stroke, pos2, vec2};
-use recto_engine::signature_scan::{DEFAULT_SENSITIVITY, PREVIEW_MAX_SIDE, SCAN_MAX_SIDE, ScanError};
-use recto_engine::{Edit, FillMark, NewAnnotation, PhotoRect, Shape, SignatureImage, SignaturePhoto, Style, Turn};
-use recto_render::{DocInfo, PageInfo};
+use pagic_engine::signature_scan::{DEFAULT_SENSITIVITY, PREVIEW_MAX_SIDE, SCAN_MAX_SIDE, ScanError};
+use pagic_engine::{Edit, FillMark, NewAnnotation, PhotoRect, Shape, SignatureImage, SignaturePhoto, Style, Turn};
+use pagic_render::{DocInfo, PageInfo};
 
 use crate::canvas::{DocView, PageToolContext, PageXform};
 use crate::theme::Tokens;
@@ -43,12 +43,12 @@ pub enum SavedSig {
 impl SavedSig {
     /// This signature as the graphic of a visible digital signature. `None` for typed text the
     /// script font has nothing to draw for.
-    pub fn graphic(&self) -> Option<recto_engine::sign::Graphic> {
+    pub fn graphic(&self) -> Option<pagic_engine::sign::Graphic> {
         match self {
-            SavedSig::Drawn(strokes) => Some(recto_engine::sign::Graphic::Strokes(
+            SavedSig::Drawn(strokes) => Some(pagic_engine::sign::Graphic::Strokes(
                 strokes.iter().map(|s| s.iter().map(|p| [f64::from(p[0]), f64::from(p[1])]).collect()).collect(),
             )),
-            SavedSig::Typed(text) => recto_engine::typed_signature_graphic(text),
+            SavedSig::Typed(text) => pagic_engine::typed_signature_graphic(text),
             SavedSig::Image(image) => Some(image.graphic()),
         }
     }
@@ -56,7 +56,7 @@ impl SavedSig {
 
 pub(crate) mod image_data {
     use base64::Engine as _;
-    use recto_engine::{SignatureImage, signature_image::MAX_SIGNATURE_IMAGE_BYTES};
+    use pagic_engine::{SignatureImage, signature_image::MAX_SIGNATURE_IMAGE_BYTES};
     use serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(image: &SignatureImage, s: S) -> Result<S::Ok, S::Error> {
@@ -133,8 +133,7 @@ impl SigDraft {
         } else if self.drawing {
             self.strokes.iter().any(|s| s.len() > 1)
         } else {
-            !self.text.trim().is_empty()
-                && self.text.chars().take(recto_engine::MAX_SIGNATURE_CHARS + 1).count() <= recto_engine::MAX_SIGNATURE_CHARS
+            !self.text.trim().is_empty() && self.text.chars().take(pagic_engine::MAX_SIGNATURE_CHARS + 1).count() <= pagic_engine::MAX_SIGNATURE_CHARS
         }
     }
 
@@ -253,7 +252,7 @@ pub fn signature_at(page: usize, at: [f64; 2], strokes: &[Vec<[f32; 2]>], rotati
     }
     let h = f64::from(max_y - min_y).max(0.05) * w;
     // Displayed right and up as user-space unit vectors (the identity on an unturned page).
-    let [a, b, c, d, ..] = recto_model::view_matrix_for(rotation, [0.0; 4]);
+    let [a, b, c, d, ..] = pagic_model::view_matrix_for(rotation, [0.0; 4]);
     let strokes: Vec<Vec<[f64; 2]>> = strokes
         .iter()
         .filter(|s| !s.is_empty())
@@ -272,7 +271,7 @@ pub fn signature_at(page: usize, at: [f64; 2], strokes: &[Vec<[f32; 2]>], rotati
 /// Place typed text in the script font with its left edge at `at`, `height` points tall, upright
 /// as displayed on a page turned by `rotation`.
 pub fn typed_signature_at(page: usize, at: [f64; 2], text: &str, height: f64, rotation: i64, author: &str) -> Option<Edit> {
-    recto_engine::typed_signature_shape(at, text, height, rotation).map(|shape| new(page, shape, String::new(), author))
+    pagic_engine::typed_signature_shape(at, text, height, rotation).map(|shape| new(page, shape, String::new(), author))
 }
 
 /// Place a saved signature or initials, upright as `info`'s page is displayed.
@@ -282,7 +281,7 @@ pub fn place(page: usize, info: &PageInfo, at: [f64; 2], sig: &SavedSig, initial
         SavedSig::Drawn(strokes) => signature_at(page, at, strokes, rotation, author),
         SavedSig::Image(image) => image.edit(page, info, at, initials, author),
         SavedSig::Typed(text) => {
-            let [left, bottom, right, top] = recto_engine::script_outline(text).bounds();
+            let [left, bottom, right, top] = pagic_engine::script_outline(text).bounds();
             let height = if initials { 24.0_f64 } else { 32.0_f64 };
             // Keep long names within the same placement width as drawn signatures.
             let height = height.min(150.0 * (top - bottom).max(0.1) / (right - left).max(0.01));
@@ -293,7 +292,7 @@ pub fn place(page: usize, info: &PageInfo, at: [f64; 2], sig: &SavedSig, initial
 
 /// The text in the script font as a picture (`w`×`h` px, black on transparent), for previews.
 pub(crate) fn script_preview(text: &str, w: usize, h: usize) -> egui::ColorImage {
-    let o = recto_engine::script_outline(text);
+    let o = pagic_engine::script_outline(text);
     let mut img = egui::ColorImage::filled([w, h], Color32::TRANSPARENT);
     let [left, bottom, right, top] = o.bounds();
     let span = (top - bottom).max(0.1);
@@ -342,7 +341,7 @@ pub(crate) fn script_preview(text: &str, w: usize, h: usize) -> egui::ColorImage
 }
 
 /// Saved previews and add/remove controls, shared by the left panel and quick-tool picker.
-pub(crate) fn signature_entries(ui: &mut egui::Ui, app: &mut crate::RectoApp, t: &Tokens) -> Option<&'static str> {
+pub(crate) fn signature_entries(ui: &mut egui::Ui, app: &mut crate::PagicApp, t: &Tokens) -> Option<&'static str> {
     ui.set_width(ui.available_width().clamp(240.0, 248.0));
     let mut command = None;
     for (i, (saved, what, use_id, change_id, remove_id)) in [
@@ -465,7 +464,7 @@ pub(crate) fn page_input(cx: PageToolContext<'_>, input: PageInput<'_>, view: &m
     }
     // Typed text starts a little above the click, as displayed.
     let rotation = i64::from(p.rotation);
-    let top = recto_engine::displayed_offset(rotation, at, 0.0, text_size * 0.6);
+    let top = pagic_engine::displayed_offset(rotation, at, 0.0, text_size * 0.6);
     match tool {
         FillTool::Text => {
             // Clicking away from an open box commits it: the page sees this click before the box
@@ -628,7 +627,7 @@ pub(crate) fn signature_pad(
         let l = ui.label(egui::RichText::new(crate::i18n::fmt(tl!("Type your {what}."), &[("what", what)])).color(t.text_muted));
         ui.add(
             egui::TextEdit::singleline(&mut d.text)
-                .char_limit(recto_engine::MAX_SIGNATURE_CHARS)
+                .char_limit(pagic_engine::MAX_SIGNATURE_CHARS)
                 .desired_width(460.0)
                 .hint_text(tl!(if d.initials { "Initials" } else { "Your name" })),
         )
@@ -750,7 +749,7 @@ struct PickedImage {
     bytes: Option<Result<Vec<u8>, String>>,
 }
 
-impl crate::RectoApp {
+impl crate::PagicApp {
     /// Browse asynchronously, answering only into the dialog (and tab) that asked for the image
     /// or, on the Scan tab, the photo.
     pub(crate) fn pick_signature_image(&mut self) {
@@ -772,8 +771,7 @@ impl crate::RectoApp {
                 app.use_signature_photo(result.map_err(|e| e.to_string()));
                 return;
             }
-            let result =
-                std::fs::File::open(path).map_err(recto_engine::signature_image::SignatureImageError::from).and_then(SignatureImage::read);
+            let result = std::fs::File::open(path).map_err(pagic_engine::signature_image::SignatureImageError::from).and_then(SignatureImage::read);
             app.use_signature_image(result.map_err(|e| e.to_string()));
         });
         #[cfg(target_arch = "wasm32")]
@@ -786,9 +784,9 @@ impl crate::RectoApp {
             let inbox = self.signature_images.clone();
             let ctx = self.ctx.clone();
             let (limit, too_large) = if scan {
-                (recto_engine::signature_scan::MAX_PHOTO_BYTES, ScanError::Size.to_string())
+                (pagic_engine::signature_scan::MAX_PHOTO_BYTES, ScanError::Size.to_string())
             } else {
-                (recto_engine::signature_image::MAX_SIGNATURE_IMAGE_BYTES, recto_engine::signature_image::SignatureImageError::Size.to_string())
+                (pagic_engine::signature_image::MAX_SIGNATURE_IMAGE_BYTES, pagic_engine::signature_image::SignatureImageError::Size.to_string())
             };
             wasm_bindgen_futures::spawn_local(async move {
                 let bytes = if let Some(file) = dialog.pick_file().await {
@@ -830,14 +828,13 @@ impl crate::RectoApp {
         }
         let Some(bytes) = picked.bytes else { return };
         if picked.scan {
-            let result = bytes.and_then(|bytes| {
-                recto_engine::guard(|| SignaturePhoto::from_bytes(&bytes)).map_err(|e| e.to_string())?.map_err(|e| e.to_string())
-            });
+            let result = bytes
+                .and_then(|bytes| pagic_engine::guard(|| SignaturePhoto::from_bytes(&bytes)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
             self.use_signature_photo(result);
             return;
         }
-        let result = bytes
-            .and_then(|bytes| recto_engine::guard(|| SignatureImage::from_bytes(&bytes)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
+        let result =
+            bytes.and_then(|bytes| pagic_engine::guard(|| SignatureImage::from_bytes(&bytes)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
         self.use_signature_image(result);
     }
 
@@ -862,7 +859,7 @@ impl crate::RectoApp {
         }
         let scan = d.scan_mode;
         let Some(file) = dropped.into_iter().next() else { return Vec::new() };
-        let limit = recto_engine::signature_image::MAX_SIGNATURE_IMAGE_BYTES;
+        let limit = pagic_engine::signature_image::MAX_SIGNATURE_IMAGE_BYTES;
         let path = file.path().to_path_buf();
         let bytes: Result<Vec<u8>, String> = if path.is_absolute() {
             use std::io::Read as _;
@@ -873,11 +870,11 @@ impl crate::RectoApp {
         };
         if scan {
             let photo =
-                bytes.and_then(|b| recto_engine::guard(|| SignaturePhoto::from_bytes(&b)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
+                bytes.and_then(|b| pagic_engine::guard(|| SignaturePhoto::from_bytes(&b)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
             self.use_signature_photo(photo);
         } else {
             let image =
-                bytes.and_then(|b| recto_engine::guard(|| SignatureImage::from_bytes(&b)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
+                bytes.and_then(|b| pagic_engine::guard(|| SignatureImage::from_bytes(&b)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
             self.use_signature_image(image);
         }
         Vec::new()
@@ -885,7 +882,7 @@ impl crate::RectoApp {
 
     /// Frame the signature in a new photo and clean it up. A previous photo stays on failure.
     fn use_signature_photo(&mut self, result: Result<SignaturePhoto, String>) {
-        match result.and_then(|photo| recto_engine::guard(|| ScanDraft::new(photo))) {
+        match result.and_then(|photo| pagic_engine::guard(|| ScanDraft::new(photo))) {
             Ok(mut scan) => {
                 scan.rescan_in_background(&mut self.signature_draft.image, true, self.ctx.as_ref());
                 self.signature_draft.scan = Some(scan);

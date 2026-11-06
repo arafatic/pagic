@@ -49,13 +49,13 @@ impl FontResolver<'_> {
             return Ok(Some(source.font.clone()));
         }
         if let Some((name, _)) = self.metrics.iter().find(|(_, metrics)| {
-            recto_fonts::embedding::face_key(&metrics.base_font) == recto_fonts::embedding::face_key(&source.base_font)
+            pagic_fonts::embedding::face_key(&metrics.base_font) == pagic_fonts::embedding::face_key(&source.base_font)
                 && source_encodes(metrics, text)
         }) {
             return Ok(Some(name.clone()));
         }
         if let Some(face) =
-            recto_fonts::embedding::matching_faces(&source.base_font).into_iter().find(|face| recto_fonts::embedding::covers(face.bytes, text))
+            pagic_fonts::embedding::matching_faces(&source.base_font).into_iter().find(|face| pagic_fonts::embedding::covers(face.bytes, text))
         {
             return self.embed_face(face.name(), face.bytes, face.family, "the full source font could not be loaded").map(Some);
         }
@@ -64,7 +64,7 @@ impl FontResolver<'_> {
             .entry(source.font.clone())
             .or_insert_with(|| source_program(self.doc, self.fonts, &source.font).map(std::sync::Arc::new))
             .clone()
-            .filter(|bytes| recto_fonts::embedding::covers(bytes, text))
+            .filter(|bytes| pagic_fonts::embedding::covers(bytes, text))
         else {
             return Ok(None);
         };
@@ -72,7 +72,7 @@ impl FontResolver<'_> {
         if let Some(name) = self.full_faces.get(&key) {
             return Ok(Some(name.clone()));
         }
-        let family = recto_fonts::embedding::names(&bytes).map_or_else(|_| source.base_font.clone(), |(family, _)| family);
+        let family = pagic_fonts::embedding::names(&bytes).map_or_else(|_| source.base_font.clone(), |(family, _)| family);
         self.embed_face(key, &bytes, &family, "the source font could not be loaded").map(Some)
     }
 
@@ -80,7 +80,7 @@ impl FontResolver<'_> {
         if let Some(name) = self.full_faces.get(&key) {
             return Ok(name.clone());
         }
-        let name = recto_fonts::embedding::embed(self.doc, self.fonts, bytes, family).map_err(EditError::Invalid)?;
+        let name = pagic_fonts::embedding::embed(self.doc, self.fonts, bytes, family).map_err(EditError::Invalid)?;
         let font =
             self.fonts.get(name.as_bytes()).and_then(|resource| self.doc.dict(resource)).ok_or_else(|| EditError::Invalid(missing_message.into()))?;
         self.metrics.insert(name.clone(), Metrics::from_dict(self.doc, &font));
@@ -232,7 +232,7 @@ struct StyledLines<'a> {
 type StyledChar = (char, usize, String);
 type StyledRows = Vec<Vec<StyledChar>>;
 type RowRanges = Vec<std::ops::Range<usize>>;
-type ShapedRunCache = HashMap<(usize, usize), (Vec<u8>, recto_fonts::source_shaping::ShapedRun, String)>;
+type ShapedRunCache = HashMap<(usize, usize), (Vec<u8>, pagic_fonts::source_shaping::ShapedRun, String)>;
 
 struct ShapedRows {
     runs: ShapedRunCache,
@@ -271,7 +271,7 @@ fn embed_shaped_resources(doc: &mut Document, fonts: &mut Dict, runs: &ShapedRun
     let mut resources = HashMap::new();
     for (key, (bytes, shaped, family)) in runs {
         let mappings: Vec<_> = shaped.glyphs.iter().map(|glyph| (glyph.text.clone(), glyph.id)).collect();
-        let resource = recto_fonts::embedding::embed_mapping(doc, fonts, bytes, family, &mappings).map_err(EditError::Invalid)?;
+        let resource = pagic_fonts::embedding::embed_mapping(doc, fonts, bytes, family, &mappings).map_err(EditError::Invalid)?;
         resources.insert(*key, resource);
     }
     Ok(resources)
@@ -280,7 +280,7 @@ fn embed_shaped_resources(doc: &mut Document, fonts: &mut Dict, runs: &ShapedRun
 fn validate_contextual_rows(rows: &[Vec<StyledChar>], kept: &[bool]) -> Result<(), EditError> {
     for (row, _) in rows.iter().zip(kept).filter(|(_, retained)| !**retained) {
         let text: String = row.iter().map(|character| character.0).collect();
-        if recto_fonts::source_shaping::required(&text)
+        if pagic_fonts::source_shaping::required(&text)
             && row.first().is_some_and(|first| row.iter().any(|character| character.1 != first.1 || character.2 != first.2))
         {
             return Err(EditError::Invalid(
@@ -383,7 +383,7 @@ fn page_font_metrics(
     (fonts, metrics)
 }
 
-fn paragraph_geometry(doc: &Document, page: &recto_model::Page, block: &TextBlock, style: &BlockStyle) -> Result<(f64, f64, f64), EditError> {
+fn paragraph_geometry(doc: &Document, page: &pagic_model::Page, block: &TextBlock, style: &BlockStyle) -> Result<(f64, f64, f64), EditError> {
     if [style.size, style.line_spacing, style.char_spacing, style.scale, style.width].iter().flatten().any(|value| !value.is_finite())
         || style.color.is_some_and(|color| color.iter().any(|value| !value.is_finite()))
     {
@@ -544,8 +544,8 @@ fn shape_source(
     fonts: &Dict,
     name: &str,
     text: &str,
-) -> Result<Option<(Vec<u8>, recto_fonts::source_shaping::ShapedRun, String)>, EditError> {
-    if !recto_fonts::source_shaping::required(text) {
+) -> Result<Option<(Vec<u8>, pagic_fonts::source_shaping::ShapedRun, String)>, EditError> {
+    if !pagic_fonts::source_shaping::required(text) {
         return Ok(None);
     }
     let source =
@@ -556,12 +556,12 @@ fn shape_source(
         fonts
             .iter()
             .filter_map(|(_, f)| doc.dict(f))
-            .filter(|f| recto_fonts::embedding::face_key(&Metrics::from_dict(doc, f).base_font) == recto_fonts::embedding::face_key(&family)),
+            .filter(|f| pagic_fonts::embedding::face_key(&Metrics::from_dict(doc, f).base_font) == pagic_fonts::embedding::face_key(&family)),
     );
     for font in candidates {
-        if let Some(bytes) = recto_fonts::pdf::embedded_sfnt(doc, &font)
-            && recto_fonts::embedding::covers(&bytes, text)
-            && let Ok(shaped) = recto_fonts::source_shaping::shape(&bytes, text)
+        if let Some(bytes) = pagic_fonts::pdf::embedded_sfnt(doc, &font)
+            && pagic_fonts::embedding::covers(&bytes, text)
+            && let Ok(shaped) = pagic_fonts::source_shaping::shape(&bytes, text)
         {
             return Ok(Some((bytes, shaped, family)));
         }
@@ -788,7 +788,7 @@ pub(crate) fn rewrite_styled_block(
     let shaped = prepare_shaped_rows(doc, &fonts, &rows, &kept, advance)?;
     let ShapedRows { runs: shaped_runs, advances: segment_advances } = shaped;
     let glyph_resources = embed_shaped_resources(doc, &mut fonts, &shaped_runs)?;
-    let n = recto_content::num;
+    let n = pagic_content::num;
     let mut block_ops = vec![Op::new("q", vec![])];
     block_ops.extend(reveal_ops(block, lines, style, o.ctm)?);
     let back = Matrix([o.ctm[0], o.ctm[1], o.ctm[2], o.ctm[3], 0.0, 0.0])

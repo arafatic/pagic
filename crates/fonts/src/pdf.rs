@@ -14,7 +14,7 @@
 use std::borrow::Cow;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
-use recto_cos::{DecodeBudget, Dict, Document, Object};
+use pagic_cos::{DecodeBudget, Dict, Document, Object};
 
 /// How the bytes of a string map to codes.
 #[derive(Clone, Debug, PartialEq)]
@@ -1334,7 +1334,7 @@ mod tests;
 
 #[cfg(test)]
 mod encoding_tests {
-    use recto_cos::{Dict, Document, Object};
+    use pagic_cos::{Dict, Document, Object};
 
     use super::*;
 
@@ -1496,7 +1496,7 @@ mod encoding_tests {
         // 128 resources naming one 1 MiB program that isn't a font: each decode is charged,
         // so an enumeration stops decoding once the shared budget is spent.
         let mut doc = Document::new_empty();
-        let program = doc.add(recto_cos::Stream::flate(Dict::new(), &vec![0; 1 << 20]));
+        let program = doc.add(pagic_cos::Stream::flate(Dict::new(), &vec![0; 1 << 20]));
         let descriptor: Dict = [(b"FontFile2".to_vec(), Object::Ref(program))].into_iter().collect();
         let descriptor = doc.add(descriptor);
         let font: Dict = [(b"FontDescriptor".to_vec(), Object::Ref(descriptor))].into_iter().collect();

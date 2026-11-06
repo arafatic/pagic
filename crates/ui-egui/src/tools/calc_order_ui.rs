@@ -15,10 +15,10 @@ use std::sync::Arc;
 
 use crate::canvas::PageToolContext;
 use crate::theme::{self, Tokens};
-use crate::{LeftPanel, RectoApp, icons, widgets};
+use crate::{LeftPanel, PagicApp, icons, widgets};
 use egui::{Align2, Color32, CornerRadius, Pos2, Rect, Sense, Shape, Stroke, Vec2, pos2, vec2};
-use recto_engine::form_scripts::{CalcOp, Calculate, format_value};
-use recto_engine::{CalculatedField, CalculationIssue, CalculationOrder, Edit, FormField, FormFieldKind};
+use pagic_engine::form_scripts::{CalcOp, Calculate, format_value};
+use pagic_engine::{CalculatedField, CalculationIssue, CalculationOrder, Edit, FormField, FormFieldKind};
 
 /// Links and steps on the page, which is paper white in either theme.
 const LINK_OK: Color32 = Color32::from_gray(0x80);
@@ -89,7 +89,7 @@ struct Link {
 }
 
 impl CalcOrderView {
-    fn listed(&mut self, doc: &recto_engine::Document) -> Arc<Listed> {
+    fn listed(&mut self, doc: &pagic_engine::Document) -> Arc<Listed> {
         let generation = doc.edit_generation();
         if let Some(listed) = self.current(generation) {
             return listed;
@@ -491,7 +491,7 @@ fn explained(issues: &[CalculationIssue]) -> String {
 }
 
 /// The Calculation order page; Back returns to Prepare a form.
-pub(crate) fn panel(app: &mut RectoApp, ui: &mut egui::Ui, t: &Tokens) {
+pub(crate) fn panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
     let (back, close) = crate::panels::panel_header(ui, t, "Calculation order", Some(("chevron-left", tl!("Back to Prepare a form"))));
     if back {
         app.left = LeftPanel::Tool("form");

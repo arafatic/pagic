@@ -65,7 +65,7 @@ fn an_upright_note_on_a_turned_page_is_in_view_where_it_is_drawn() {
     }
 }
 
-use recto_render::TextGlyph;
+use pagic_render::TextGlyph;
 
 /// One glyph per character, `w` points wide, on a line of `em`-point text whose baseline is at `y`, drawn
 /// along `direction` (a unit vector in view space, y down).
@@ -286,7 +286,7 @@ fn context_menu_colour_submenu_keeps_its_picker_open_and_a_swatch_closes_the_men
         }],
         ..Default::default()
     };
-    let mut view = DocView::new(recto_engine::DocId(1), &info, crate::canvas::ViewDefaults::default());
+    let mut view = DocView::new(pagic_engine::DocId(1), &info, crate::canvas::ViewDefaults::default());
     view.comments.selected = Some((0, 0));
     let prefs = CommentPrefs::default();
     let mut h = egui_kittest::Harness::new_ui_state(
@@ -358,7 +358,7 @@ fn proportional_corners_keep_the_opposite_anchor_and_edges_stretch_one_axis() {
 fn tools_round_trip_through_their_commands() {
     for t in ALL {
         assert_eq!(CommentTool::from_command(t.command()), Some(t));
-        assert!(recto_engine::commands::command(t.command()).is_some(), "{} is registered", t.command());
+        assert!(pagic_engine::commands::command(t.command()).is_some(), "{} is registered", t.command());
         assert!(icons::exists(t.icon()), "icon {}", t.icon());
         assert!(GROUPS[t.group()].contains(&t));
     }

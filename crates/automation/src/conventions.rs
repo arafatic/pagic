@@ -2,8 +2,8 @@
 use serde_json::{Value, json};
 
 use crate::{Args, Automation, Content, Result, ToolError, encode_png, failed, info, tools};
-use recto_engine::commands;
-use recto_render::{RenderRequest, RequestKind};
+use pagic_engine::commands;
+use pagic_render::{RenderRequest, RequestKind};
 
 /// The most steps one `command_batch` runs.
 pub(crate) const MAX_BATCH_STEPS: usize = 1000;

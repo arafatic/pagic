@@ -14,10 +14,10 @@ use super::{AnnotError, Dict, Document, HashMap, HashSet, ObjRef, Object, PdfStr
 /// replace those characters with `?`, so the edit is refused before the dictionary changes.
 pub(crate) fn refuse_foreign_text(doc: &Document, d: &Dict) -> Result<(), AnnotError> {
     let drawn_elsewhere =
-        d.get(b"AP").is_some_and(|ap| doc.resolve(ap).as_dict().is_some_and(|ap| ap.contains(b"N"))) && recto_fonts::undrawn_mark(d).is_none();
+        d.get(b"AP").is_some_and(|ap| doc.resolve(ap).as_dict().is_some_and(|ap| ap.contains(b"N"))) && pagic_fonts::undrawn_mark(d).is_none();
     if drawn_elsewhere && let Some((what, c)) = appearance::undrawable_text(d) {
         return Err(AnnotError::Undrawable(format!(
-            "Recto can't redraw this comment: the standard fonts can't draw \"{}\" (U+{:04X}) in {what}, which would then show as ? (the comment was left as it is)",
+            "Pagic can't redraw this comment: the standard fonts can't draw \"{}\" (U+{:04X}) in {what}, which would then show as ? (the comment was left as it is)",
             c.escape_debug(),
             u32::from(c)
         )));
@@ -232,7 +232,7 @@ fn reply(
     fd.set(b"Type".to_vec(), Object::name("XObject"));
     fd.set(b"Subtype".to_vec(), Object::name("Form"));
     fd.set(b"BBox".to_vec(), num_array(&[0.0, 0.0, 0.0, 0.0]));
-    let ap = doc.add(Object::Stream(recto_cos::Stream::from_raw(fd, Vec::new())));
+    let ap = doc.add(Object::Stream(pagic_cos::Stream::from_raw(fd, Vec::new())));
     let mut apd = Dict::new();
     apd.set(b"N".to_vec(), Object::Ref(ap));
     d.set(b"AP".to_vec(), Object::Dict(apd));

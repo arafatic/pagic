@@ -1,11 +1,11 @@
 use super::bookmarks::{BmAction, OutlineCtx, outline_item, outline_matches};
 use super::pages::{page_tools, pages, thumbnail_size};
 use super::{
-    Align, Align2, Color32, DocInfo, FieldKind, Layout, Nav, RectoApp, Rect, RightPanel, Sense, Stroke, Tokens, human_size, icons, theme, vec2,
+    Align, Align2, Color32, DocInfo, FieldKind, Layout, Nav, PagicApp, Rect, RightPanel, Sense, Stroke, Tokens, human_size, icons, theme, vec2,
 };
 
 /// Draw the selected right-hand panel and apply its navigation, layer, bookmark or edit actions.
-pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn right_panel(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let Some((index, id)) = app.active_ids() else { return };
     let Some(panel) = app.right else { return };
@@ -16,7 +16,7 @@ pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
     let mut attachment_action: Option<(usize, bool)> = None; // (index, open instead of save)
     let mut bm_action: Option<BmAction> = None;
     let mut bm_expand: Option<usize> = None;
-    let mut panel_edit: Option<recto_engine::Edit> = None;
+    let mut panel_edit: Option<pagic_engine::Edit> = None;
     let mut field_properties = None;
     let mut panel_command: Option<&'static str> = None;
     let mut sig_action: Option<crate::sign_ui::PanelAction> = None;
@@ -161,7 +161,7 @@ pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
                     ui.data_mut(|d| d.insert_temp(search_id, bookmark_query.clone()));
                     ui.add_space(6.0);
                 }
-                let bookmark_query = recto_render::text::fold_case(bookmark_query.trim());
+                let bookmark_query = pagic_render::text::fold_case(bookmark_query.trim());
                 let mut bookmark_matches =
                     if panel == RightPanel::Bookmarks { outline_matches(&info.outline, &bookmark_query) } else { std::collections::HashSet::new() };
                 // A new bookmark must stay nameable even when its initial title doesn't match.
@@ -285,7 +285,7 @@ pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
                             let is_pdf = a.name.to_lowercase().ends_with(".pdf");
                             // Only an attachment of the document itself can be deleted here.
                             let deletable = match &a.source {
-                                recto_render::AttachmentSource::Document { key } if attachable => Some(key),
+                                pagic_render::AttachmentSource::Document { key } if attachable => Some(key),
                                 _ => None,
                             };
                             // The whole row answers a double-click and a right-click (#3466), below
@@ -302,7 +302,7 @@ pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
                                                 egui::Label::new(egui::RichText::new(&a.name).font(theme::medium(13.0))).truncate().selectable(false),
                                             );
                                             let mut meta = a.size.map(human_size).unwrap_or_default();
-                                            if let recto_render::AttachmentSource::Annotation { page, .. } = a.source {
+                                            if let pagic_render::AttachmentSource::Annotation { page, .. } = a.source {
                                                 let on_page = crate::i18n::fmt(
                                                     tl!("on page {label}"),
                                                     &[("label", info.pages.get(page).map(|p| p.label.as_str()).unwrap_or("?"))],
@@ -332,7 +332,7 @@ pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
                                             if let Some(key) = deletable {
                                                 let delete = icons::button(ui, "trash-2", 28.0, false, tl!("Delete attachment"));
                                                 if delete.clicked() {
-                                                    panel_edit = Some(recto_engine::Edit::DeleteAttachment { key: key.clone() });
+                                                    panel_edit = Some(pagic_engine::Edit::DeleteAttachment { key: key.clone() });
                                                 }
                                                 buttons.push(delete);
                                             }
@@ -341,7 +341,7 @@ pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
                                 })
                             });
                             // A double-click opens a PDF in a new tab, as Acrobat opens an attachment;
-                            // any other file is saved, since Recto opens only PDFs.
+                            // any other file is saved, since Pagic opens only PDFs.
                             if row.response.double_clicked() {
                                 attachment_action = Some((ai, is_pdf));
                             }
@@ -360,7 +360,7 @@ pub fn right_panel(app: &mut RectoApp, ui: &mut egui::Ui) {
                                 if let Some(key) = deletable
                                     && ui.button(tl!("Delete attachment")).clicked()
                                 {
-                                    panel_edit = Some(recto_engine::Edit::DeleteAttachment { key: key.clone() });
+                                    panel_edit = Some(pagic_engine::Edit::DeleteAttachment { key: key.clone() });
                                     ui.close();
                                 }
                             });
@@ -463,11 +463,11 @@ fn empty(ui: &mut egui::Ui, t: &Tokens, icon: &str, text: &str) {
 struct FieldsPanel<'a> {
     theme: &'a Tokens,
     info: &'a DocInfo,
-    form: &'a [recto_engine::FormField],
+    form: &'a [pagic_engine::FormField],
     preparing: bool,
     selection: &'a mut crate::prepare::PrepareView,
     nav: &'a mut Option<Nav>,
-    edit: &'a mut Option<recto_engine::Edit>,
+    edit: &'a mut Option<pagic_engine::Edit>,
 }
 
 fn fields(ui: &mut egui::Ui, panel: FieldsPanel<'_>) -> Option<(String, usize)> {
@@ -547,7 +547,7 @@ fn fields(ui: &mut egui::Ui, panel: FieldsPanel<'_>) -> Option<(String, usize)> 
                         icons::paint(ui, r.shrink(3.0).translate(bpress.offset()), icon, 15.0, t.icon);
                     }
                     if theme::hand(b).on_hover_text(tip).clicked() {
-                        *edit = Some(recto_engine::Edit::MoveInTabOrder { name: f.name.clone(), earlier });
+                        *edit = Some(pagic_engine::Edit::MoveInTabOrder { name: f.name.clone(), earlier });
                     }
                 }
             }
@@ -578,7 +578,7 @@ fn fields(ui: &mut egui::Ui, panel: FieldsPanel<'_>) -> Option<(String, usize)> 
 }
 
 /// A Fields panel row's tooltip: the field's kind, its own tooltip and whether it has scripts.
-fn field_tip(f: &recto_render::Field) -> String {
+fn field_tip(f: &pagic_render::Field) -> String {
     let kind = format!("{:?}", f.kind);
     let mut tip = crate::i18n::fmt(tl!("{kind} field"), &[("kind", tl!(&kind))]);
     if let Some(tt) = &f.tooltip {
@@ -592,18 +592,18 @@ fn field_tip(f: &recto_render::Field) -> String {
 
 /// One page's rows of the Fields panel: each field, with the form field and widget a click on
 /// it selects (`None` when the form has no widget of it on that page).
-type FieldRows<'a> = Vec<(&'a recto_render::Field, Option<(String, usize)>)>;
+type FieldRows<'a> = Vec<(&'a pagic_render::Field, Option<(String, usize)>)>;
 
 /// The Fields panel's rows: by page ("Unplaced" first), each page's in tab order. A row is paired
 /// with the first form field of its name, as the engine pairs them: one map, built once a frame.
 /// Searching the form for each row, and again inside the sort, was O(fields²) every frame.
-fn field_rows<'a>(fields: &'a [recto_render::Field], form: &[recto_engine::FormField]) -> Vec<(Option<usize>, FieldRows<'a>)> {
-    let mut by_name: std::collections::HashMap<&str, &recto_engine::FormField> = std::collections::HashMap::with_capacity(form.len());
+fn field_rows<'a>(fields: &'a [pagic_render::Field], form: &[pagic_engine::FormField]) -> Vec<(Option<usize>, FieldRows<'a>)> {
+    let mut by_name: std::collections::HashMap<&str, &pagic_engine::FormField> = std::collections::HashMap::with_capacity(form.len());
     for field in form {
         by_name.entry(field.name.as_str()).or_insert(field);
     }
     let rank = |name: &str| by_name.get(name).and_then(|f| f.widgets.iter().map(|w| w.tab).min()).unwrap_or(usize::MAX);
-    let mut ordered: Vec<&recto_render::Field> = fields.iter().collect();
+    let mut ordered: Vec<&pagic_render::Field> = fields.iter().collect();
     ordered.sort_by_cached_key(|f| (f.page, rank(&f.name)));
     let mut rows: Vec<(Option<usize>, FieldRows<'a>)> = Vec::new();
     for f in ordered {
@@ -640,8 +640,8 @@ mod field_rows {
     }
 
     /// The fields the engine reads from `bytes`: the inspector's list and the form.
-    fn open(bytes: Vec<u8>) -> (Vec<recto_render::Field>, Arc<Vec<recto_engine::FormField>>) {
-        let mut session = recto_engine::Session::new();
+    fn open(bytes: Vec<u8>) -> (Vec<pagic_render::Field>, Arc<Vec<pagic_engine::FormField>>) {
+        let mut session = pagic_engine::Session::new();
         let id = session.open("form.pdf", None, Arc::new(bytes), None).expect("opens");
         let doc = session.get(id).expect("open");
         (doc.info.fields.clone(), doc.form.clone())

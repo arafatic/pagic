@@ -8,8 +8,8 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use egui::{Color32, CornerRadius, FontFamily, FontId, Pos2, Rect, Stroke};
-use recto_engine::{Edit, ObjectKind, ObjectTarget};
-use recto_render::DocInfo;
+use pagic_engine::{Edit, ObjectKind, ObjectTarget};
+use pagic_render::DocInfo;
 
 use crate::canvas::{DocView, PageToolContext, PageXform};
 use crate::page_pointer::PagePointer;
@@ -56,7 +56,7 @@ pub struct LineEditor {
     /// stays attached while the page is zoomed, scrolled, or rotated.
     source_rect: [f32; 4],
     multiline: bool,
-    source: Option<(recto_engine::TextBlock, Vec<recto_engine::TextLine>)>,
+    source: Option<(pagic_engine::TextBlock, Vec<pagic_engine::TextLine>)>,
     pub(crate) fonts: BTreeMap<String, String>,
     /// The draft extends outside the source container; its frame follows the live draft bounds.
     pub overflow: bool,
@@ -70,8 +70,8 @@ pub struct LineEditor {
     /// ([`lost_focus_once`]).
     had_focus: bool,
     /// The Format text panel's values, and what the paragraph had (to send only changes).
-    pub look: recto_engine::AddedText,
-    look0: recto_engine::AddedText,
+    pub look: pagic_engine::AddedText,
+    look0: pagic_engine::AddedText,
     /// A standard family was picked from the font list. The family guessed from a PDF font name
     /// (Calibri reads as Helvetica) can be the one picked, so comparing `look` with `look0` alone
     /// would miss the choice.
@@ -124,7 +124,7 @@ impl LineEditor {
 
     /// A standard family picked from the font list, replacing the paragraph's font even when it
     /// is the family the paragraph's font name reads as.
-    pub(crate) fn choose_family(&mut self, family: recto_engine::FontFamily) {
+    pub(crate) fn choose_family(&mut self, family: pagic_engine::FontFamily) {
         self.font_resource = None;
         self.look.family = family;
         self.family_chosen = true;
@@ -150,9 +150,9 @@ impl LineEditor {
     }
 
     /// The formatting the panel changed.
-    pub fn style(&self) -> recto_engine::BlockStyle {
+    pub fn style(&self) -> pagic_engine::BlockStyle {
         let (l, o) = (&self.look, &self.look0);
-        let mut style = recto_engine::BlockStyle {
+        let mut style = pagic_engine::BlockStyle {
             resource: self.font_resource.clone(),
             family: (l.family != o.family || self.family_chosen || l.bold != o.bold || l.italic != o.italic).then_some((l.family, l.bold, l.italic)),
             size: (l.size != o.size).then_some(l.size),
@@ -174,7 +174,7 @@ impl LineEditor {
                 || style.char_spacing.is_some()
                 || style.scale.is_some())
         {
-            style.ranges.push(recto_engine::RangeStyle {
+            style.ranges.push(pagic_engine::RangeStyle {
                 range: range.clone(),
                 family: style.family.take(),
                 resource: style.resource.take(),
@@ -200,7 +200,7 @@ impl LineEditor {
     }
 
     /// Adopt the rewritten paragraph's current geometry before the next overlay frame.
-    pub(crate) fn refresh_source(&mut self, block: &recto_engine::TextBlock, lines: Vec<recto_engine::TextLine>) {
+    pub(crate) fn refresh_source(&mut self, block: &pagic_engine::TextBlock, lines: Vec<pagic_engine::TextLine>) {
         self.source_rect = block.rect.map(|v| v as f32);
         self.multiline = block.rows.len() > 1;
         self.source = Some((block.clone(), lines));
@@ -292,7 +292,7 @@ fn user_box(xf: &PageXform, info: &DocInfo, page: usize, r: Rect) -> [f64; 4] {
 
 /// Open `block` on `page` in the inline editor. The box's geometry and source are read from the
 /// `lines` handed in, so callers pass the document's current inventory.
-fn open_editor(cx: PageToolContext<'_>, lines: &[recto_engine::TextBlock], boxes: &[Rect], block: usize, view: &mut DocView) {
+fn open_editor(cx: PageToolContext<'_>, lines: &[pagic_engine::TextBlock], boxes: &[Rect], block: usize, view: &mut DocView) {
     let PageToolContext { ui, xf, doc, page, .. } = cx;
     view.pending_text_open = None;
     let (Some(l), Some(b)) = (lines.get(block), boxes.get(block)) else { return };
@@ -332,7 +332,7 @@ fn open_editor(cx: PageToolContext<'_>, lines: &[recto_engine::TextBlock], boxes
 
 /// Lines and their screen boxes for a page; hover outlines, click opens the editor. Returns
 /// `true` when the pointer was used.
-pub(crate) fn page_input(cx: PageToolContext<'_>, lines: &[recto_engine::TextBlock], view: &mut DocView, allow_interaction: bool) -> bool {
+pub(crate) fn page_input(cx: PageToolContext<'_>, lines: &[pagic_engine::TextBlock], view: &mut DocView, allow_interaction: bool) -> bool {
     let PageToolContext { ui, resp, xf, ptr, page, doc, .. } = cx;
     let info = &doc.info;
     if view.block_drag.is_some_and(|d| d.generation != doc.edit_generation()) {
@@ -397,7 +397,7 @@ pub(crate) fn page_input(cx: PageToolContext<'_>, lines: &[recto_engine::TextBlo
                 // edge) moves the paragraph with it.
                 let width = (l.rect[2] - l.rect[0]) + (to[2] - to[0]) - (from[2] - from[0]);
                 let shift = to[0] - from[0];
-                let style = recto_engine::BlockStyle { width: Some(width), offset: (shift != 0.0).then_some([shift, 0.0]), ..Default::default() };
+                let style = pagic_engine::BlockStyle { width: Some(width), offset: (shift != 0.0).then_some([shift, 0.0]), ..Default::default() };
                 Edit::EditTextBlock { page, block: d.block, text: l.text.clone(), style }
             } else {
                 // Translation must keep the selected source operators. Rewriting unchanged text
@@ -459,13 +459,13 @@ pub(crate) fn page_input(cx: PageToolContext<'_>, lines: &[recto_engine::TextBlo
             }
             if let Some(old) = view.line_editor.take() {
                 let style = old.style();
-                if old.text != old.original || style != recto_engine::BlockStyle::default() {
+                if old.text != old.original || style != pagic_engine::BlockStyle::default() {
                     view.applied_editor = Some(old.clone());
                     view.pending_edit = Some(Edit::EditTextBlock { page: old.page, block: old.block, text: old.text, style });
                 }
             }
             // The clicked box opens next frame, from the document with that edit applied.
-            view.pending_text_open = lines.get(hit).map(|l| (page, recto_engine::BlockKey::of(l)));
+            view.pending_text_open = lines.get(hit).map(|l| (page, pagic_engine::BlockKey::of(l)));
             return true;
         }
         open_editor(cx, lines, &boxes, hit, view);
@@ -657,7 +657,7 @@ pub(crate) fn overlay(ctx: &egui::Context, view: &mut DocView, info: &DocInfo) -
 /// The edit a closed paragraph editor applies, or `None` when nothing in it changed.
 pub(crate) fn finished_edit(ed: LineEditor) -> Option<Edit> {
     let style = ed.style();
-    (ed.text != ed.original || style != recto_engine::BlockStyle::default()).then_some(Edit::EditTextBlock {
+    (ed.text != ed.original || style != pagic_engine::BlockStyle::default()).then_some(Edit::EditTextBlock {
         page: ed.page,
         block: ed.block,
         text: ed.text,
@@ -704,8 +704,8 @@ mod tests {
     }
 
     /// An app with one text document open, and an editor on its first paragraph.
-    fn preview_app() -> (crate::RectoApp, LineEditor) {
-        let mut app = crate::RectoApp::new();
+    fn preview_app() -> (crate::PagicApp, LineEditor) {
+        let mut app = crate::PagicApp::new();
         let bytes = app.session.create_from_text("Preview", "Preview text").unwrap();
         app.open_bytes("preview.pdf", None, bytes.as_ref().clone()).unwrap();
         let doc = app.session.get(app.views[0].id).unwrap();
@@ -775,7 +775,7 @@ mod tests {
         let (mut app, mut ed) = preview_app();
         ed.text = "Text preview".into();
         app.views[0].line_editor = Some(ed);
-        let dir = std::env::temp_dir().join(format!("recto-ui-open-paragraph-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("pagic-ui-open-paragraph-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         app.save_override = Some(dir.join("out.pdf").to_string_lossy().into_owned());

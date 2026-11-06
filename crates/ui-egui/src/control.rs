@@ -8,7 +8,7 @@
 //! - [`ControlPlugin`], an egui plugin, keeps a copy of the AccessKit tree from every frame's
 //!   output (the widget tree with ids, roles, labels, rects and states) and injects queued input
 //!   events (AccessKit click actions, pointer events, keys, text) at the start of later frames.
-//! - Requests reach the app through a channel; `RectoApp` answers them at the start of a
+//! - Requests reach the app through a channel; `PagicApp` answers them at the start of a
 //!   frame, so they see and change exactly what the user would.
 //!
 //! Methods (JSON in, JSON out):
@@ -220,7 +220,7 @@ pub fn attach(ctx: &egui::Context) -> (Control, ControlClient) {
     (Control { rx, shared, pending: Vec::new(), deferred: VecDeque::new() }, ControlClient { tx, ctx: ctx.clone() })
 }
 
-/// What a request needs from the app (implemented by `RectoApp`).
+/// What a request needs from the app (implemented by `PagicApp`).
 pub(crate) trait Host {
     /// Return the UI-state snapshot reported by `ui.state`.
     fn state(&self) -> Value;
@@ -469,7 +469,7 @@ mod pointer_tests {
         struct Probe {
             control: Option<Control>,
             client: Option<ControlClient>,
-            host: crate::RectoApp,
+            host: crate::PagicApp,
             primary: usize,
             secondary: usize,
             disabled: usize,
@@ -493,12 +493,12 @@ mod pointer_tests {
         let slow_dt = (max_duration + 0.25) as f32;
         assert!(f64::from(slow_dt) > max_duration);
         for discard in [false, true] {
-            // This probe draws its own UI with the harness's fonts, not RectoApp::ui.
+            // This probe draws its own UI with the harness's fonts, not PagicApp::ui.
             // Exercise the readiness gate explicitly before allowing this host's input.
             let state = Probe {
                 control: None,
                 client: None,
-                host: crate::RectoApp::new(),
+                host: crate::PagicApp::new(),
                 primary: 0,
                 secondary: 0,
                 disabled: 0,

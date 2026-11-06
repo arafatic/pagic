@@ -1,14 +1,14 @@
-//! recto-automation — agent control for Recto (architecture §13).
+//! pagic-automation — agent control for Pagic (architecture §13).
 //!
 //! - **Layer:** L7. Headless: depends on the engine, never on a UI toolkit.
 //! - [`Automation`] is a tool set over an engine [`Session`]: open, inspect, render, extract and
 //!   find text, edit pages and metadata, undo/redo, save, combine, extract and split. Every tool
 //!   has a JSON Schema ([`tools`]) and takes and returns JSON, so the same table drives the MCP
-//!   server ([`mcp`]), `recto-cli run` and (later) the UI control channel.
+//!   server ([`mcp`]), `pagic-cli run` and (later) the UI control channel.
 //! - Pages are **1-based** in every tool, as people number them. Rectangles are in PDF points
 //!   with the origin at the top-left of the displayed page.
 //! - An optional root directory confines every path a tool reads or writes. Separately,
-//!   [`file_access::AutomationRoots`] (`recto-cli mcp --automation-read-root` and
+//!   [`file_access::AutomationRoots`] (`pagic-cli mcp --automation-read-root` and
 //!   `--automation-write-root`) holds a read folder and a write folder, each left out meaning no
 //!   access of its kind.
 
@@ -37,12 +37,12 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use recto_engine::{BlockKey, CombineSource, DocId, Document, Edit, Session, TextBlock, block_overlapping, commands};
-use recto_platform::staging::{StagingName, staging_suffixes};
-use recto_render::{PageRenderer, PageText, RenderConfig, RenderRequest, RequestKind};
+use pagic_engine::{BlockKey, CombineSource, DocId, Document, Edit, Session, TextBlock, block_overlapping, commands};
+use pagic_platform::staging::{StagingName, staging_suffixes};
+use pagic_render::{PageRenderer, PageText, RenderConfig, RenderRequest, RequestKind};
 use serde_json::{Value, json};
 
-pub use recto_render::Pixels;
+pub use pagic_render::Pixels;
 pub use tools::{ToolDef, tools};
 
 use file_access::foreign_share;
@@ -72,7 +72,7 @@ pub(crate) use paths::{read_input, read_input_bytes};
 #[cfg(test)]
 use paths::{write_atomic_synced, write_atomic_with};
 
-/// A headless Recto session driven by tool calls.
+/// A headless Pagic session driven by tool calls.
 pub struct Automation {
     session: Session,
     root: Option<PathBuf>,
@@ -149,7 +149,7 @@ impl Automation {
         &self.session
     }
 
-    /// Save `bytes` that a caller writes on the session's behalf, such as `recto-cli run`
+    /// Save `bytes` that a caller writes on the session's behalf, such as `pagic-cli run`
     /// saving a rendered page. With a root, it is confined like a tool's own output (a relative
     /// path resolves inside it). Written atomically either way (#2166), except to something
     /// that is not a regular file, such as `/dev/stdout` or a pipe, which is written as given.

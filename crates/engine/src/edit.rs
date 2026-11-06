@@ -75,7 +75,7 @@ pub enum Edit {
         pages: Option<Vec<usize>>,
         at: usize,
         /// How a form field whose name the document already uses is kept separate.
-        field_conflicts: recto_organize::FieldConflicts,
+        field_conflicts: pagic_organize::FieldConflicts,
     },
     /// Add a bookmark to `page` as child `index` of the bookmark at `parent` (`[]` = top level).
     /// It goes to the user-space point (`left`, `top`) of the page at the reader's zoom, and
@@ -126,7 +126,7 @@ pub enum Edit {
     NumberPages {
         from: usize,
         to: usize,
-        style: recto_organize::LabelStyle,
+        style: pagic_organize::LabelStyle,
         prefix: String,
         first: u32,
     },
@@ -230,7 +230,7 @@ pub enum Edit {
         opacity: Option<f64>,
         width: Option<f64>,
         /// Line or polyline: two endings. Callout: one. `None` leaves `/LE` unchanged.
-        endings: Option<Vec<recto_annot::LineEnding>>,
+        endings: Option<Vec<pagic_annot::LineEnding>>,
     },
     /// Fill a rectangle, oval or polygon comment, or remove its fill (`None`).
     FillAnnotation {
@@ -318,14 +318,14 @@ pub enum Edit {
     AutoTagFormFields,
     /// Change one property on a reachable indirect structure tag.
     SetTagProperty {
-        object: recto_cos::ObjRef,
+        object: pagic_cos::ObjRef,
         property: a11y::TagProperty,
         value: Option<String>,
     },
     /// Move a structure tag before or after a direct sibling in reading order.
     MoveTag {
-        object: recto_cos::ObjRef,
-        anchor: recto_cos::ObjRef,
+        object: pagic_cos::ObjRef,
+        anchor: pagic_cos::ObjRef,
         placement: a11y::TagPlacement,
     },
     /// Add alternate text ▸ Decorative figure: the figure's content becomes an artifact.
@@ -334,7 +334,7 @@ pub enum Edit {
     },
     /// Tags panel ▸ Mark as artifact: retire a leaf tag and mark its content as an artifact.
     MarkTagArtifact {
-        object: recto_cos::ObjRef,
+        object: pagic_cos::ObjRef,
     },
     /// Document JavaScripts: add, replace (`script`) or remove (`None`) the document-level
     /// script `name`.
@@ -352,7 +352,7 @@ pub enum Edit {
     /// Standards ▸ Save as PDF/A: fix what can be fixed for `level` (metadata, output intent,
     /// forbidden actions, annotation flags, …).
     ConvertPdfA {
-        level: recto_preflight::Level,
+        level: pagic_preflight::Level,
     },
     /// Remove what identifies the document as meeting `standard` (PDF/A or PDF/X).
     RemoveStandardId {
@@ -361,7 +361,7 @@ pub enum Edit {
     /// What a script (button or console) changed in form fields: values, read-only, required
     /// and visibility.
     ApplyScriptChanges {
-        changes: Vec<recto_forms::FieldChange>,
+        changes: Vec<pagic_forms::FieldChange>,
     },
     /// An XFA form's scripted event (a button's `click`, say) on the object at `som`: what the
     /// script changes (values, rows, visibility) is applied and the form laid out again.
@@ -373,7 +373,7 @@ pub enum Edit {
     /// image (from [`ocr::OcrJob::run`](crate::ocr::OcrJob::run)).
     AddOcrText {
         page: usize,
-        words: Vec<recto_ocr::PlacedWord>,
+        words: Vec<pagic_ocr::PlacedWord>,
     },
     /// Edit a PDF ▸ Edit text: replace the text of line `line` (from `Document::text_lines`) on
     /// `page`, in its own font when it can show it, else in Helvetica.
@@ -402,7 +402,7 @@ pub enum Edit {
         block: usize,
         text: String,
         /// Formatting changes (font, size, colour, alignment); default keeps the paragraph's.
-        style: recto_edit::BlockStyle,
+        style: pagic_edit::BlockStyle,
     },
     /// An explicit open-licensed full font program, completing subsets or selected by a user.
     RegisterTextFont {
@@ -529,7 +529,7 @@ pub enum Edit {
     /// Sanitize Document: every category, then a full rewrite on save.
     Sanitize,
     /// An XFA form made an ordinary (static) PDF form: the XFA packets, `/NeedsRendering` and
-    /// Recto's private keys go, the pages as laid out and the fields with their values
+    /// Pagic's private keys go, the pages as laid out and the fields with their values
     /// stay, so every viewer shows the same form and none lays it out again. Its scripts no
     /// longer run.
     XfaToStatic,

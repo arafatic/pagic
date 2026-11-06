@@ -13,10 +13,10 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use recto_content::{Matrix, Op, Pieces, parse, serialize_ops};
-use recto_cos::{DecodeBudget, Dict, Document, Object, PdfString, Stream};
-use recto_fonts::pdf::Metrics;
-use recto_fonts::{EmbeddedFont, GlyphError, japanese_glyph_from};
+use pagic_content::{Matrix, Op, Pieces, parse, serialize_ops};
+use pagic_cos::{DecodeBudget, Dict, Document, Object, PdfString, Stream};
+use pagic_fonts::pdf::Metrics;
+use pagic_fonts::{EmbeddedFont, GlyphError, japanese_glyph_from};
 
 use crate::EditError;
 

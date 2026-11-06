@@ -2,12 +2,12 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_ui_egui::{Dialog, RectoApp, UpdateDetails};
-use recto_ui_egui::updater::is_newer_version;
+use pagic_ui_egui::updater::is_newer_version;
+use pagic_ui_egui::{Dialog, PagicApp, UpdateDetails};
 
-fn harness() -> Harness<'static, RectoApp> {
+fn harness() -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app
     });
@@ -45,16 +45,20 @@ fn update_command_is_in_palette() {
 }
 
 #[test]
-fn check_updates_command_triggers_check() {
+fn unconfigured_update_checks_never_start_a_network_job() {
     let mut h = harness();
+    h.state_mut().check_for_updates(false);
+    assert!(h.state().toast.is_none());
     assert!(h.state_mut().execute("help.check_updates"));
-    assert!(h.state().toast.is_some() || h.state().available_update.is_some());
+    assert!(h.state().toast.is_some());
+    assert!(h.state().available_update.is_none());
+    assert!(pagic_ui_egui::updater::fetch_latest_release().unwrap_err().contains("No application update source"));
 }
 
 #[test]
 fn update_modal_renders_and_opens_download_url() {
     let mut h = harness();
-    let test_url = "https://github.com/arafatic/recto/releases/tag/v0.15.0";
+    let test_url = "https://github.com/arafatic/pagic/releases/tag/v0.15.0";
     h.state_mut().available_update = Some(UpdateDetails {
         version: "0.15.0".to_string(),
         url: test_url.to_string(),
@@ -64,7 +68,7 @@ fn update_modal_renders_and_opens_download_url() {
     h.run_steps(4);
 
     assert!(h.query_by_label_contains("Update Available").is_some());
-    assert!(h.query_by_label_contains("A new version of Recto is available").is_some());
+    assert!(h.query_by_label_contains("A new version of Pagic is available").is_some());
     assert!(h.query_by_label_contains("New features and improvements").is_some());
 
     let download_btn = h.get_by_label("Download Update");
@@ -80,7 +84,7 @@ fn update_modal_dismiss_with_later() {
     let mut h = harness();
     h.state_mut().available_update = Some(UpdateDetails {
         version: "0.15.0".to_string(),
-        url: "https://github.com/arafatic/recto/releases/latest".to_string(),
+        url: "https://github.com/arafatic/pagic/releases/latest".to_string(),
         notes: "Notes".to_string(),
     });
     h.state_mut().dialog = Some(Dialog::UpdateAvailable);

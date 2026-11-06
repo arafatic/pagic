@@ -7,7 +7,10 @@
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The compile-time build label, if any.
-pub const LABEL: Option<&str> = option_env!("RECTO_BUILD_LABEL");
+pub const LABEL: Option<&str> = match option_env!("PAGIC_BUILD_LABEL") {
+    Some(label) => Some(label),
+    None => option_env!("RECTO_BUILD_LABEL"),
+};
 
 /// The version as shown to people: `0.7.1`, or `0.7.1 (titlebar)` for a labelled build.
 pub fn version() -> String {

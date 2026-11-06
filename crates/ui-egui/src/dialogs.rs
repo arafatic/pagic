@@ -3,13 +3,14 @@
 use egui::{Align, Layout};
 
 use crate::theme::{self, Tokens};
-use recto_engine::Edit;
+use pagic_engine::Edit;
 
-use crate::{CloseRequest, Dialog, RectoApp, PropsTab, panels::human_size, widgets};
+use crate::{CloseRequest, Dialog, PagicApp, PropsTab, panels::human_size, widgets};
 
 pub(super) mod appearance;
 pub(super) mod comment_props;
 pub(super) mod credits;
+mod licenses;
 pub(super) mod marks_ui;
 pub(super) mod pageboxes;
 pub(super) mod palette;
@@ -66,7 +67,7 @@ struct Pending {
     next: Option<Dialog>,
 }
 
-pub fn show(app: &mut RectoApp, ctx: &egui::Context) {
+pub fn show(app: &mut PagicApp, ctx: &egui::Context) {
     // The page sets hover cursors from the raw pointer position (form fields, links, comments)
     // before any dialog is drawn, and nothing under a modal's backdrop takes clicks. Start from
     // the arrow; the modal's own widgets set theirs as they are drawn.
@@ -79,7 +80,7 @@ pub fn show(app: &mut RectoApp, ctx: &egui::Context) {
 }
 
 /// Draw the active modal dialog and apply the action the user chose.
-fn dialogs(app: &mut RectoApp, ctx: &egui::Context) {
+fn dialogs(app: &mut PagicApp, ctx: &egui::Context) {
     password(app, ctx);
     save_prompt(app, ctx);
     link_prompt(app, ctx);
@@ -120,12 +121,14 @@ fn dialogs(app: &mut RectoApp, ctx: &egui::Context) {
         app.custom_draft = Some((id, crate::CustomDraft { props: doc.custom_info(), ..Default::default() }));
     }
     let mut req = Pending::default();
-    let modal = widgets::show_modal(ctx, "dialog", |ui| {
+    let modal_id = if dialog == Dialog::CreditsLicenses { "credits-licenses" } else { "dialog" };
+    let modal = widgets::show_modal(ctx, modal_id, |ui| {
         ui.set_width(match dialog {
             Dialog::Properties(_) => 640.0,
             Dialog::Print => 820.0,
             Dialog::FieldProps | Dialog::BulkFieldProps => 600.0,
-            Dialog::About => 780.0,
+            Dialog::About => 540.0,
+            Dialog::CreditsLicenses => 780.0,
             Dialog::UpdateAvailable => 480.0,
             _ => 520.0,
         });
@@ -137,7 +140,7 @@ fn dialogs(app: &mut RectoApp, ctx: &egui::Context) {
 }
 
 /// The dialog's content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_body(ui: &mut egui::Ui, app: &mut RectoApp, dialog: Dialog, req: &mut Pending) -> bool {
+fn dialog_body(ui: &mut egui::Ui, app: &mut PagicApp, dialog: Dialog, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     match dialog {
         Dialog::WordCount => {
@@ -428,6 +431,7 @@ fn dialog_body(ui: &mut egui::Ui, app: &mut RectoApp, dialog: Dialog, req: &mut 
                 return false;
             }
         }
+        Dialog::CreditsLicenses => return dialog_credits(ui, req),
         Dialog::UpdateAvailable => {
             if !dialog_update(ui, app, req) {
                 return false;
@@ -438,7 +442,7 @@ fn dialog_body(ui: &mut egui::Ui, app: &mut RectoApp, dialog: Dialog, req: &mut 
 }
 
 /// `Dialog::Properties(tab)` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_properties(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending, tab: PropsTab) -> bool {
+fn dialog_properties(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending, tab: PropsTab) -> bool {
     let t = Tokens::get(ui.ctx());
     ui.label(egui::RichText::new(tl!("Document Properties")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
@@ -521,7 +525,7 @@ fn dialog_properties(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending, t
                 row(ui, "PDF producer", i.producer.clone().unwrap_or_default());
             }
             PropsTab::InitialView => {
-                use recto_engine::{InitialLayout as L, Magnification as M, Navigation as N};
+                use pagic_engine::{InitialLayout as L, Magnification as M, Navigation as N};
                 let editable = doc.allows_modification();
                 let pages = i.pages.len();
                 let Some((_, v)) = app.view_draft.as_mut() else { return };
@@ -735,7 +739,7 @@ fn dialog_properties(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending, t
                 // An entry the list leaves out (not text, only padding, or past its 256) keeps its value.
                 let file_props = doc.custom_info();
                 let unlisted = doc.has_info(&name) && !file_props.iter().any(|(k, _)| *k == name);
-                let refused = recto_engine::check_custom_key(&name).err().filter(|_| !name.is_empty()).map(|e| e.to_string());
+                let refused = pagic_engine::check_custom_key(&name).err().filter(|_| !name.is_empty()).map(|e| e.to_string());
                 ui.label("");
                 // A file can hold a custom name that `check_custom_key` refuses, such as one
                 // with a space: the tab lists it, and Add, Update and Delete stay off for it.
@@ -869,7 +873,7 @@ fn dialog_properties(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending, t
 }
 
 /// `Dialog::Split` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_split(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_split(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     ui.label(egui::RichText::new(tl!("Split document")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
@@ -910,16 +914,14 @@ fn dialog_split(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> boo
         widgets::radio_value(ui, &mut draft.mode, M::Selection, tl!("Before each selected page (select pages in Organize)"))
     });
     let plan = match draft.mode {
-        M::Pages => crate::SplitPlan::By(recto_engine::SplitBy::PageCount(draft.every)),
-        M::Selection => crate::SplitPlan::By(recto_engine::SplitBy::Before(selected)),
+        M::Pages => crate::SplitPlan::By(pagic_engine::SplitBy::PageCount(draft.every)),
+        M::Selection => crate::SplitPlan::By(pagic_engine::SplitBy::Before(selected)),
         M::Size => crate::SplitPlan::Size((draft.size_mb * 1_048_576.0) as usize),
         M::Bookmarks => crate::SplitPlan::Bookmarks,
     };
     let files = match &plan {
-        crate::SplitPlan::By(by) => Some(recto_engine::split_ranges(n, by).len()),
-        crate::SplitPlan::Bookmarks => {
-            Some(recto_engine::split_ranges(n, &recto_engine::SplitBy::Before(marks.iter().map(|m| m.0).collect())).len())
-        }
+        crate::SplitPlan::By(by) => Some(pagic_engine::split_ranges(n, by).len()),
+        crate::SplitPlan::Bookmarks => Some(pagic_engine::split_ranges(n, &pagic_engine::SplitBy::Before(marks.iter().map(|m| m.0).collect())).len()),
         crate::SplitPlan::Size(_) => None,
     };
     ui.add_space(8.0);
@@ -941,7 +943,7 @@ fn dialog_split(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> boo
 }
 
 /// `Dialog::ReplacePages` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_replace_pages(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_replace_pages(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     let count = app.active_ids().and_then(|(_, id)| app.session.get(id)).map(|d| d.info.pages.len()).unwrap_or(1).max(1);
     let Some(d) = app.replace_draft.as_mut() else {
@@ -996,7 +998,7 @@ fn dialog_replace_pages(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending
 }
 
 /// `Dialog::RedactProps` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_redact_props(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_redact_props(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     let mut prefs = app.redact_prefs.clone();
     let (ok, cancel) = crate::redact_ui::props_body(ui, &mut prefs, &t);
@@ -1015,7 +1017,7 @@ fn dialog_redact_props(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending)
 }
 
 /// `Dialog::Extract` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_extract(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_extract(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let (selected, total) = app.active_ids().map_or((Vec::new(), 0), |(i, _)| (app.views[i].target_pages(), app.views[i].page_count()));
     ui.label(egui::RichText::new(tl!("Extract pages")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
@@ -1063,8 +1065,8 @@ fn dialog_extract(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> b
 }
 
 /// `Dialog::RotatePages` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_rotate_pages(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
-    use recto_engine::{PageOrientation as O, PageParity as P};
+fn dialog_rotate_pages(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
+    use pagic_engine::{PageOrientation as O, PageParity as P};
     let n = app.active_ids().and_then(|(_, id)| app.session.get(id)).map_or(1, |d| d.info.pages.len());
     let d = &mut app.rotate_draft;
     ui.label(egui::RichText::new(tl!("Rotate Pages")).font(theme::semibold(18.0)));
@@ -1138,7 +1140,7 @@ fn dialog_rotate_pages(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending)
 }
 
 /// `Dialog::DuplicateField` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_duplicate_field(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_duplicate_field(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let n = app.active_ids().and_then(|(_, id)| app.session.get(id)).map_or(1, |d| d.info.pages.len());
     let Some(d) = app.duplicate_draft.as_mut() else {
         req.close = true;
@@ -1171,7 +1173,7 @@ fn dialog_duplicate_field(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pendi
 }
 
 /// `Dialog::CertificateViewer` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_certificate_viewer(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_certificate_viewer(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     ui.set_width(700.0);
     let trusted = app.session.trusted_certificates().to_vec();
@@ -1192,7 +1194,7 @@ fn dialog_certificate_viewer(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pe
 }
 
 /// `Dialog::SummarizeComments` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_summarize_comments(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_summarize_comments(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     ui.label(egui::RichText::new(tl!("Summarize Options")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
     ui.label(tl!("Choose a layout:"));
@@ -1201,7 +1203,7 @@ fn dialog_summarize_comments(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pe
     ui.horizontal(|ui| {
         ui.label(tl!("Sort comments by:"));
         craft_ui::ComboBox::from_id_salt("summary-sort").selected_text(tl!(app.summary_sort.name())).show_ui(ui, |ui| {
-            for s in recto_engine::SummarySort::ALL {
+            for s in pagic_engine::SummarySort::ALL {
                 ui.selectable_value(&mut app.summary_sort, s, tl!(s.name()));
             }
         });
@@ -1220,7 +1222,7 @@ fn dialog_summarize_comments(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pe
 }
 
 /// `Dialog::Revert` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_revert(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_revert(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let name = app.active_ids().and_then(|(_, id)| app.session.get(id)).map(|d| d.name.clone()).unwrap_or_default();
     ui.label(egui::RichText::new(tl!("Revert")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
@@ -1242,7 +1244,7 @@ fn dialog_revert(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bo
 }
 
 /// `Dialog::OverwriteChanged` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_overwrite_changed(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_overwrite_changed(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     #[cfg(not(target_arch = "wasm32"))]
     let name = app.pending_overwrite.as_ref().and_then(|p| app.session.get(p.id)).map(|d| d.name.clone()).unwrap_or_default();
     #[cfg(target_arch = "wasm32")]
@@ -1271,7 +1273,7 @@ fn dialog_overwrite_changed(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pen
 }
 
 /// `Dialog::Print` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_print(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_print(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     let Some((i, id)) = app.active_ids() else {
         req.close = true;
@@ -1303,7 +1305,7 @@ fn dialog_print(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> boo
 }
 
 /// `Dialog::Signature` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_signature(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_signature(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     let (go, cancel, browse) =
         crate::fill_sign::signature_pad(ui, &t, &mut app.signature_draft, &mut app.signature_preview, &mut app.signature_photo);
@@ -1328,7 +1330,7 @@ fn dialog_signature(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) ->
 }
 
 /// `Dialog::Preferences` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_preferences(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_preferences(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     // The settings outgrow a short window: scroll them rather than run off the screen.
     // The OK row stays below the scroll, in reach however far the settings are scrolled.
@@ -1348,9 +1350,9 @@ fn dialog_preferences(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) 
 }
 
 /// `Dialog::NumberPages` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_number_pages(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_number_pages(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
-    use recto_engine::LabelStyle as L;
+    use pagic_engine::LabelStyle as L;
     ui.label(egui::RichText::new(tl!("Number pages")).font(theme::semibold(18.0)));
     ui.add_space(8.0);
     let Some((_, id)) = app.active_ids() else { return false };
@@ -1406,14 +1408,14 @@ fn dialog_number_pages(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending)
 }
 
 /// `Dialog::Recovery` content. Returns `false` when it has its own buttons and no footer is wanted.
-fn dialog_recovery(ui: &mut egui::Ui, app: &mut RectoApp) -> bool {
+fn dialog_recovery(ui: &mut egui::Ui, app: &mut PagicApp) -> bool {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
         ui.add(crate::icons::image("clock-3", 22.0, t.accent));
         ui.label(egui::RichText::new(tl!("Recover unsaved documents?")).font(theme::semibold(18.0)));
     });
     ui.add_space(6.0);
-    ui.label(tl!("Recto didn't shut down normally. These documents had changes that were autosaved:"));
+    ui.label(tl!("Pagic didn't shut down normally. These documents had changes that were autosaved:"));
     ui.add_space(8.0);
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     egui::Grid::new("recoverable").num_columns(2).spacing([18.0, 6.0]).show(ui, |ui| {
@@ -1442,11 +1444,11 @@ fn dialog_shortcuts(ui: &mut egui::Ui) -> bool {
     };
     // Registered commands first (always in sync with the real bindings), then the
     // keys the document view handles itself.
-    let mut rows: Vec<(String, String)> = recto_engine::commands::COMMANDS
+    let mut rows: Vec<(String, String)> = pagic_engine::commands::COMMANDS
         .iter()
         .filter_map(|c| c.shortcut.map(|k| (crate::commands::shortcut_label(ui.ctx(), k), tl!(c.label).trim_end_matches('…').to_string())))
         .collect();
-    let key = |s: recto_engine::commands::Shortcut| crate::commands::shortcut_label(ui.ctx(), s);
+    let key = |s: pagic_engine::commands::Shortcut| crate::commands::shortcut_label(ui.ctx(), s);
     let pair = |a, b| format!("{} / {}", key(a), key(b));
     // Key names, translated where a catalog has them (not scanned as UI literals).
     let named = |k: &str| tl!(k).to_string();
@@ -1484,28 +1486,38 @@ fn dialog_shortcuts(ui: &mut egui::Ui) -> bool {
 
 /// `Dialog::About` content. Returns `false` when it has its own buttons and no footer is wanted.
 fn dialog_about(ui: &mut egui::Ui, _req: &mut Pending) -> bool {
-    let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
-            ui.label(egui::RichText::new("Recto").font(theme::semibold(20.0)));
-            ui.label(crate::i18n::fmt(tl!("Version {v}"), &[("v", &recto_engine::build_info::version())]));
+            ui.label(egui::RichText::new("Pagic").font(theme::semibold(20.0)));
+            ui.label(crate::i18n::fmt(tl!("Version {v}"), &[("v", &pagic_engine::build_info::version())]));
         });
     });
     ui.add_space(6.0);
-    ui.label(tl!("Contributors"));
-    ui.label(tl!("A clean-room, open-source PDF application written in Rust. MIT OR Apache-2.0."));
-    ui.label(
-        egui::RichText::new(
-            "Rendering: hayro (bootstrap) · UI: egui · Icons: Lucide (ISC) · Fonts: Inter, JetBrains Mono, Dancing Script (OFL)",
-        )
-        .color(t.text_muted)
-        .small(),
-    );
+    ui.label(tl!("Developed and maintained by Arafatic"));
     true
 }
 
+/// A separate, fixed-size reader keeps legal text from moving About's controls.
+fn dialog_credits(ui: &mut egui::Ui, req: &mut Pending) -> bool {
+    ui.label(egui::RichText::new(tl!("Credits & Licenses")).font(theme::semibold(18.0)));
+    ui.label(tl!("Based on Recto and contributions from open-source developers"));
+    ui.label(tl!("Contributors"));
+    for contributor in credits::CONTRIBUTORS {
+        ui.label(contributor.display_name.unwrap_or(contributor.login));
+    }
+    ui.label("Rendering: hayro · UI: egui · Icons: Lucide (ISC) · Fonts: Inter, JetBrains Mono, Dancing Script and bundled OFL faces");
+    ui.label("MIT OR Apache-2.0. Original and third-party copyright notices and license terms follow.");
+    licenses::show(ui);
+    ui.horizontal(|ui| {
+        if widgets::pill_button(ui, tl!("Close"), true).clicked() {
+            req.close = true;
+        }
+    });
+    false
+}
+
 /// `Dialog::UpdateAvailable` content. Returns `false` as it draws its own action buttons.
-fn dialog_update(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bool {
+fn dialog_update(ui: &mut egui::Ui, app: &mut PagicApp, req: &mut Pending) -> bool {
     let t = Tokens::get(ui.ctx());
     let current_version = env!("CARGO_PKG_VERSION");
     let (version, notes) = match &app.available_update {
@@ -1518,7 +1530,7 @@ fn dialog_update(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bo
             ui.label(egui::RichText::new(tl!("Update Available")).font(theme::semibold(18.0)));
             ui.add_space(4.0);
             ui.label(crate::i18n::fmt(
-                tl!("A new version of Recto is available: v{new} (current: v{cur})."),
+                tl!("A new version of Pagic is available: v{new} (current: v{cur})."),
                 &[("new", version), ("cur", current_version)],
             ));
         });
@@ -1528,18 +1540,11 @@ fn dialog_update(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bo
         ui.add_space(10.0);
         ui.label(egui::RichText::new(tl!("Release Notes")).font(theme::semibold(13.0)));
         ui.add_space(4.0);
-        egui::Frame::new()
-            .fill(t.hover)
-            .corner_radius(egui::CornerRadius::same(6))
-            .inner_margin(egui::Margin::same(8))
-            .show(ui, |ui| {
-                egui::ScrollArea::vertical()
-                    .max_height(180.0)
-                    .auto_shrink([false, true])
-                    .show(ui, |ui| {
-                        ui.label(egui::RichText::new(notes).color(t.text));
-                    });
+        egui::Frame::new().fill(t.hover).corner_radius(egui::CornerRadius::same(6)).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
+            egui::ScrollArea::vertical().max_height(180.0).auto_shrink([false, true]).show(ui, |ui| {
+                ui.label(egui::RichText::new(notes).color(t.text));
             });
+        });
     }
 
     ui.add_space(16.0);
@@ -1558,7 +1563,7 @@ fn dialog_update(ui: &mut egui::Ui, app: &mut RectoApp, req: &mut Pending) -> bo
     false
 }
 
-fn dialog_footer(ui: &mut egui::Ui, app: &mut RectoApp, dialog: Dialog, req: &mut Pending) {
+fn dialog_footer(ui: &mut egui::Ui, app: &mut PagicApp, dialog: Dialog, req: &mut Pending) {
     ui.add_space(16.0);
     let changed = draft_changes(app).is_some_and(|c| !c.is_empty());
     // One row high: on its own, a right-to-left layout centres the buttons in all the height
@@ -1606,7 +1611,7 @@ fn dialog_footer(ui: &mut egui::Ui, app: &mut RectoApp, dialog: Dialog, req: &mu
 }
 
 /// Acts on what the dialog asked for, once the modal is drawn.
-fn finish_dialog(app: &mut RectoApp, dialog: Dialog, modal_closed: bool, req: &mut Pending) {
+fn finish_dialog(app: &mut PagicApp, dialog: Dialog, modal_closed: bool, req: &mut Pending) {
     finish_requests(app, dialog, modal_closed, req);
     finish_actions(app, req);
     finish_redactions_and_fields(app, req);
@@ -1615,7 +1620,7 @@ fn finish_dialog(app: &mut RectoApp, dialog: Dialog, modal_closed: bool, req: &m
 }
 
 /// Runs the one-shot requests the dialog made.
-fn finish_requests(app: &mut RectoApp, dialog: Dialog, modal_closed: bool, req: &mut Pending) {
+fn finish_requests(app: &mut PagicApp, dialog: Dialog, modal_closed: bool, req: &mut Pending) {
     if req.download_update {
         if let Some(details) = &app.available_update {
             let url = details.url.clone();
@@ -1670,7 +1675,7 @@ fn finish_requests(app: &mut RectoApp, dialog: Dialog, modal_closed: bool, req: 
 }
 
 /// Runs the document actions the dialog asked for.
-fn finish_actions(app: &mut RectoApp, req: &mut Pending) {
+fn finish_actions(app: &mut PagicApp, req: &mut Pending) {
     if req.summarize_now {
         app.summarize_comments();
     }
@@ -1697,7 +1702,7 @@ fn finish_actions(app: &mut RectoApp, req: &mut Pending) {
 }
 
 /// Redaction, hidden-data and field-properties requests.
-fn finish_redactions_and_fields(app: &mut RectoApp, req: &mut Pending) {
+fn finish_redactions_and_fields(app: &mut PagicApp, req: &mut Pending) {
     match req.redact_now.take() {
         Some(Dialog::RedactPages) => app.redact_pages(),
         Some(Dialog::RedactSearch) => {
@@ -1705,7 +1710,7 @@ fn finish_redactions_and_fields(app: &mut RectoApp, req: &mut Pending) {
             app.redact_search.found = Some(n);
         }
         Some(Dialog::RemoveHidden) => {
-            let which: Vec<recto_engine::Hidden> = app.hidden_draft.found.iter().filter(|f| f.2 && f.1 > 0).map(|f| f.0).collect();
+            let which: Vec<pagic_engine::Hidden> = app.hidden_draft.found.iter().filter(|f| f.2 && f.1 > 0).map(|f| f.0).collect();
             let n: usize = app.hidden_draft.found.iter().filter(|f| f.2).map(|f| f.1).sum();
             if app.apply_edit(Edit::RemoveHidden { which }) {
                 if n == 1 {
@@ -1737,7 +1742,7 @@ fn finish_redactions_and_fields(app: &mut RectoApp, req: &mut Pending) {
         && let Some(d) = app.field_props.take()
         && let Some(props) = d.props()
     {
-        let form = |app: &RectoApp| app.active_ids().and_then(|(_, id)| app.session.get(id)).map(|doc| doc.form.clone());
+        let form = |app: &PagicApp| app.active_ids().and_then(|(_, id)| app.session.get(id)).map(|doc| doc.form.clone());
         // A rename also renames the field in the formulas that read it.
         let before = props.name.as_ref().and_then(|_| form(app));
         if app.apply_edit(Edit::SetFieldProps { name: d.field.clone(), props: Box::new(props) })
@@ -1749,7 +1754,7 @@ fn finish_redactions_and_fields(app: &mut RectoApp, req: &mut Pending) {
             let prefix = d.field.rsplit_once('.').filter(|_| !typed.contains('.')).map(|(p, _)| format!("{p}.")).unwrap_or_default();
             let name = format!("{prefix}{typed}");
             if let (Some(before), Some(after)) = (before, form(app)) {
-                let n = recto_engine::form_calculations_changed(&before, &after).iter().filter(|f| **f != name).count();
+                let n = pagic_engine::form_calculations_changed(&before, &after).iter().filter(|f| **f != name).count();
                 if n > 0 {
                     app.notify(crate::i18n::trn(
                         crate::i18n::current(),
@@ -1765,7 +1770,7 @@ fn finish_redactions_and_fields(app: &mut RectoApp, req: &mut Pending) {
 }
 
 /// Edits built from the dialog's drafts.
-fn finish_edits(app: &mut RectoApp, dialog: Dialog, req: &mut Pending) {
+fn finish_edits(app: &mut PagicApp, dialog: Dialog, req: &mut Pending) {
     if req.props_now
         && let Some(d) = app.comment_props.take()
     {
@@ -1824,7 +1829,7 @@ fn finish_edits(app: &mut RectoApp, dialog: Dialog, req: &mut Pending) {
 }
 
 /// Closes (or switches) the dialog, then runs what closing it asked for.
-fn finish_close(app: &mut RectoApp, dialog: Dialog, modal_closed: bool, req: &mut Pending) {
+fn finish_close(app: &mut PagicApp, dialog: Dialog, modal_closed: bool, req: &mut Pending) {
     // Protect / Remove security replace the Properties dialog.
     let replaces = req.link_command.is_some_and(|c| c.starts_with("protect.")) || req.open_revision.is_some();
     if modal_closed || req.close || replaces {
@@ -1868,7 +1873,7 @@ fn finish_close(app: &mut RectoApp, dialog: Dialog, modal_closed: bool, req: &mu
 }
 
 /// Info edits needed to make the document match the Description draft.
-fn draft_changes(app: &RectoApp) -> Option<Vec<Edit>> {
+fn draft_changes(app: &PagicApp) -> Option<Vec<Edit>> {
     let (id, draft) = app.props_draft.as_ref()?;
     let doc = app.session.get(*id)?;
     let mut edits: Vec<Edit> = INFO_KEYS

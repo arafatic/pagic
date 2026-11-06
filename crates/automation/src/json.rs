@@ -7,7 +7,7 @@ const MAX_BOOKMARK_POSITION: f64 = 1_000_000.0;
 
 // ---- JSON helpers ----------------------------------------------------------------------------
 
-pub(crate) fn parse_style_ranges(value: Option<&Value>) -> Result<Vec<recto_engine::RangeStyle>> {
+pub(crate) fn parse_style_ranges(value: Option<&Value>) -> Result<Vec<pagic_engine::RangeStyle>> {
     let Some(value) = value else { return Ok(Vec::new()) };
     let values = value.as_array().filter(|v| v.len() <= 1024).ok_or_else(|| Args::wrong("ranges", "an array of at most 1024 style objects"))?;
     values
@@ -32,15 +32,15 @@ pub(crate) fn parse_style_ranges(value: Option<&Value>) -> Result<Vec<recto_engi
             let family = a
                 .opt_str("font")?
                 .map(|f| match f {
-                    "helvetica" => Ok(recto_engine::FontFamily::Helvetica),
-                    "times" => Ok(recto_engine::FontFamily::Times),
-                    "courier" => Ok(recto_engine::FontFamily::Courier),
+                    "helvetica" => Ok(pagic_engine::FontFamily::Helvetica),
+                    "times" => Ok(pagic_engine::FontFamily::Times),
+                    "courier" => Ok(pagic_engine::FontFamily::Courier),
                     _ => Err(Args::wrong("font", "helvetica, times or courier")),
                 })
                 .transpose()?
                 .map(|f| -> Result<_> { Ok((f, a.opt_bool("bold")?.unwrap_or(false), a.opt_bool("italic")?.unwrap_or(false))) })
                 .transpose()?;
-            Ok(recto_engine::RangeStyle {
+            Ok(pagic_engine::RangeStyle {
                 range: start..end,
                 family,
                 resource: a.opt_str("font_resource")?.map(str::to_owned),
@@ -127,15 +127,15 @@ pub(crate) fn document_attachment_keys(doc: &Document) -> Vec<String> {
         .attachments
         .iter()
         .filter_map(|x| match &x.source {
-            recto_render::AttachmentSource::Document { key } => Some(key.clone()),
-            recto_render::AttachmentSource::Annotation { .. } => None,
+            pagic_render::AttachmentSource::Document { key } => Some(key.clone()),
+            pagic_render::AttachmentSource::Annotation { .. } => None,
         })
         .collect()
 }
 
 /// Bookmark rows in listing order as JSON: a row holds the rows that follow it on the page at the
 /// next level down in `children`, and paths and pages are 1-based.
-pub(crate) fn nest_rows(rows: &[recto_engine::BookmarkRow], pages: &[recto_render::PageInfo]) -> Vec<Value> {
+pub(crate) fn nest_rows(rows: &[pagic_engine::BookmarkRow], pages: &[pagic_render::PageInfo]) -> Vec<Value> {
     // The open rows, outermost first, with their depth and the children gathered so far.
     let mut open: Vec<(usize, Value, Vec<Value>)> = Vec::new();
     let mut roots = Vec::new();
@@ -171,8 +171,8 @@ pub(crate) fn nest_rows(rows: &[recto_engine::BookmarkRow], pages: &[recto_rende
 /// like every `rect`: the destination type (`XYZ`, `Fit`, `FitH`, `FitV`, `FitR`) and its
 /// position, `null` where the destination leaves it unspecified (`/XYZ null null null` keeps the
 /// reader's position and zoom). `None` for a destination without a type.
-pub(crate) fn destination(view: &recto_render::DestView, page: &recto_render::PageInfo) -> Option<Value> {
-    use recto_render::DestView;
+pub(crate) fn destination(view: &pagic_render::DestView, page: &pagic_render::PageInfo) -> Option<Value> {
+    use pagic_render::DestView;
     let points = |left: Option<f32>, top: Option<f32>| {
         let [x, y] = page.dest_fraction(left, top, 0);
         let round = |v: f32| f64::from((v * 100.0).round() / 100.0);
@@ -271,8 +271,8 @@ pub(crate) fn info(d: &Document) -> Value {
         // destination, null without one.
         "open_destination": i.open_dest.as_ref().map(|(p, view)| json!({ "page": page1(*p), "destination": i.pages.get(*p).and_then(|pg| destination(view, pg)) })),
         // XFA forms: "static" (the PDF's own fields work; the XFA data is ignored) or "dynamic"
-        // (laid out from the template by Recto, see xfa_layout; placeholder pages when that failed).
-        "xfa": i.xfa.map(|x| match x { recto_render::Xfa::Static => "static", recto_render::Xfa::Dynamic => "dynamic" }),
+        // (laid out from the template by Pagic, see xfa_layout; placeholder pages when that failed).
+        "xfa": i.xfa.map(|x| match x { pagic_render::Xfa::Static => "static", pagic_render::Xfa::Dynamic => "dynamic" }),
         "xfa_layout": d.xfa.as_ref().map(|x| json!({ "pages": x.pages, "fields": x.fields, "warnings": x.warnings })),
         // A script of the form ran too long and was abandoned: its scripts no longer run in this
         // document (calculations, buttons) until it is opened again.
@@ -300,37 +300,37 @@ pub(crate) fn info(d: &Document) -> Value {
         "links": i.links.iter().map(|l| json!({
             "page": page1(l.page), "rect": view_rect(i, l.page, l.rect),
             "target": match &l.target {
-                recto_render::LinkTarget::Page(p, _) => json!({ "page": page1(*p) }),
-                recto_render::LinkTarget::Uri(u) => json!({ "uri": u }),
-                recto_render::LinkTarget::SetLayers { changes, preserve_rb } => json!({
+                pagic_render::LinkTarget::Page(p, _) => json!({ "page": page1(*p) }),
+                pagic_render::LinkTarget::Uri(u) => json!({ "uri": u }),
+                pagic_render::LinkTarget::SetLayers { changes, preserve_rb } => json!({
                     "layers": changes.iter().map(|(op, ocg)| json!({
                         "layer": i.layers.iter().find(|l| l.id == *ocg).map(|l| l.name.as_str()),
                         "state": match op {
-                            recto_render::LayerOp::On => "on",
-                            recto_render::LayerOp::Off => "off",
-                            recto_render::LayerOp::Toggle => "toggle",
+                            pagic_render::LayerOp::On => "on",
+                            pagic_render::LayerOp::Off => "off",
+                            pagic_render::LayerOp::Toggle => "toggle",
                         },
                     })).collect::<Vec<_>>(),
                     "preserve_rb": preserve_rb,
                 }),
-                recto_render::LinkTarget::RemoteGoTo { launch, file, destination, new_window } => json!({
+                pagic_render::LinkTarget::RemoteGoTo { launch, file, destination, new_window } => json!({
                     "action": if *launch { "Launch" } else { "GoToR" },
                     "remote_document": file,
                     "destination": match destination {
-                        recto_render::RemoteDestination::Default => json!({ "kind": "default" }),
-                        recto_render::RemoteDestination::Page { page, view } => json!({ "kind": "page", "page": page1(*page), "view": format!("{view:?}") }),
-                        recto_render::RemoteDestination::Named(name) => json!({ "kind": "named", "name": name }),
+                        pagic_render::RemoteDestination::Default => json!({ "kind": "default" }),
+                        pagic_render::RemoteDestination::Page { page, view } => json!({ "kind": "page", "page": page1(*page), "view": format!("{view:?}") }),
+                        pagic_render::RemoteDestination::Named(name) => json!({ "kind": "named", "name": name }),
                     },
                     "new_window": new_window,
                 }),
-                recto_render::LinkTarget::Other(o) => json!({ "other": o }),
+                pagic_render::LinkTarget::Other(o) => json!({ "other": o }),
             },
         })).collect::<Vec<_>>(),
         "layers": i.layers.iter().map(|l| json!({ "name": l.name, "visible": l.visible, "initial": l.initial })).collect::<Vec<_>>(),
         // Full-screen presentation settings a page carries (ISO 32000-2 §12.4.4): only pages with
         // a `/Trans` or `/Dur` appear; `style` is null for a display time alone.
         "transitions": i.transitions.iter().map(|t| json!({
-            "page": page1(t.page), "style": t.style.map(recto_render::TransitionStyle::name), "duration": t.duration,
+            "page": page1(t.page), "style": t.style.map(pagic_render::TransitionStyle::name), "duration": t.duration,
             "horizontal": t.horizontal, "inward": t.inward, "direction": t.direction, "scale": t.scale, "opaque": t.opaque,
             "display": t.display,
         })).collect::<Vec<_>>(),
@@ -351,11 +351,11 @@ pub(crate) fn info(d: &Document) -> Value {
 /// A user-space rectangle on 0-based `page` in displayed-page coordinates (points from the
 /// top-left of the page as displayed, y down, after `/Rotate`), the way every tool reports
 /// rectangles; unchanged when the page is unknown (a malformed annotation that points at no page).
-/// Public so `recto-cli` reports the same rectangles as the tools.
-pub fn view_rect(i: &recto_render::DocInfo, page: usize, rect: [f32; 4]) -> [f32; 4] {
+/// Public so `pagic-cli` reports the same rectangles as the tools.
+pub fn view_rect(i: &pagic_render::DocInfo, page: usize, rect: [f32; 4]) -> [f32; 4] {
     i.pages.get(page).map_or(rect, |p| comments::rect_to_view(p, rect))
 }
 
-fn outline(items: &[recto_render::OutlineItem]) -> Value {
+fn outline(items: &[pagic_render::OutlineItem]) -> Value {
     Value::Array(items.iter().map(|o| json!({ "title": o.title, "page": o.page.map(|p| p + 1), "children": outline(&o.children) })).collect())
 }

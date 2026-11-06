@@ -1,5 +1,5 @@
 [package]
-name = "recto-a11y"
+name = "pagic-a11y"
 description = "Accessibility: the Accessibility Checker (32 rules), its report and fixes"
 version.workspace = true
 edition.workspace = true
@@ -11,9 +11,9 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-recto-cos = { workspace = true }
-recto-model = { workspace = true }
-recto-content = { workspace = true }
-recto-filters = { workspace = true }
-recto-fonts = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-model = { workspace = true }
+pagic-content = { workspace = true }
+pagic-filters = { workspace = true }
+pagic-fonts = { workspace = true }
 thiserror.workspace = true

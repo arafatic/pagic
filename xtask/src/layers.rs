@@ -27,7 +27,7 @@ impl Class {
     }
 }
 
-/// Every workspace crate (package name without the `recto-` prefix) and its layer.
+/// Every workspace crate (package name without the `pagic-` prefix) and its layer.
 pub const TABLE: &[(&str, Class)] = &[
     // L0 foundation (standalone, publishable)
     ("geom", Class::Standalone(0)),
@@ -85,7 +85,7 @@ pub const TABLE: &[(&str, Class)] = &[
     ("testkit", Class::Testkit),
     ("oracle", Class::Testkit),
     // L8 apps + tooling
-    ("recto", Class::Exempt),
+    ("pagic", Class::Exempt),
     ("cli", Class::Exempt),
     ("web", Class::Exempt),
     ("xtask", Class::Exempt),
@@ -112,7 +112,7 @@ pub const UI_CRATES: &[&str] = &["egui", "eframe", "winit", "egui_kittest", "cra
 pub const UI_MIN_LAYER: u8 = 7;
 
 pub fn short_name(pkg: &str) -> &str {
-    pkg.strip_prefix("recto-").unwrap_or(pkg)
+    pkg.strip_prefix("pagic-").unwrap_or(pkg)
 }
 
 pub fn classify(pkg: &str) -> Option<Class> {
@@ -283,79 +283,79 @@ mod tests {
     #[test]
     fn current_graph_shape_passes() {
         let g = [
-            c("recto-geom", &[]),
-            c("recto-render", &[("hayro", Normal, false), ("lopdf", Normal, false)]),
-            c("recto-engine", &[("recto-render", Normal, true)]),
-            c("recto-ui-egui", &[("recto-engine", Normal, true), ("egui", Normal, false), ("egui_kittest", Dev, false)]),
-            c("recto", &[("recto-ui-egui", Normal, true)]),
+            c("pagic-geom", &[]),
+            c("pagic-render", &[("hayro", Normal, false), ("lopdf", Normal, false)]),
+            c("pagic-engine", &[("pagic-render", Normal, true)]),
+            c("pagic-ui-egui", &[("pagic-engine", Normal, true), ("egui", Normal, false), ("egui_kittest", Dev, false)]),
+            c("pagic", &[("pagic-ui-egui", Normal, true)]),
         ];
         assert!(check(&g).is_empty(), "{:?}", check(&g));
     }
 
     #[test]
     fn upward_and_sideways_edges_flagged() {
-        let v = check(&[c("recto-model", &[("recto-engine", Normal, true)])]);
+        let v = check(&[c("pagic-model", &[("pagic-engine", Normal, true)])]);
         assert!(matches!(v[..], [Violation::Upward { from: 2, to: 6, .. }]));
         // forms -> js must go through the ActionRunner trait, never directly.
-        let v = check(&[c("recto-forms", &[("recto-js", Normal, true)])]);
+        let v = check(&[c("pagic-forms", &[("pagic-js", Normal, true)])]);
         assert!(matches!(v[..], [Violation::Upward { from: 3, to: 3, .. }]));
     }
 
     #[test]
     fn listed_sideways_edges_allowed() {
-        assert!(check(&[c("recto-redact", &[("recto-edit", Normal, true)])]).is_empty());
-        assert!(!check(&[c("recto-edit", &[("recto-redact", Normal, true)])]).is_empty());
+        assert!(check(&[c("pagic-redact", &[("pagic-edit", Normal, true)])]).is_empty());
+        assert!(!check(&[c("pagic-edit", &[("pagic-redact", Normal, true)])]).is_empty());
     }
 
     #[test]
     fn cos_may_use_only_its_listed_foundation() {
-        assert!(check(&[c("recto-cos", &[("recto-filters", Normal, true), ("recto-crypt", Normal, true)])]).is_empty());
-        let v = check(&[c("recto-cos", &[("recto-arlington", Normal, true)])]);
+        assert!(check(&[c("pagic-cos", &[("pagic-filters", Normal, true), ("pagic-crypt", Normal, true)])]).is_empty());
+        let v = check(&[c("pagic-cos", &[("pagic-arlington", Normal, true)])]);
         assert!(matches!(v[..], [Violation::StandaloneHasWorkspaceDep { .. }]));
-        let v = check(&[c("recto-filters", &[("recto-geom", Normal, true)])]);
+        let v = check(&[c("pagic-filters", &[("pagic-geom", Normal, true)])]);
         assert!(matches!(v[..], [Violation::StandaloneHasWorkspaceDep { .. }]));
     }
 
     #[test]
     fn ui_crates_below_l7_flagged() {
         for dep in ["egui", "eframe", "winit", "rfd", "wgpu", "wgpu-core", "egui_dock", "craft-ui"] {
-            let v = check(&[c("recto-engine", &[(dep, Normal, false)])]);
+            let v = check(&[c("pagic-engine", &[(dep, Normal, false)])]);
             assert!(matches!(v[..], [Violation::UiBelowL7 { layer: 6, .. }]), "{dep}");
         }
-        assert!(check(&[c("recto-platform", &[("winit", Normal, false)])]).is_empty());
-        assert!(check(&[c("recto-ui-egui", &[("craft-ui", Normal, false)])]).is_empty());
+        assert!(check(&[c("pagic-platform", &[("winit", Normal, false)])]).is_empty());
+        assert!(check(&[c("pagic-ui-egui", &[("craft-ui", Normal, false)])]).is_empty());
     }
 
     #[test]
     fn test_support_only_as_dev_dependency() {
-        let v = check(&[c("recto-cos", &[("recto-testkit", Normal, true)])]);
+        let v = check(&[c("pagic-cos", &[("pagic-testkit", Normal, true)])]);
         assert!(!v.is_empty());
-        assert!(check(&[c("recto-render", &[("recto-oracle", Dev, true)])]).is_empty());
-        let v = check(&[c("recto-render", &[("recto-oracle", Normal, true)])]);
+        assert!(check(&[c("pagic-render", &[("pagic-oracle", Dev, true)])]).is_empty());
+        let v = check(&[c("pagic-render", &[("pagic-oracle", Normal, true)])]);
         assert!(matches!(v[..], [Violation::TestkitAsNormalDep { .. }]));
 
         // A standalone crate may use test support in its own tests: a dev-dependency is not part
         // of the graph the standalone rule protects. `cos` is where the qpdf oracle is needed.
-        assert!(check(&[c("recto-cos", &[("recto-oracle", Dev, true)])]).is_empty());
-        assert!(check(&[c("recto-geom", &[("recto-testkit", Dev, true)])]).is_empty());
+        assert!(check(&[c("pagic-cos", &[("pagic-oracle", Dev, true)])]).is_empty());
+        assert!(check(&[c("pagic-geom", &[("pagic-testkit", Dev, true)])]).is_empty());
         // ...but only as a dev-dependency, and only for test support. Product crates are still
         // off-limits to a standalone crate however they are depended on.
-        let v = check(&[c("recto-cos", &[("recto-oracle", Normal, true)])]);
+        let v = check(&[c("pagic-cos", &[("pagic-oracle", Normal, true)])]);
         assert!(matches!(v[..], [Violation::StandaloneHasWorkspaceDep { .. }]), "{v:?}");
-        let v = check(&[c("recto-cos", &[("recto-model", Dev, true)])]);
+        let v = check(&[c("pagic-cos", &[("pagic-model", Dev, true)])]);
         assert!(matches!(v[..], [Violation::StandaloneHasWorkspaceDep { .. }]), "{v:?}");
     }
 
     #[test]
     fn unregistered_crate_is_error() {
-        let v = check(&[c("recto-mystery", &[])]);
-        assert!(matches!(&v[..], [Violation::Unregistered { krate }] if krate == "recto-mystery"));
+        let v = check(&[c("pagic-mystery", &[])]);
+        assert!(matches!(&v[..], [Violation::Unregistered { krate }] if krate == "pagic-mystery"));
     }
 
     #[test]
     fn apps_exempt() {
-        for app in ["recto", "recto-cli", "recto-web", "xtask"] {
-            assert!(check(&[c(app, &[("egui", Normal, false), ("recto-ui-egui", Normal, true)])]).is_empty());
+        for app in ["pagic", "pagic-cli", "pagic-web", "xtask"] {
+            assert!(check(&[c(app, &[("egui", Normal, false), ("pagic-ui-egui", Normal, true)])]).is_empty());
         }
     }
 }

@@ -289,7 +289,7 @@ pub fn clear_block(doc: &mut Document, page: usize, block: usize) -> Result<(), 
                 replacement.push(Op::new("T*", vec![]));
             }
         }
-        replacement.push(Op::new("TJ", vec![Object::Array(vec![recto_content::num(adjustment)])]));
+        replacement.push(Op::new("TJ", vec![Object::Array(vec![pagic_content::num(adjustment)])]));
         patches.insert(s.op, replacement);
     }
     let data = splice(&pieces, &ops, |i| patches.remove(&i).map_or((Vec::new(), true), |v| (v, false)));

@@ -1,5 +1,5 @@
 [package]
-name = "recto-cos"
+name = "pagic-cos"
 description = "PDF object layer: lazy tolerant parsing, copy-on-write edits, incremental and full saving"
 version.workspace = true
 edition.workspace = true
@@ -9,15 +9,15 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-recto-crypt = { workspace = true }
-recto-filters = { workspace = true }
+pagic-crypt = { workspace = true }
+pagic-filters = { workspace = true }
 thiserror = { workspace = true }
 # PDF date strings (`pdf_date`) go through chrono (no hand-rolled calendar code).
 chrono = { workspace = true }
 
 [dev-dependencies]
-recto-oracle = { workspace = true }
-recto-testkit = { workspace = true }
+pagic-oracle = { workspace = true }
+pagic-testkit = { workspace = true }
 serde_json = { workspace = true }
 proptest = { workspace = true }
 hayro-syntax = { workspace = true }

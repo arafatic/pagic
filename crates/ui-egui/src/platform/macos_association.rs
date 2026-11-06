@@ -1,4 +1,4 @@
-//! Best-effort recovery of an existing per-file Recto binding after a successful open/save.
+//! Best-effort recovery of an existing per-file Pagic binding after a successful open/save.
 //! Quarantined documents with redirected bindings can be refused by LaunchServices before the
 //! app receives an open event (Apple feedback FB19468486). In-app Open remains reachable.
 //! Never remove quarantine, set type-wide defaults, or create a new preference on an open.
@@ -7,7 +7,7 @@ use std::{io, path::Path};
 
 const OPEN_WITH: &str = "com.apple.LaunchServices.OpenWith";
 const QUARANTINE: &str = "com.apple.quarantine";
-const BUNDLE_ID: &str = "local.recto.desktop";
+const BUNDLE_ID: &str = pagic_engine::identity::APP_ID;
 const MAX_ATTRIBUTE: usize = 64 * 1024;
 
 /// A bounded snapshot used only to decide whether native association recovery is eligible.
@@ -41,13 +41,7 @@ impl OpeningMetadata {
 
 /// Read a last-component-symlink-safe attribute with a strict allocation cap.
 fn read_attribute(path: &Path, name: &str) -> io::Result<Option<Vec<u8>>> {
-    read_attribute_with(|buffer| {
-        if buffer.is_empty() {
-            rustix::fs::lgetxattr_query(path, name)
-        } else {
-            rustix::fs::lgetxattr(path, name, buffer)
-        }
-    })
+    read_attribute_with(|buffer| if buffer.is_empty() { rustix::fs::lgetxattr_query(path, name) } else { rustix::fs::lgetxattr(path, name, buffer) })
 }
 
 /// Probe the length before allocating. A concurrently grown value fails safely; unreadable
@@ -122,7 +116,7 @@ pub(crate) fn repair(path: &Path) {
         let (tx, rx) = mpsc::sync_channel::<RepairJob>(32);
         let pending = Arc::new(Mutex::new(HashSet::new()));
         std::thread::Builder::new()
-            .name("recto-association".into())
+            .name("pagic-association".into())
             .spawn(move || {
                 for job in rx {
                     if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| objc2::rc::autoreleasepool(|_| repair_job(job)))).is_err() {
@@ -208,7 +202,7 @@ mod tests {
 
     /// Create an isolated scratch directory for parallel metadata tests.
     fn directory() -> std::path::PathBuf {
-        let p = std::env::temp_dir().join(format!("recto-association-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        let p = std::env::temp_dir().join(format!("pagic-association-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir(&p).unwrap();
         p
     }
@@ -343,7 +337,7 @@ mod tests {
     #[test]
     fn untrusted_bundle_aliases_are_skipped_without_resolving_them() {
         let dir = directory();
-        let app = dir.join("Recto.app");
+        let app = dir.join("Pagic.app");
         std::fs::create_dir(&app).unwrap();
         let alias = dir.join("alias.app");
         std::os::unix::fs::symlink(&app, &alias).unwrap();
@@ -351,7 +345,14 @@ mod tests {
         std::fs::remove_dir_all(dir).unwrap();
     }
 
-    /// Keep the captured upstream binding foreign and match Recto to its package identity.
+    #[test]
+    fn recto_bindings_remain_foreign_to_pagic() {
+        let app = Path::new("/Applications/Pagic.app");
+        assert!(!points_to_this_app(&binding(app, "local.recto.desktop", 0, true), app));
+        assert!(points_to_this_app(&binding(app, "local.pagic.desktop", 0, true), app));
+    }
+
+    /// Keep the captured upstream binding foreign and match Pagic to its package identity.
     #[test]
     fn native_binding_and_packaging_identity_match() {
         // Captured via Apple's API on a synthetic PDF on macOS 27.0.1. Contains only the
@@ -359,8 +360,8 @@ mod tests {
         let hex = "62706c6973743030d30102030405065776657273696f6e54706174685f101062756e646c656964656e74696669657210005f101a2f4170706c69636174696f6e732f50646643726166742e6170705f101761692e73746f727974656c6c65722e7064666372616674080f171c2f314e0000000000000101000000000000000700000000000000000000000000000068";
         let captured: Vec<u8> =
             hex.as_bytes().as_chunks::<2>().0.iter().map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()).collect();
-        assert!(!points_to_this_app(&captured, Path::new("/Applications/Recto.app")), "the upstream bundle belongs to a separate app");
-        let app = Path::new("/Applications/Recto.app");
+        assert!(!points_to_this_app(&captured, Path::new("/Applications/Pagic.app")), "the upstream bundle belongs to a separate app");
+        let app = Path::new("/Applications/Pagic.app");
         assert!(points_to_this_app(&binding(app, BUNDLE_ID, 0, true), app));
         let package = plist::from_bytes::<plist::Value>(include_bytes!("../../../../packaging/macos/Info.plist.in")).unwrap();
         assert_eq!(package.as_dictionary().unwrap().get("CFBundleIdentifier").unwrap().as_string(), Some(BUNDLE_ID));
@@ -369,7 +370,7 @@ mod tests {
     /// Exercise arbitrary and damaged metadata through the strict native parser.
     #[test]
     fn malformed_plists_and_truncated_native_schemas_do_not_panic() {
-        let app = Path::new("/Applications/Recto.app");
+        let app = Path::new("/Applications/Pagic.app");
         for binary in [false, true] {
             let native = binding(app, BUNDLE_ID, 0, binary);
             for end in 0..native.len() {

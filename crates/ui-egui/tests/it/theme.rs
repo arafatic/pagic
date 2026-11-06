@@ -2,12 +2,12 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_ui_egui::RectoApp;
-use recto_ui_egui::theme::{ThemeKind, ThemePreference, Tokens};
+use pagic_ui_egui::PagicApp;
+use pagic_ui_egui::theme::{ThemeKind, ThemePreference, Tokens};
 
-fn harness() -> Harness<'static, RectoApp> {
+fn harness() -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1100.0, 800.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.set_theme_preference(ThemePreference::System);
         app
@@ -17,7 +17,7 @@ fn harness() -> Harness<'static, RectoApp> {
     h
 }
 
-fn assert_theme(h: &Harness<'static, RectoApp>, preference: ThemePreference, kind: ThemeKind) {
+fn assert_theme(h: &Harness<'static, PagicApp>, preference: ThemePreference, kind: ThemeKind) {
     assert_eq!(h.state().theme_preference, preference);
     assert_eq!(h.state().theme, kind);
     assert_eq!(Tokens::get(&h.ctx).kind, kind);
@@ -31,12 +31,12 @@ fn assert_theme(h: &Harness<'static, RectoApp>, preference: ThemePreference, kin
 }
 
 /// A click on the title bar's theme button cycles Light, Dark, System.
-fn click_toolbar(h: &mut Harness<'static, RectoApp>, label: &str) {
+fn click_toolbar(h: &mut Harness<'static, PagicApp>, label: &str) {
     h.get_by_label(&format!("Display theme: {label}")).click();
     h.run_steps(3);
 }
 
-fn open_view_menu(h: &mut Harness<'static, RectoApp>) {
+fn open_view_menu(h: &mut Harness<'static, PagicApp>) {
     crate::support::open_menu(h, "View");
     assert!(h.query_by_label("Switch light / dark theme").is_none());
     crate::support::menu_row(h, "Display theme").hover();
@@ -53,13 +53,13 @@ fn a_fresh_install_defaults_to_dark_and_restores_saved_choices() {
     let h = harness();
     assert_theme(&h, ThemePreference::System, ThemeKind::Dark);
     let mut quiet = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app
     });
     quiet.run_steps(4);
     assert_theme(&quiet, ThemePreference::Dark, ThemeKind::Dark);
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.restore(r#"{"theme":"Light"}"#);
     assert_eq!(app.theme_preference, ThemePreference::Light, "a saved choice wins over the default");
 }
@@ -104,16 +104,16 @@ fn toolbar_and_view_menu_share_three_state_preferences() {
 #[test]
 fn saved_preferences_restore_with_legacy_light_dark_settings() {
     for (value, preference) in [("light", ThemePreference::Light), ("dark", ThemePreference::Dark), ("system", ThemePreference::System)] {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.set_option("theme", value).unwrap();
         let saved = app.persist();
-        let mut restored = RectoApp::new();
+        let mut restored = PagicApp::new();
         restored.set_option("language", "en").unwrap();
         restored.restore(&saved);
         assert_eq!(restored.theme_preference, preference);
     }
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.set_option("language", "en").unwrap();
     app.restore(r#"{"theme":"Dark"}"#);
     assert_eq!(app.theme_preference, ThemePreference::Dark);
@@ -128,7 +128,7 @@ fn saved_preferences_restore_with_legacy_light_dark_settings() {
 
 #[test]
 fn commands_and_options_apply_before_the_first_frame() {
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.set_option("language", "en").unwrap();
     app.run_command("view.theme.dark");
     assert_eq!(app.theme_preference, ThemePreference::Dark);
@@ -150,7 +150,7 @@ fn commands_and_options_apply_before_the_first_frame() {
 #[test]
 fn restored_system_tracks_native_input_without_rewriting_saved_preference() {
     let mut h = Harness::builder().with_size(egui::vec2(1100.0, 800.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.restore(r#"{"theme":"System"}"#);
         app
@@ -178,7 +178,7 @@ fn restored_system_tracks_native_input_without_rewriting_saved_preference() {
 
 #[test]
 fn unknown_system_uses_light_after_a_manual_dark_choice() {
-    let mut app = RectoApp::new();
+    let mut app = PagicApp::new();
     app.set_theme_preference(ThemePreference::Dark);
     app.set_theme_preference(ThemePreference::System);
     assert_eq!(app.theme, ThemeKind::Light);
@@ -206,7 +206,7 @@ fn native_appearance_remains_inherited_for_every_saved_choice() {
         let observed = commands.clone();
         let mut h = Harness::builder().with_size(egui::vec2(1100.0, 800.0)).build_eframe(move |cc| {
             cc.egui_ctx.add_plugin(commands);
-            let mut app = RectoApp::new();
+            let mut app = PagicApp::new();
             app.set_option("language", "en").unwrap();
             app.set_theme_preference(preference);
             app
@@ -229,7 +229,7 @@ fn native_appearance_remains_inherited_for_every_saved_choice() {
 #[test]
 fn preferences_theme_cards_and_use_system_setting_stay_in_sync() {
     use egui::accesskit::Role;
-    fn mode_shown(h: &Harness<'static, RectoApp>) -> String {
+    fn mode_shown(h: &Harness<'static, PagicApp>) -> String {
         let combo =
             h.get_by(|n| n.role() == Role::ComboBox && n.value().is_some_and(|v| ["Use system setting", "Light", "Dark"].contains(&v.as_str())));
         combo.value().unwrap_or_default()
@@ -288,13 +288,13 @@ fn preferences_theme_cards_and_use_system_setting_stay_in_sync() {
 
 #[test]
 fn collapsed_menu_symbol_has_embedded_coverage_and_narrow_home_renders() {
-    let mut fonts = egui::epaint::text::Fonts::new(egui::epaint::text::TextOptions::default(), recto_ui_egui::theme::font_definitions());
+    let mut fonts = egui::epaint::text::Fonts::new(egui::epaint::text::TextOptions::default(), pagic_ui_egui::theme::font_definitions());
     let mut view = fonts.with_pixels_per_point(1.0);
-    for font in [recto_ui_egui::theme::regular(13.0), recto_ui_egui::theme::medium(13.0), recto_ui_egui::theme::semibold(13.0)] {
+    for font in [pagic_ui_egui::theme::regular(13.0), pagic_ui_egui::theme::medium(13.0), pagic_ui_egui::theme::semibold(13.0)] {
         assert!(view.has_glyph(&font, '\u{22ef}'), "collapsed menu symbol must not need a system font");
     }
     let mut h = Harness::builder().with_size(egui::vec2(820.0, 600.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app
     });

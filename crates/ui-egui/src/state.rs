@@ -77,7 +77,7 @@ pub enum QuickTool {
     /// Edit a PDF ▸ Edit text: click a line of existing text to edit it.
     EditText,
     /// Add a stamp: click to place this stamp.
-    Stamp(recto_engine::StampKind),
+    Stamp(pagic_engine::StampKind),
     /// A custom stamp from the library (its index).
     CustomStamp(usize),
     /// Edit a PDF ▸ Link: draw link areas, select and edit links.
@@ -105,6 +105,7 @@ pub enum Dialog {
     CreateImages,
     Properties(PropsTab),
     About,
+    CreditsLicenses,
     Shortcuts,
     UpdateAvailable,
     Split,
@@ -115,7 +116,7 @@ pub enum Dialog {
     /// Set Page Boxes (crop, trim, bleed, art, media).
     PageBoxes,
     /// Add / Update Header and Footer, Watermark, Background.
-    Marks(recto_engine::MarkKind),
+    Marks(pagic_engine::MarkKind),
     /// Export a PDF ▸ Image / Text.
     Export(export_ui::ExportKind),
     /// Fill & Sign ▸ Create signature (the drawing pad).
@@ -227,7 +228,7 @@ pub struct PageClip {
 /// One page of a whole-document copy: its text as read for display, to read, or not to try
 /// (reading it failed before).
 pub(crate) enum CopyPage {
-    Read(std::sync::Arc<recto_render::PageText>),
+    Read(std::sync::Arc<pagic_render::PageText>),
     ToRead,
     Skip,
 }
@@ -241,7 +242,7 @@ pub(crate) struct DocumentCopyJob {
 }
 
 impl DocumentCopyJob {
-    pub(crate) fn of(v: &DocView, doc: &recto_engine::Document) -> DocumentCopyJob {
+    pub(crate) fn of(v: &DocView, doc: &pagic_engine::Document) -> DocumentCopyJob {
         let pages = (0..v.page_count())
             .map(|p| match v.texts.get(&p) {
                 Some(t) => CopyPage::Read(t.clone()),
@@ -256,7 +257,7 @@ impl DocumentCopyJob {
     /// once its text is taken, so a large document never holds every page's text layer at once.
     /// `None` when `cancel` was set.
     pub(crate) fn text(self, cancel: &std::sync::atomic::AtomicBool) -> Option<String> {
-        let mut renderer: Option<recto_render::PageRenderer> = None;
+        let mut renderer: Option<pagic_render::PageRenderer> = None;
         let mut out = String::new();
         let mut push = |text: String| {
             if !text.is_empty() {
@@ -274,17 +275,11 @@ impl DocumentCopyJob {
                 CopyPage::Read(t) => push(t.text_of(0..t.glyphs.len())),
                 CopyPage::ToRead => {
                     let r = renderer.get_or_insert_with(|| {
-                        let config = recto_render::RenderConfig { password: self.password.clone(), ..Default::default() };
-                        recto_render::PageRenderer::new(self.bytes.clone(), config)
+                        let config = pagic_render::RenderConfig { password: self.password.clone(), ..Default::default() };
+                        pagic_render::PageRenderer::new(self.bytes.clone(), config)
                     });
-                    let req = recto_render::RenderRequest {
-                        page,
-                        kind: recto_render::RequestKind::Text,
-                        tile: None,
-                        scale: 1.0,
-                        tag: 0,
-                        preview: false,
-                    };
+                    let req =
+                        pagic_render::RenderRequest { page, kind: pagic_render::RequestKind::Text, tile: None, scale: 1.0, tag: 0, preview: false };
                     if let Some(t) = r.render(req).text {
                         push(t.text_of(0..t.glyphs.len()));
                     }
@@ -313,7 +308,7 @@ pub struct PasswordPrompt {
     /// the document is unlocked.
     pub(crate) then: Option<&'static str>,
     /// A link destination to apply after the linked PDF is unlocked.
-    pub(crate) after_open: Option<recto_render::RemoteDestination>,
+    pub(crate) after_open: Option<pagic_render::RemoteDestination>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -324,7 +319,7 @@ pub(crate) struct OpenRequest {
     pub(crate) input: open_worker::Input,
     pub(crate) password: Option<String>,
     pub(crate) activate: bool,
-    pub(crate) after_open: Option<recto_render::RemoteDestination>,
+    pub(crate) after_open: Option<pagic_render::RemoteDestination>,
     pub(crate) recovered: Option<RecoveryMeta>,
     pub(crate) then: Option<&'static str>,
 }
@@ -341,7 +336,7 @@ pub struct UnlockPrompt {
 }
 
 impl UnlockPrompt {
-    pub(crate) fn new(doc: &recto_engine::Document, then: Option<&'static str>) -> Self {
+    pub(crate) fn new(doc: &pagic_engine::Document, then: Option<&'static str>) -> Self {
         Self { doc: doc.id, name: doc.name.clone(), input: String::new(), error: None, then }
     }
 }
@@ -387,7 +382,7 @@ pub struct PendingLink {
 pub struct PendingRemoteLink {
     pub source: DocId,
     pub path: std::path::PathBuf,
-    pub destination: recto_render::RemoteDestination,
+    pub destination: pagic_render::RemoteDestination,
 }
 
 /// Settings for the Number pages dialog.
@@ -395,12 +390,12 @@ pub struct PendingRemoteLink {
 pub struct NumberDraft {
     pub from: usize,
     pub to: usize,
-    pub style: recto_engine::LabelStyle,
+    pub style: pagic_engine::LabelStyle,
     pub prefix: String,
     pub start: u32,
 }
 
-/// What [`RectoApp::open_path`] did: opened the file in a new tab, focused the tab already
+/// What [`PagicApp::open_path`] did: opened the file in a new tab, focused the tab already
 /// showing it, handed it to the background open worker, or failed. Failures tell the user
 /// through a toast; this is the programmatic contract for callers that must know (the control
 /// channel, tools that wait for a file) (#1620).

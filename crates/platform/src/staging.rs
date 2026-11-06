@@ -10,9 +10,9 @@ pub const STAGING_ATTEMPTS: usize = 16;
 /// Where the suffix goes in a staging name. Each caller keeps the form it has always used.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StagingName {
-    /// `.{name}.{suffix}.recto-tmp`, used by the automation tools.
+    /// `.{name}.{suffix}.pagic-tmp`, used by the automation tools.
     SuffixThenTag,
-    /// `.{name}.recto-{suffix}.tmp`, used by the desktop app's save.
+    /// `.{name}.pagic-{suffix}.tmp`, used by the desktop app's save.
     TagThenSuffix,
 }
 
@@ -54,8 +54,8 @@ fn create_staging_as(
     }
     for suffix in suffixes.into_iter().take(STAGING_ATTEMPTS) {
         let tmp = dir.join(match form {
-            StagingName::SuffixThenTag => format!(".{stem}.{suffix:016x}.recto-tmp"),
-            StagingName::TagThenSuffix => format!(".{stem}.recto-{suffix:016x}.tmp"),
+            StagingName::SuffixThenTag => format!(".{stem}.{suffix:016x}.pagic-tmp"),
+            StagingName::TagThenSuffix => format!(".{stem}.pagic-{suffix:016x}.tmp"),
         });
         let mut options = std::fs::OpenOptions::new();
         options.write(true).create_new(true);
@@ -249,7 +249,11 @@ fn preserve_target_xattrs(path: &Path, staged: &std::fs::File) -> std::io::Resul
 
 /// Read an already size-bounded attribute, refusing a partial result or a changed post-read size.
 #[cfg(target_os = "macos")]
-fn read_xattr_value(size: usize, mut read: impl FnMut(&mut [u8]) -> std::io::Result<usize>, mut query: impl FnMut() -> std::io::Result<usize>) -> std::io::Result<Vec<u8>> {
+fn read_xattr_value(
+    size: usize,
+    mut read: impl FnMut(&mut [u8]) -> std::io::Result<usize>,
+    mut query: impl FnMut() -> std::io::Result<usize>,
+) -> std::io::Result<Vec<u8>> {
     let mut value = vec![0u8; size.max(1)];
     let len = read(value.as_mut_slice())?;
     let after = query()?;

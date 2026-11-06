@@ -1,4 +1,4 @@
-use recto_render::{PageText, TextGlyph, text::fold_case};
+use pagic_render::{PageText, TextGlyph, text::fold_case};
 use std::ops::Range;
 
 fn page(parts: &[&str]) -> PageText {

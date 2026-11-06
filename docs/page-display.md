@@ -18,8 +18,8 @@ current view; the per-document toggle does not change the preference for future 
 Desktop launch options:
 
 ```sh
-recto --layout continuous --page-gaps off document.pdf
-recto --default-page-gaps off
+pagic --layout continuous --page-gaps off document.pdf
+pagic --default-page-gaps off
 ```
 
 The opt-in UI control channel accepts `set key=page-gaps value=off` for the active document

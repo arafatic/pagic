@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build, sign and (optionally) notarize the macOS release artifacts:
 #
-#   $DIST/recto-<version>-macos-<arch>.dmg          Recto.app on a drag-to-Applications DMG
-#   $DIST/recto-cli-<version>-macos-<arch>.zip      the headless CLI
+#   $DIST/pagic-<version>-macos-<arch>.dmg          Pagic.app on a drag-to-Applications DMG
+#   $DIST/pagic-cli-<version>-macos-<arch>.zip      the headless CLI
 #
 # Usage: packaging/macos/package.sh [--arch universal|aarch64|x86_64] [--skip-build]
 #
@@ -15,6 +15,7 @@
 set -euo pipefail
 # shellcheck source=../env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/../env.sh"
+python3 "$ROOT/packaging/check-identity.py" --require-release-ready
 HERE="$ROOT/packaging/macos"
 
 ARCH=universal
@@ -39,9 +40,9 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 IDENTITY="${MACOS_SIGN_IDENTITY:--}"
 SHORT_VERSION="${VERSION%%-*}"
 WORK="$CARGO_TARGET_DIR/macos-package"
-APP="$WORK/Recto.app"
-DMG="$DIST/recto-$VERSION-macos-$ARCH.dmg"
-CLI_ZIP="$DIST/recto-cli-$VERSION-macos-$ARCH.zip"
+APP="$WORK/Pagic.app"
+DMG="$DIST/pagic-$VERSION-macos-$ARCH.dmg"
+CLI_ZIP="$DIST/pagic-cli-$VERSION-macos-$ARCH.zip"
 
 NOTARIZE=0
 if [[ "$IDENTITY" = "-" ]]; then
@@ -52,18 +53,18 @@ else
   warn "macOS: APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID incomplete; signed but not notarized"
 fi
 
-echo "==> Recto $VERSION for macOS ($ARCH), identity: $IDENTITY, notarize: $NOTARIZE"
+echo "==> Pagic $VERSION for macOS ($ARCH), identity: $IDENTITY, notarize: $NOTARIZE"
 
 # ---- build -------------------------------------------------------------------------------------
 if [[ "$SKIP_BUILD" = 0 ]]; then
   args=()
   for t in "${TARGETS[@]}"; do args+=(--target "$t"); done
-  (cd "$ROOT" && cargo build --release --locked -p recto -p recto-cli "${args[@]}")
+  (cd "$ROOT" && cargo build --release --locked -p pagic -p pagic-cli "${args[@]}")
 fi
 
 rm -rf "$WORK"
 mkdir -p "$WORK/bin"
-for bin in recto recto-cli; do
+for bin in pagic pagic-cli; do
   inputs=()
   for t in "${TARGETS[@]}"; do inputs+=("$CARGO_TARGET_DIR/$t/release/$bin"); done
   lipo -create -output "$WORK/bin/$bin" "${inputs[@]}"
@@ -97,12 +98,12 @@ notarize() {
   fi
 }
 
-# ---- Recto.app ----------------------------------------------------------------------------
+# ---- Pagic.app ----------------------------------------------------------------------------
 echo "==> assembling $APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 # Executable and icon carry the display name (CFBundleExecutable / CFBundleIconFile).
-cp "$WORK/bin/recto" "$APP/Contents/MacOS/recto"
-cp "$ROOT/assets/app-icon/recto.icns" "$APP/Contents/Resources/recto.icns"
+cp "$WORK/bin/pagic" "$APP/Contents/MacOS/pagic"
+cp "$ROOT/assets/app-icon/pagic.icns" "$APP/Contents/Resources/pagic.icns"
 # Required embedded-font notices are independent of optional font inputs.
 for notice in NOTICE LICENSE LICENSE-MIT LICENSE-APACHE ATTRIBUTION.md; do
   if [[ -f "$ROOT/$notice" ]]; then
@@ -110,7 +111,7 @@ for notice in NOTICE LICENSE LICENSE-MIT LICENSE-APACHE ATTRIBUTION.md; do
   fi
 done
 cp "$ROOT/assets/app-icon/LICENSE-recto.txt" "$APP/Contents/Resources/LICENSE-recto.txt"
-# The standard About panel (Recto menu > About Recto) shows Credits.rtf under the version:
+# The standard About panel (Pagic menu > About Pagic) shows Credits.rtf under the version:
 # legal attribution for this modified build.
 cp "$HERE/Credits.rtf" "$APP/Contents/Resources/Credits.rtf"
 copy_font_licences "$APP/Contents/Resources"
@@ -118,20 +119,20 @@ copy_font_licences "$APP/Contents/Resources"
 # bundle's seal covers them.
 stage_models "$APP/Contents/Resources/models"
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/$SHORT_VERSION/g" \
-  -e "s/@BUILD_SHA@/${RECTO_BUILD_SHA:-unknown}/g" \
+  -e "s/@BUILD_SHA@/${PAGIC_BUILD_SHA:-unknown}/g" \
   "$HERE/Info.plist.in" >"$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 printf 'APPL????' >"$APP/Contents/PkgInfo"
 
 # Sign inside-out: nested code first, then the bundle itself (no --deep on the final signature).
 # Today the only nested code is the main executable; frameworks/helpers would be signed here too.
-sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/recto"
+sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/pagic"
 sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP"
 codesign --verify --strict --deep --verbose=2 "$APP"
 
 if [[ "$NOTARIZE" = 1 ]]; then
-  ditto -c -k --keepParent "$APP" "$WORK/Recto-notarize.zip"
-  notarize "$WORK/Recto-notarize.zip"
+  ditto -c -k --keepParent "$APP" "$WORK/Pagic-notarize.zip"
+  notarize "$WORK/Pagic-notarize.zip"
   xcrun stapler staple "$APP"
   xcrun stapler validate "$APP"
   spctl --assess --type execute -vvv "$APP"
@@ -141,7 +142,7 @@ fi
 echo "==> building $DMG"
 STAGE="$WORK/dmg"
 mkdir -p "$STAGE"
-ditto "$APP" "$STAGE/Recto.app"
+ditto "$APP" "$STAGE/Pagic.app"
 ln -s /Applications "$STAGE/Applications"
 # Use the standard Finder window, without upstream promotional artwork.
 rm -f "$DMG"
@@ -164,7 +165,7 @@ hdiutil_retry() {
     sleep $((attempt * 10))
   done
 }
-hdiutil_retry create create -srcfolder "$STAGE" -volname "Recto" -fs HFS+ -format UDZO -imagekey zlib-level=9 -ov "$DMG"
+hdiutil_retry create create -srcfolder "$STAGE" -volname "Pagic" -fs HFS+ -format UDZO -imagekey zlib-level=9 -ov "$DMG"
 sign "$DMG"
 codesign --verify --strict --verbose=2 "$DMG"
 # The app inside the image must still pass --strict, so a makehybrid-style regression can't ship.
@@ -172,7 +173,7 @@ MOUNT="$WORK/dmg-check"
 rm -rf "$MOUNT"
 mkdir -p "$MOUNT"
 hdiutil_retry attach attach -nobrowse -readonly -mountpoint "$MOUNT" "$DMG" >/dev/null
-if ! codesign --verify --strict --deep --verbose=2 "$MOUNT/Recto.app"; then
+if ! codesign --verify --strict --deep --verbose=2 "$MOUNT/Pagic.app"; then
   hdiutil_retry detach detach "$MOUNT" >/dev/null || true
   exit 1
 fi
@@ -186,17 +187,17 @@ fi
 
 # ---- CLI ---------------------------------------------------------------------------------------
 echo "==> building $CLI_ZIP"
-CLI_DIR="$WORK/recto-cli-$VERSION-macos-$ARCH"
+CLI_DIR="$WORK/pagic-cli-$VERSION-macos-$ARCH"
 mkdir -p "$CLI_DIR"
-cp "$WORK/bin/recto-cli" "$CLI_DIR/"
+cp "$WORK/bin/pagic-cli" "$CLI_DIR/"
 copy_docs "$CLI_DIR"
-sign --options runtime "$CLI_DIR/recto-cli"
-codesign --verify --strict --verbose=2 "$CLI_DIR/recto-cli"
+sign --options runtime "$CLI_DIR/pagic-cli"
+codesign --verify --strict --verbose=2 "$CLI_DIR/pagic-cli"
 rm -f "$CLI_ZIP"
 ditto -c -k --keepParent "$CLI_DIR" "$CLI_ZIP"
 # A bare Mach-O can't carry a stapled ticket; Gatekeeper looks the notarization up online.
 if [[ "$NOTARIZE" = 1 ]]; then notarize "$CLI_ZIP"; fi
 
-"$WORK/bin/recto-cli" --version
+"$WORK/bin/pagic-cli" --version
 echo "==> done"
 ls -lh "$DMG" "$CLI_ZIP"

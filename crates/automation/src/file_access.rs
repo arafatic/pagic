@@ -1,6 +1,6 @@
 //! The folders automation may read and write.
 //!
-//! `recto-cli mcp --automation-read-root <dir> --automation-write-root <dir>` confines the
+//! `pagic-cli mcp --automation-read-root <dir> --automation-write-root <dir>` confines the
 //! files an agent's tools reach, with the names and wording VectorCraft uses. [`AutomationRoots`]
 //! holds the two folders. Every path a tool reads is checked with [`Access::Read`] and every path
 //! it writes with [`Access::Write`], in `Automation::resolve`, which all of them go through:
@@ -268,11 +268,11 @@ mod tests {
     fn other_shares_and_devices_are_refused_before_they_are_resolved() {
         let (base, roots) = folders("shares");
         for p in [
-            r"\\.\pipe\recto-4003.pdf",
+            r"\\.\pipe\pagic-4003.pdf",
             r"\\?\GLOBALROOT\Device\Null",
-            r"\\recto-no-such-host.invalid\share\a.pdf",
-            "//recto-no-such-host.invalid/share/a.pdf",
-            r"\\?\UNC\recto-no-such-host.invalid\share\a.pdf",
+            r"\\pagic-no-such-host.invalid\share\a.pdf",
+            "//pagic-no-such-host.invalid/share/a.pdf",
+            r"\\?\UNC\pagic-no-such-host.invalid\share\a.pdf",
         ] {
             let e = roots.check(p, Access::Read).unwrap_err();
             assert!(e.starts_with("automation path rejected: outside the read root"), "{p}: {e}");

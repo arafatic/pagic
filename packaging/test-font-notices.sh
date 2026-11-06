@@ -5,7 +5,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 . "$root/packaging/font-notices.sh"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-unset RECTO_FONTS_DIR RECTO_FONTS_REQUIRED
+unset PAGIC_FONTS_DIR PAGIC_FONTS_REQUIRED RECTO_FONTS_DIR RECTO_FONTS_REQUIRED
 copy_font_licences "$work/default"
 # All local family notices plus the three always-embedded base-font notices.
 for notice in "$root"/crates/fonts/assets/fonts/*/OFL.txt; do
@@ -22,6 +22,13 @@ export RECTO_FONTS_DIR="$work/override"
 copy_font_licences "$work/custom"
 cmp "$work/override/fonts/custom/OFL.txt" "$work/custom/OFL-custom.txt"
 [[ ! -e "$work/custom/OFL-shippori-mincho.txt" ]]
+# New override wins even when a legacy override is present.
+export PAGIC_FONTS_DIR="$work/override"
+export RECTO_FONTS_DIR="$work/not-the-selected-root"
+copy_font_licences "$work/pagic-override"
+cmp "$work/override/fonts/custom/OFL.txt" "$work/pagic-override/OFL-custom.txt"
+unset PAGIC_FONTS_DIR
+export RECTO_FONTS_DIR="$work/override"
 export RECTO_FONTS_REQUIRED=1
 if copy_font_licences "$work/missing-chinese" 2>/dev/null; then
   echo 'Expected missing required Chinese manifest to fail' >&2; exit 1

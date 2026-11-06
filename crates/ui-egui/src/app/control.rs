@@ -1,7 +1,7 @@
 use super::*;
 use crate::control;
 
-impl RectoApp {
+impl PagicApp {
     /// Enable the UI control channel on `ctx` (opt-in; see [`control`]). Returns a client that
     /// sends requests to this app; [`control::serve`] exposes it on loopback.
     pub fn attach_control(&mut self, ctx: &egui::Context) -> control::ControlClient {
@@ -70,7 +70,7 @@ impl RectoApp {
             ("date-format", _) => self.session.set_date_format(value)?,
             ("date-language", _) => self.session.set_date_language(Some(value).filter(|v| *v != "auto"))?,
             ("tool", _) => {
-                let g = recto_engine::catalog::group(value).ok_or_else(|| format!("unknown tool {value}"))?;
+                let g = pagic_engine::catalog::group(value).ok_or_else(|| format!("unknown tool {value}"))?;
                 self.select_tool(g.id);
             }
             ("left", _) => self.left_open = value != "closed",
@@ -92,9 +92,9 @@ impl RectoApp {
                     "split" => Some(Dialog::Split),
                     "protect" => Some(Dialog::Protect),
                     "page-boxes" => Some(Dialog::PageBoxes),
-                    "header-footer" => Some(Dialog::Marks(recto_engine::MarkKind::HeaderFooter)),
-                    "watermark" => Some(Dialog::Marks(recto_engine::MarkKind::Watermark)),
-                    "background" => Some(Dialog::Marks(recto_engine::MarkKind::Background)),
+                    "header-footer" => Some(Dialog::Marks(pagic_engine::MarkKind::HeaderFooter)),
+                    "watermark" => Some(Dialog::Marks(pagic_engine::MarkKind::Watermark)),
+                    "background" => Some(Dialog::Marks(pagic_engine::MarkKind::Background)),
                     "export-image" => Some(Dialog::Export(export_ui::ExportKind::Image)),
                     "word-count" => Some(Dialog::WordCount),
                     "export-text" => Some(Dialog::Export(export_ui::ExportKind::Text)),
@@ -292,7 +292,7 @@ impl RectoApp {
                         QuickTool::CustomStamp(i)
                     }
                     stamp if stamp.starts_with("stamp-") => QuickTool::Stamp(
-                        recto_engine::StampKind::ALL
+                        pagic_engine::StampKind::ALL
                             .into_iter()
                             .find(|k| k.name().trim_start_matches("PC").eq_ignore_ascii_case(&stamp[6..]))
                             .ok_or_else(|| format!("unknown stamp {stamp}"))?,

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use recto_cos::{Dict, Document, Object, SaveOptions, write_incremental};
+use pagic_cos::{Dict, Document, Object, SaveOptions, write_incremental};
 
 use super::*;
 use crate::data::{
@@ -44,7 +44,7 @@ fn measurements_convert_to_points() {
 /// text is at full width, and a rich-text draw condensed to half by its span style.
 fn scaled_text_template() -> (String, &'static str) {
     const TEXT: &str = "Approving authority name and title";
-    let w = recto_fonts::helvetica_width(TEXT, 10.0) * 0.9;
+    let w = pagic_fonts::helvetica_width(TEXT, 10.0) * 0.9;
     let xdp = format!(
         r##"<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/"><template xmlns="http://www.xfa.org/schema/xfa-template/3.3/">
 <subform name="form" layout="tb">
@@ -681,9 +681,9 @@ fn empty_repeating_subforms_spend_the_layout_budget() {
 #[test]
 fn a_packet_stream_listed_many_times_is_read_once() {
     let mut doc = Document::open(Arc::new(shell("<template><subform/></template>"))).unwrap();
-    let packet = recto_cos::ObjRef::new(5, 0);
+    let packet = pagic_cos::ObjRef::new(5, 0);
     let items: Vec<Object> =
-        (0..1000).flat_map(|_| [Object::String(recto_cos::PdfString::literal(b"template".to_vec())), Object::Ref(packet)]).collect();
+        (0..1000).flat_map(|_| [Object::String(pagic_cos::PdfString::literal(b"template".to_vec())), Object::Ref(packet)]).collect();
     let root = doc.root().unwrap();
     doc.update_dict(root, |c| {
         let mut acro = c.get(b"AcroForm").and_then(Object::as_dict).cloned().unwrap();
@@ -1075,8 +1075,8 @@ fn static_forms_read_their_values_from_the_datasets() {
     let doc = Document::open(Arc::new(static_shell("<form1><page1><name>Ada</name><agree>1</agree></page1></form1>"))).unwrap();
     assert!(!is_dynamic(&doc));
     let fields = vec![
-        FieldDatum { obj: recto_cos::ObjRef::new(8, 0), name: "form1[0].page1[0].name[0]".into(), data: FieldData::Text(String::new()) },
-        FieldDatum { obj: recto_cos::ObjRef::new(9, 0), name: "form1[0].page1[0].agree[0]".into(), data: FieldData::Check(false) },
+        FieldDatum { obj: pagic_cos::ObjRef::new(8, 0), name: "form1[0].page1[0].name[0]".into(), data: FieldData::Text(String::new()) },
+        FieldDatum { obj: pagic_cos::ObjRef::new(9, 0), name: "form1[0].page1[0].agree[0]".into(), data: FieldData::Check(false) },
     ];
     let values = read_values(&doc, &fields);
     assert_eq!(
@@ -1112,8 +1112,8 @@ fn nested_width_less_subforms_lay_out_in_polynomial_time() {
 /// The static fixture's two fields, holding `name` and `agree`.
 fn static_fields(name: &str, agree: bool) -> Vec<FieldDatum> {
     vec![
-        FieldDatum { obj: recto_cos::ObjRef::new(8, 0), name: "form1[0].page1[0].name[0]".into(), data: FieldData::Text(name.into()) },
-        FieldDatum { obj: recto_cos::ObjRef::new(9, 0), name: "form1[0].page1[0].agree[0]".into(), data: FieldData::Check(agree) },
+        FieldDatum { obj: pagic_cos::ObjRef::new(8, 0), name: "form1[0].page1[0].name[0]".into(), data: FieldData::Text(name.into()) },
+        FieldDatum { obj: pagic_cos::ObjRef::new(9, 0), name: "form1[0].page1[0].agree[0]".into(), data: FieldData::Check(agree) },
     ]
 }
 
@@ -1195,10 +1195,7 @@ fn utf16_packets_are_read_and_written_back_as_utf16() {
     let text = String::from_utf8(xfa_bytes(&doc)).unwrap();
     for (encoding, bom) in [(Encoding::Utf16Le { bom: true }, &[0xFF, 0xFE][..]), (Encoding::Utf16Be { bom: true }, &[0xFE, 0xFF][..])] {
         let mut doc16 = doc.clone();
-        doc16.set(
-            recto_cos::ObjRef::new(5, 0),
-            Object::Stream(recto_cos::Stream::flate(recto_cos::Dict::new(), &encode_packet(&text, encoding))),
-        );
+        doc16.set(pagic_cos::ObjRef::new(5, 0), Object::Stream(pagic_cos::Stream::flate(pagic_cos::Dict::new(), &encode_packet(&text, encoding))));
         // Read exactly, not as mojibake.
         let values = read_values(&doc16, &static_fields("", false));
         assert_eq!(values.first(), Some(&("form1[0].page1[0].name[0]".to_string(), FieldData::Text("Zoë 日本".into()))));
@@ -1212,7 +1209,7 @@ fn utf16_packets_are_read_and_written_back_as_utf16() {
     }
     // A packet in neither UTF-8 nor UTF-16 (Latin-1 here) is left alone, and that is reported.
     let latin1: Vec<u8> = text.replace("Zoë 日本", "Zo\u{eb}").chars().map(|c| c as u32 as u8).collect();
-    doc.set(recto_cos::ObjRef::new(5, 0), Object::Stream(recto_cos::Stream::flate(recto_cos::Dict::new(), &latin1)));
+    doc.set(pagic_cos::ObjRef::new(5, 0), Object::Stream(pagic_cos::Stream::flate(pagic_cos::Dict::new(), &latin1)));
     let w = write_datasets(&mut doc, &static_fields("x", true)).unwrap();
     assert!(!w.written && !w.warnings.is_empty(), "{w:?}");
     assert_eq!(xfa_bytes(&doc), latin1);
@@ -1230,7 +1227,7 @@ fn huge_som_indices_are_capped_not_built() {
     let start = std::time::Instant::now();
     let fields: Vec<FieldDatum> = (0..300)
         .map(|i| FieldDatum {
-            obj: recto_cos::ObjRef::new(1000 + i, 0),
+            obj: pagic_cos::ObjRef::new(1000 + i, 0),
             name: format!("form1[0].a[{}].b[99999].c[99999].d[{i}]", 9_000 + i),
             data: FieldData::Text("v".into()),
         })
@@ -1247,11 +1244,8 @@ fn huge_som_indices_are_capped_not_built() {
     assert!(data.len() < 2_000_000);
     // And a moderate index still works.
     let mut doc = Document::open(Arc::new(static_shell("<form1><row><v>1</v></row></form1>"))).unwrap();
-    let row = |i: usize| FieldDatum {
-        obj: recto_cos::ObjRef::new(500, 0),
-        name: format!("form1[0].row[{i}].v[0]"),
-        data: FieldData::Text(i.to_string()),
-    };
+    let row =
+        |i: usize| FieldDatum { obj: pagic_cos::ObjRef::new(500, 0), name: format!("form1[0].row[{i}].v[0]"), data: FieldData::Text(i.to_string()) };
     let w = write_datasets(&mut doc, &[row(0), row(3)]).unwrap();
     assert!(w.written && w.warnings.is_empty(), "{w:?}");
     let d = parse_datasets(&String::from_utf8(xfa_bytes(&doc)).unwrap()).unwrap();
@@ -1491,7 +1485,7 @@ fn script_buttons_carry_no_javascript_action_for_other_viewers() {
 }
 
 /// The generated fields' dictionaries by name (top-level fields only).
-fn top_fields(doc: &Document) -> Vec<(String, recto_cos::Dict)> {
+fn top_fields(doc: &Document) -> Vec<(String, pagic_cos::Dict)> {
     let root = doc.root().unwrap();
     let catalog = doc.get(root);
     let acro = doc.resolve(catalog.as_dict().unwrap().get(b"AcroForm").unwrap());
@@ -1584,10 +1578,10 @@ fn assert_choice_fields_and_picture_streams() {
     let named = full_names(&doc);
     let sign = named.iter().find(|(name, _)| name == "form[0].page1[0].sign[0]").map(|(_, d)| d).expect("named by its SOM path");
     assert_eq!(sign.name(b"FT"), Some(b"Sig".as_slice()));
-    let streams: Vec<recto_cos::Stream> = doc
+    let streams: Vec<pagic_cos::Stream> = doc
         .object_numbers()
         .into_iter()
-        .filter_map(|n| if let Object::Stream(st) = &*doc.get(recto_cos::ObjRef { num: n, generation: 0 }) { Some(st.clone()) } else { None })
+        .filter_map(|n| if let Object::Stream(st) = &*doc.get(pagic_cos::ObjRef { num: n, generation: 0 }) { Some(st.clone()) } else { None })
         .filter(|s| s.dict.name(b"Subtype") == Some(b"Image"))
         .collect();
     assert_eq!(streams.len(), 3, "the PNG, its soft mask, the GIF");
@@ -1601,7 +1595,7 @@ fn assert_choice_fields_and_picture_streams() {
 }
 
 /// The terminal field dictionaries by name (one level: this fixture has no hierarchy).
-fn recto_forms_free_fields(doc: &Document) -> Vec<(String, recto_cos::Dict)> {
+fn recto_forms_free_fields(doc: &Document) -> Vec<(String, pagic_cos::Dict)> {
     let root = doc.get(doc.root().unwrap());
     let acro = doc.resolve(root.as_dict().unwrap().get(b"AcroForm").unwrap());
     let fields = doc.resolve(acro.as_dict().unwrap().get(b"Fields").unwrap()).as_array().unwrap().clone();
@@ -1744,9 +1738,7 @@ fn pictures_are_embedded_once_across_relayouts_and_bad_data_pictures_are_reporte
     let images = doc
         .object_numbers()
         .into_iter()
-        .filter(
-            |n| matches!(&*doc.get(recto_cos::ObjRef { num: *n, generation: 0 }), Object::Stream(s) if s.dict.name(b"Subtype") == Some(b"Image")),
-        )
+        .filter(|n| matches!(&*doc.get(pagic_cos::ObjRef { num: *n, generation: 0 }), Object::Stream(s) if s.dict.name(b"Subtype") == Some(b"Image")))
         .count();
     assert_eq!(images, 3, "the PNG, its soft mask and the GIF, however many times the form was laid out");
     // No private map in the catalog: earlier pictures are found on the pages, by their hash.
@@ -1842,7 +1834,7 @@ fn bmp_and_tiff_pictures_are_decoded_and_drawn() {
         assert!(!report.warnings.iter().any(|w| w.contains("left out")), "{declared}: {:?}", report.warnings);
         let samples: Vec<u8> = if declared.contains("bmp") { vec![255, 0, 0, 0, 0, 255] } else { vec![0x12, 0x34, 0x56] };
         let drawn = doc.object_numbers().into_iter().any(|n| {
-            matches!(&*doc.get(recto_cos::ObjRef { num: n, generation: 0 }), Object::Stream(st)
+            matches!(&*doc.get(pagic_cos::ObjRef { num: n, generation: 0 }), Object::Stream(st)
                 if st.dict.name(b"Subtype") == Some(b"Image") && st.decoded().ok().as_ref() == Some(&samples))
         });
         assert!(drawn, "{declared}: its pixels are an image XObject");
@@ -1917,7 +1909,7 @@ fn positioned(body: &str) -> Vec<Item> {
 #[test]
 fn a_label_without_a_width_is_as_wide_as_its_text() {
     const TEXT: &str = "PERSONNEL ONLY: from date (YYYYMMDD):";
-    let natural = recto_fonts::helvetica_width(TEXT, 8.0);
+    let natural = pagic_fonts::helvetica_width(TEXT, 8.0);
     // Right-aligned, with a minimum narrower than the text: the box is as wide as the text and
     // starts where it is placed, so the text does too (not at the far right of the subform).
     let items = positioned(&format!(
@@ -1966,7 +1958,7 @@ fn a_button_without_a_width_is_as_wide_as_its_caption() {
         r#"<field name="help" x="1in" y="0" minW="40pt" minH="12pt"><ui><button/></ui><caption><value><text>{caption}</text></value><font typeface="Arial" size="8pt"/></caption></field>"#
     ));
     let button = items.iter().find_map(|i| if let Item::Widget(w) = i { Some(w) } else { None }).expect("the button");
-    let natural = recto_fonts::helvetica_width(caption, 8.0);
+    let natural = pagic_fonts::helvetica_width(caption, 8.0);
     assert!(button.rect.w >= natural && button.rect.w < natural + 10.0, "{} for a caption of {natural}", button.rect.w);
     // A minimum wider than the caption wins.
     let items = positioned(
@@ -3109,10 +3101,10 @@ fn signature_fields_are_named_by_their_som_path() {
 }
 
 /// The terminal field named `full`, down the field tree.
-fn field_ref(doc: &Document, full: &str) -> Option<recto_cos::ObjRef> {
+fn field_ref(doc: &Document, full: &str) -> Option<pagic_cos::ObjRef> {
     let root = doc.get(doc.root()?);
     let acro = doc.resolve(root.as_dict()?.get(b"AcroForm")?);
-    let mut todo: Vec<(recto_cos::ObjRef, String)> =
+    let mut todo: Vec<(pagic_cos::ObjRef, String)> =
         doc.resolve(acro.as_dict()?.get(b"Fields")?).as_array()?.iter().filter_map(Object::as_ref).map(|r| (r, String::new())).collect();
     while let Some((r, prefix)) = todo.pop() {
         let d = doc.get(r).as_dict()?.clone();
@@ -3140,7 +3132,7 @@ fn a_signature_on_a_laid_out_box_survives_a_new_layout() {
     let mut sig = Dict::new();
     sig.set(b"Type".to_vec(), Object::name("Sig"));
     let sig = doc.add(Object::Dict(sig));
-    let picture = doc.add(Object::Stream(recto_cos::Stream::from_raw(Dict::new(), b"0 0 1 rg 0 0 10 10 re f".to_vec())));
+    let picture = doc.add(Object::Stream(pagic_cos::Stream::from_raw(Dict::new(), b"0 0 1 rg 0 0 10 10 re f".to_vec())));
     doc.update_dict(old, |d| {
         d.set(b"V".to_vec(), Object::Ref(sig));
         let mut ap = Dict::new();
@@ -3178,7 +3170,7 @@ fn a_signed_box_in_the_root_subform_keeps_its_picture_through_a_new_layout() {
     let som = "form[0].sign[0]";
     let old = field_ref(&doc, som).expect("the box");
     let sig = doc.add(Object::Dict(Dict::new()));
-    let picture = doc.add(Object::Stream(recto_cos::Stream::from_raw(Dict::new(), b"0 0 1 rg 0 0 10 10 re f".to_vec())));
+    let picture = doc.add(Object::Stream(pagic_cos::Stream::from_raw(Dict::new(), b"0 0 1 rg 0 0 10 10 re f".to_vec())));
     doc.update_dict(old, |d| {
         d.set(b"V".to_vec(), Object::Ref(sig));
         let mut ap = Dict::new();
@@ -3574,8 +3566,8 @@ fn assert_stripping_leaves_ordinary_document() {
     assert!(crate::read_packets(&doc).unwrap().is_some());
     // Reader usage rights on the catalog go too (changing the form voids them).
     let root = doc.root().unwrap();
-    let mut ur = recto_cos::Dict::new();
-    ur.set(b"UR3".to_vec(), Object::Dict(recto_cos::Dict::new()));
+    let mut ur = pagic_cos::Dict::new();
+    ur.set(b"UR3".to_vec(), Object::Dict(pagic_cos::Dict::new()));
     doc.update_dict(root, |d| d.set(b"Perms".to_vec(), Object::Dict(ur))).unwrap();
     let r = strip(&mut doc).unwrap();
     assert!(doc.full_save_required());
@@ -3640,18 +3632,18 @@ fn assert_stripping_handles_unbound_data_and_shared_field_tree() {
     render_into(&mut doc).unwrap();
     let root = doc.root().unwrap();
     let acro_ref = doc.get(root).as_dict().unwrap().get(b"AcroForm").and_then(Object::as_ref);
-    let fields: Vec<Object> = (0..2000).map(|_| Object::Ref(doc.add(Object::Dict(recto_cos::Dict::new())))).collect();
+    let fields: Vec<Object> = (0..2000).map(|_| Object::Ref(doc.add(Object::Dict(pagic_cos::Dict::new())))).collect();
     let kids = doc.add(Object::Array(fields.clone()));
     for f in &fields {
         if let Some(r) = f.as_ref() {
             doc.update_dict(r, |d| {
                 d.set(b"Kids".to_vec(), Object::Ref(kids));
-                d.set(b"PCSom".to_vec(), Object::String(recto_cos::PdfString::text("x")));
+                d.set(b"PCSom".to_vec(), Object::String(pagic_cos::PdfString::text("x")));
             })
             .unwrap();
         }
     }
-    let update = |d: &mut recto_cos::Dict| d.set(b"Fields".to_vec(), Object::Array(fields.clone()));
+    let update = |d: &mut pagic_cos::Dict| d.set(b"Fields".to_vec(), Object::Array(fields.clone()));
     match acro_ref {
         Some(r) => doc.update_dict(r, update).unwrap(),
         None => doc
@@ -3748,7 +3740,7 @@ fn draw_spans(xdp: &str) -> Vec<text::Span> {
 fn a_space_at_the_end_of_a_line_does_not_count_when_fitting_it() {
     // The box is just wide enough for "a. DATE"; the label is written "a. DATE " (as forms
     // often are). The trailing space is never drawn, so the label stays on one line.
-    let w = recto_fonts::helvetica_width("a. DATE", 10.0) + 0.01;
+    let w = pagic_fonts::helvetica_width("a. DATE", 10.0) + 0.01;
     let spans = draw_spans(&one_draw("a. DATE ", w, "left"));
     let baselines: std::collections::BTreeSet<i64> = spans.iter().map(|s| (s.baseline * 100.0).round() as i64).collect();
     assert_eq!(baselines.len(), 1, "{spans:?}");
@@ -3770,7 +3762,7 @@ fn a_space_at_the_end_of_a_line_does_not_count_when_fitting_it() {
 #[test]
 fn trailing_spaces_do_not_shift_centered_or_right_aligned_text() {
     let w = 200.0;
-    let ink = recto_fonts::helvetica_width("TITLE", 10.0);
+    let ink = pagic_fonts::helvetica_width("TITLE", 10.0);
     let left_edge = |align: &str, text: &str| draw_spans(&one_draw(text, w, align)).first().map(|s| s.x).unwrap();
     // The draw's left edge is the content area's (0.5in); centered and right-aligned text is
     // placed by its drawn width, whatever spaces follow it.
@@ -3940,7 +3932,7 @@ fn an_inherited_namespace_does_not_multiply_an_import() {
 fn long_names_repeated_by_an_index_are_capped() {
     let doc = Document::open(Arc::new(static_shell("<form1/>"))).unwrap();
     let fields = vec![FieldDatum {
-        obj: recto_cos::ObjRef::new(1000, 0),
+        obj: pagic_cos::ObjRef::new(1000, 0),
         name: format!("form1[0].{}[9999]", "n".repeat(2_000)),
         data: FieldData::Text("v".into()),
     }];
@@ -3988,7 +3980,7 @@ fn rendering_keeps_the_forms_own_font_objects() {
 /// gives: bold and Times are no longer Helvetica scaled, and the horizontal scale still applies.
 #[test]
 fn faces_measure_text_at_their_standard_14_widths() {
-    use recto_fonts::Std14;
+    use pagic_fonts::Std14;
     let face = |family: text::Family, bold: bool, italic: bool| text::Face {
         family,
         bold,
@@ -4065,7 +4057,7 @@ fn clear_password_values_removes_typed_passwords_from_datasets_in_place() {
     let written = write_incremental(&doc, &SaveOptions::default()).unwrap();
     let reopened = Document::open(Arc::new(written)).unwrap();
     for num in reopened.object_numbers() {
-        if let Object::Stream(st) = &*reopened.get(recto_cos::ObjRef::new(num, 0)) {
+        if let Object::Stream(st) = &*reopened.get(pagic_cos::ObjRef::new(num, 0)) {
             let decoded = st.decoded().unwrap_or_default();
             let text = String::from_utf8_lossy(&decoded);
             for secret in ["hunter2", "9999", "first", "second"] {

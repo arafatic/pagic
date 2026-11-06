@@ -8,7 +8,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use recto_cos::{CosError, DecodeBudget, Dict, Document, ObjRef, Object};
+use pagic_cos::{CosError, DecodeBudget, Dict, Document, ObjRef, Object};
 
 use crate::OrganizeError;
 
@@ -188,7 +188,7 @@ impl Pruner<'_> {
             self.unsure.insert(key);
             return;
         }
-        for op in recto_content::parse(data).ops {
+        for op in pagic_content::parse(data).ops {
             if op.op.as_slice() != b"Do" {
                 continue;
             }

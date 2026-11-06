@@ -1,9 +1,9 @@
-//! recto-ui-egui — the first Recto shell (L7).
+//! pagic-ui-egui — the first Pagic shell (L7).
 //!
 //! Layout grammar follows plan/acrobat/02-ui-ux.md §1: tab strip, mode bar, left tool panel,
 //! floating quick-action bar, document area, right panel + right rail with page navigation.
 //! Everything here is presentation: documents, rendering and the tool catalogue live in
-//! `recto-engine`.
+//! `pagic-engine`.
 
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 // The settings object in `persist` is one `json!` literal past the default limit of 128.
@@ -54,7 +54,7 @@ pub mod i18n;
 pub mod theme;
 mod widgets;
 
-use recto_engine::{DocId, Session};
+use pagic_engine::{DocId, Session};
 
 pub use canvas::{DocView, RasterMemory};
 pub use editing::{CloseRequest, SaveTarget};
@@ -65,6 +65,7 @@ use theme::{ThemeKind, ThemePreference};
 mod app;
 mod hooks;
 mod persist;
+pub use persist::import as preference_import;
 mod platform;
 mod state;
 mod tools;
@@ -168,7 +169,7 @@ use workflows::web_print;
 
 /// Files dropped on a document's page grid or its Pages panel.
 struct GridDrop {
-    doc: recto_engine::DocId,
+    doc: pagic_engine::DocId,
     /// Dropped on the Pages panel (its gap decides where they go), not the page grid.
     panel: bool,
     files: Vec<GridFile>,
@@ -226,12 +227,12 @@ struct PendingOpen {
     path: Option<String>,
     stamp: Option<file_watch::Stamp>,
     activate: bool,
-    after_open: Option<recto_render::RemoteDestination>,
+    after_open: Option<pagic_render::RemoteDestination>,
     recovered: Option<RecoveryMeta>,
     then: Option<&'static str>,
 }
 
-pub struct RectoApp {
+pub struct PagicApp {
     /// Tools side and pane widths; which panes are open is `left_open` and `right`.
     pub side_panels: side_panels::SidePanels,
     pub session: Session,
@@ -280,10 +281,10 @@ pub struct RectoApp {
     pub theme_preference: ThemePreference,
     /// The reading-colours preference (Preferences ▸ Reading colours): applied to every open
     /// document, and documents open with it (Acrobat's Replace Document Colors).
-    pub reading_colors: recto_render::ReadingColors,
+    pub reading_colors: pagic_render::ReadingColors,
     /// The Linux portal is enabled only by the native host, and starts on the first System choice.
     #[cfg(target_os = "linux")]
-    desktop_theme: Option<recto_platform::desktop_theme::DesktopTheme>,
+    desktop_theme: Option<pagic_platform::desktop_theme::DesktopTheme>,
     #[cfg(target_os = "linux")]
     desktop_theme_enabled: bool,
     /// How far a mouse-wheel notch scrolls.
@@ -324,15 +325,15 @@ pub struct RectoApp {
     /// tab coming to the front (Home, a document, Combine files) puts the view away.
     all_tools_tab: (Option<DocId>, bool),
     pub recent: Vec<RecentFile>,
-    /// Preferences: reopen the files that were open when Recto last closed (#442).
+    /// Preferences: reopen the files that were open when Pagic last closed (#442).
     pub reopen_last_session: bool,
     /// Restore last view settings when reopening documents (Preferences ▸ Documents and view;
     /// #1767): the page, zoom and page display a file was last shown with. On by default.
     pub restore_last_view: bool,
     /// How files were last shown, most recent first (see `last_view`).
     pub last_views: Vec<last_view::LastView>,
-    /// The files open when Recto last closed, read from the settings for
-    /// [`RectoApp::reopen_last_files`].
+    /// The files open when Pagic last closed, read from the settings for
+    /// [`PagicApp::reopen_last_files`].
     pub last_session: last_session::LastSession,
     /// Quitting closes unsaved tabs one by one: what was open when the quit began.
     quit_session: Option<last_session::LastSession>,
@@ -408,7 +409,7 @@ pub struct RectoApp {
     /// Document Properties ▸ Description fields being edited: (document, Title/Author/Subject/Keywords).
     pub props_draft: Option<(DocId, [String; 4])>,
     /// Document Properties ▸ Initial View (and reading options) being edited.
-    pub view_draft: Option<(DocId, recto_engine::InitialView)>,
+    pub view_draft: Option<(DocId, pagic_engine::InitialView)>,
     /// Document Properties ▸ Custom being edited.
     pub custom_draft: Option<(DocId, CustomDraft)>,
     /// Files picked asynchronously for combine / insert (web).
@@ -426,7 +427,7 @@ pub struct RectoApp {
     pub extract_draft: ExtractDraft,
     pub rotate_draft: RotateDraft,
     /// Summarize Comments: sort order.
-    pub summary_sort: recto_engine::SummarySort,
+    pub summary_sort: pagic_engine::SummarySort,
     /// The signing dialogs' state.
     pub sign_draft: Option<SignDraft>,
     /// Digital ID files the user has created or added.
@@ -443,7 +444,7 @@ pub struct RectoApp {
     pub run_inline: bool,
     /// Action Wizard: the user's actions, the dialog state, the running action and (tests) the
     /// files to use instead of a picker.
-    pub custom_actions: Vec<recto_engine::actions::Action>,
+    pub custom_actions: Vec<pagic_engine::actions::Action>,
     pub wizard: actions_ui::Wizard,
     pub action_run: Option<std::sync::Arc<std::sync::Mutex<actions_ui::RunProgress>>>,
     pub action_files_override: Option<Vec<String>>,
@@ -458,13 +459,13 @@ pub struct RectoApp {
     pub a11y: a11y_ui::A11yState,
     pub(crate) tags_state: tags_ui::State,
     /// Rules skipped by hand, for the document they were skipped in.
-    pub a11y_skipped: std::collections::HashSet<(DocId, recto_engine::a11y::Rule)>,
+    pub a11y_skipped: std::collections::HashSet<(DocId, pagic_engine::a11y::Rule)>,
     pub alt_draft: a11y_ui::AltDraft,
     /// List the OS key store's signing identities among the digital IDs (the desktop app).
     pub os_key_store_ids: bool,
     pub cert_viewer: Option<sign_ui::CertViewer>,
     /// The last space audit.
-    pub space_audit: Vec<recto_engine::optimize::SpaceUse>,
+    pub space_audit: Vec<pagic_engine::optimize::SpaceUse>,
     /// The document and edit generation `space_audit` was measured from.
     pub(crate) space_audit_of: Option<(DocId, u64)>,
     /// Combine files: the files staged so far.
@@ -478,7 +479,7 @@ pub struct RectoApp {
     /// Combine files as thumbnails or as the table (kept in the settings).
     pub combine_view: combine_ui::CombineView,
     /// How large the Combine grid draws its cards (1.0 = the usual; kept in the settings). Set
-    /// with [`RectoApp::set_combine_zoom`].
+    /// with [`PagicApp::set_combine_zoom`].
     pub combine_zoom: f32,
     /// How large Organize pages draws its grid, for every document (1.0 = the usual; kept in
     /// the settings).
@@ -502,7 +503,7 @@ pub struct RectoApp {
     grid_drop: Option<GridDrop>,
     /// The last snapshot (width, height, RGBA); `system_clipboard` also puts it on the
     /// system clipboard (tests turn that off).
-    pub last_snapshot: Option<(u32, u32, recto_render::Pixels)>,
+    pub last_snapshot: Option<(u32, u32, pagic_render::Pixels)>,
     /// The last image copied with Copy Image (width, height, straight RGBA), also put on the
     /// system clipboard when `system_clipboard` is on.
     pub last_copied_image: Option<(u32, u32, Vec<u8>)>,
@@ -597,7 +598,7 @@ pub struct RectoApp {
     pub print_draft: PrintDraft,
     pub link_draft: Option<LinkDraft>,
     /// The style new text gets (Edit a PDF ▸ Format text).
-    pub text_style: recto_engine::AddedText,
+    pub text_style: pagic_engine::AddedText,
     /// The Replace Pages dialog's state.
     pub replace_draft: Option<files::ReplaceDraft>,
     /// The last web link the app asked the system to open (tests and automation).

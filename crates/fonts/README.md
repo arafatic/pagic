@@ -1,6 +1,6 @@
-# recto-fonts
+# pagic-fonts
 
-Layer L2. Font helpers for the appearance streams Recto generates (comments, form fields).
+Layer L2. Font helpers for the appearance streams Pagic generates (comments, form fields).
 
 Today it holds what generated appearances need without a font program:
 
@@ -20,9 +20,9 @@ Today it holds what generated appearances need without a font program:
   flattening refuses. `script_missing` names what the typed-signature script font and its Inter fallback both lack.
 
 It also holds the embedded fonts stored locally under `crates/fonts/assets/fonts/`.
-`build.rs` embeds them as `RECTO_FONTS` automatically from the local assets directory
-(or from `RECTO_FONTS_DIR=<path>` when overridden). Without available font assets,
-`RECTO_FONTS` is empty and everything below copes:
+`build.rs` embeds them as `PAGIC_FONTS` automatically from the local assets directory
+(or from `PAGIC_FONTS_DIR=<path>` when overridden). Without available font assets,
+`PAGIC_FONTS` is empty and everything below copes:
 
 - `ui_japanese_fonts`: the `Jpan` faces for the interface, BIZ UDPGothic first.
 - `ui_chinese_fonts`: the `Hans` faces for the interface, in manifest order (without one,

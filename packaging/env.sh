@@ -3,16 +3,22 @@
 #
 # Exports:
 #   ROOT                    workspace root
-#   VERSION                 [workspace.package] version from Cargo.toml (override: RECTO_VERSION)
-#   RECTO_BUILD_LABEL       optional label for a local or patched build (letters, digits, dots);
+#   VERSION                 [workspace.package] version from Cargo.toml (override: PAGIC_VERSION)
+#   PAGIC_BUILD_LABEL       optional label for a local or patched build (letters, digits, dots);
 #                           compiled into `--version` and About, and appended to the package release
 #   DIST                    output directory for release artifacts (default: $ROOT/dist/release)
-#   RECTO_BUILD_SHA         git commit, recorded in the macOS Info.plist (RectoBuildCommit)
-#   RECTO_BUILD_DATE        UTC build date, YYYY-MM-DD
+#   PAGIC_BUILD_SHA         git commit, recorded in the macOS Info.plist (PagicBuildCommit)
+#   PAGIC_BUILD_DATE        UTC build date, YYYY-MM-DD
 #   CARGO_TARGET_DIR        cargo's target dir (default: $ROOT/target)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ROOT
+
+# Legacy build inputs remain supported; an explicitly supplied PAGIC_* value wins.
+export PAGIC_VERSION="${PAGIC_VERSION-${RECTO_VERSION-}}"
+export PAGIC_BUILD_LABEL="${PAGIC_BUILD_LABEL-${RECTO_BUILD_LABEL-}}"
+export PAGIC_BUILD_SHA="${PAGIC_BUILD_SHA-${RECTO_BUILD_SHA-}}"
+export PAGIC_BUILD_DATE="${PAGIC_BUILD_DATE-${RECTO_BUILD_DATE-}}"
 
 # The version lives in exactly one place: `[workspace.package] version` in the root Cargo.toml.
 # (`cargo xtask version` prints the same thing; awk avoids compiling xtask here.)
@@ -24,35 +30,35 @@ workspace_version() {
   return
 }
 
-VERSION="${RECTO_VERSION:-$(workspace_version)}"
+VERSION="${PAGIC_VERSION:-$(workspace_version)}"
 if [[ -z "$VERSION" ]]; then
   echo "error: could not read [workspace.package] version from $ROOT/Cargo.toml" >&2
   exit 1
 fi
 export VERSION
 
-# A labelled build says so in `--version` and About (recto_engine::build_info) and in its
+# A labelled build says so in `--version` and About (pagic_engine::build_info) and in its
 # package release (packaging/linux/nfpm.yaml), so it can't be mistaken for the release.
-if [[ -n "${RECTO_BUILD_LABEL:-}" ]]; then
-  case "$RECTO_BUILD_LABEL" in
+if [[ -n "${PAGIC_BUILD_LABEL:-}" ]]; then
+  case "$PAGIC_BUILD_LABEL" in
     *[!A-Za-z0-9.]* | .* | *.)
-      echo "error: RECTO_BUILD_LABEL may hold only letters, digits and inner dots: $RECTO_BUILD_LABEL" >&2
+      echo "error: PAGIC_BUILD_LABEL may hold only letters, digits and inner dots: $PAGIC_BUILD_LABEL" >&2
       exit 1
       ;;
     *) ;;
   esac
-  export RECTO_BUILD_LABEL
+  export PAGIC_BUILD_LABEL
 fi
 
 DIST="${DIST:-$ROOT/dist/release}"
 mkdir -p "$DIST"
 export DIST
 
-if [[ -z "${RECTO_BUILD_SHA:-}" ]]; then
-  RECTO_BUILD_SHA="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
+if [[ -z "${PAGIC_BUILD_SHA:-}" ]]; then
+  PAGIC_BUILD_SHA="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
 fi
-export RECTO_BUILD_SHA
-export RECTO_BUILD_DATE="${RECTO_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
+export PAGIC_BUILD_SHA
+export PAGIC_BUILD_DATE="${PAGIC_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 
 # Emit a GitHub Actions warning (plain stderr outside Actions).
@@ -76,7 +82,7 @@ copy_docs() {
 
 # Fetch the OCR models into a package directory (#103): `cargo xtask models DEST` downloads every
 # ATTRIBUTION.toml `kind = "model"` file, verified by SHA-256, with its licence text and an
-# ATTRIBUTION.txt crediting them. DEST must be where recto_ocr::Models::dirs_beside_exe looks
+# ATTRIBUTION.txt crediting them. DEST must be where pagic_ocr::Models::dirs_beside_exe looks
 # from the installed executable. Nothing here names a model file, so a model added to the manifest
 # later ships without changing the packaging.
 stage_models() {

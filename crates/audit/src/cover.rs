@@ -15,8 +15,8 @@
 //! the joined stream)`; rectangles inside a form XObject carry the `Do` operator's position.
 //! Positions compare lexicographically in paint order.
 
-use recto_content::{Matrix, Op, Pieces, parse};
-use recto_cos::{DecodeBudget, Dict, Document, Object};
+use pagic_content::{Matrix, Op, Pieces, parse};
+use pagic_cos::{DecodeBudget, Dict, Document, Object};
 
 use crate::AuditError;
 

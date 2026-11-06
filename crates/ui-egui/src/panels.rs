@@ -2,11 +2,11 @@
 //! right-hand panels (Comments, Bookmarks, Pages, Fields, Layers, Attachments).
 
 use egui::{Align, Align2, Color32, CornerRadius, Layout, Rect, Sense, Stroke, pos2, vec2};
-use recto_engine::catalog::{self, Availability, TOOL_GROUPS, ToolGroup, ToolItem};
-use recto_render::{DocInfo, FieldKind, OutlineItem};
+use pagic_engine::catalog::{self, Availability, TOOL_GROUPS, ToolGroup, ToolItem};
+use pagic_render::{DocInfo, FieldKind, OutlineItem};
 
 use crate::theme::{self, Tokens};
-use crate::{LeftPanel, RectoApp, RightPanel, icons, widgets};
+use crate::{LeftPanel, PagicApp, RightPanel, icons, widgets};
 
 pub(super) mod all_tools_ui;
 mod bookmarks;
@@ -32,7 +32,7 @@ pub(crate) use tools::panel_header;
 pub(crate) enum Nav {
     Page(usize),
     /// A bookmark's destination: its page and where on it.
-    Dest(usize, recto_render::DestView),
+    Dest(usize, pagic_render::DestView),
     Flash(usize, [f32; 4]),
 }
 

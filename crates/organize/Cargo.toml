@@ -1,5 +1,5 @@
 [package]
-name = "recto-organize"
+name = "pagic-organize"
 description = "Page and document-structure edits: rotate, delete, move, insert pages; document info"
 version.workspace = true
 edition.workspace = true
@@ -9,10 +9,10 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-recto-content = { workspace = true }
-recto-cos = { workspace = true }
+pagic-content = { workspace = true }
+pagic-cos = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-recto-oracle = { workspace = true }
+pagic-oracle = { workspace = true }
 hayro-syntax = { workspace = true }

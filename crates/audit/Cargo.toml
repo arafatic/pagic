@@ -1,5 +1,5 @@
 [package]
-name = "recto-audit"
+name = "pagic-audit"
 description = "Verification tooling: audit documents for faux redactions (opaque covers over extractable text)"
 version.workspace = true
 edition.workspace = true
@@ -11,10 +11,10 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-recto-cos = { workspace = true }
-recto-content = { workspace = true }
-recto-edit = { workspace = true }
-recto-model = { workspace = true }
+pagic-cos = { workspace = true }
+pagic-content = { workspace = true }
+pagic-edit = { workspace = true }
+pagic-model = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

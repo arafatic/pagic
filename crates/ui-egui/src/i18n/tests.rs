@@ -311,7 +311,7 @@ fn ui_literals() -> std::collections::BTreeSet<String> {
 /// at its end.
 #[test]
 fn signature_appearance_labels_keep_their_separator() {
-    let english = recto_engine::sign::AppearanceLabels::default();
+    let english = pagic_engine::sign::AppearanceLabels::default();
     for language in LANGUAGES.iter().filter(|language| !language.source.is_empty()) {
         let lang = Lang::from_code(language.code).expect("registered language");
         for (field, label) in english.fields() {
@@ -327,7 +327,7 @@ fn signature_appearance_labels_keep_their_separator() {
 /// and with BIZ UDPGothic Regular alone (the web build's only Japanese face).
 #[test]
 fn japanese_labels_have_glyphs() {
-    let craft = recto_fonts::ui_japanese_fonts();
+    let craft = pagic_fonts::ui_japanese_fonts();
     let Some(web) = craft.iter().find(|f| f.family == "BIZ UDPGothic" && f.style == "Regular") else {
         eprintln!("skipping Japanese glyph checks: build with RECTO_FONTS_DIR to run them");
         return;
@@ -337,7 +337,7 @@ fn japanese_labels_have_glyphs() {
     let web_name = web.name();
     let mut web_only = crate::theme::font_definitions();
     for family in web_only.families.values_mut() {
-        family.retain(|name| !recto_fonts::RECTO_FONTS.iter().any(|face| face.name() == *name) || *name == web_name);
+        family.retain(|name| !pagic_fonts::PAGIC_FONTS.iter().any(|face| face.name() == *name) || *name == web_name);
     }
     use egui::epaint::text::{Fonts, TextOptions};
     for (build, defs) in [("desktop", crate::theme::font_definitions()), ("web", web_only)] {
@@ -382,13 +382,13 @@ fn plurals_and_placeholders() {
 
 #[test]
 fn language_persists_and_invalid_input_keeps_current_language() {
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     assert_eq!(app.language, AUTO);
     app.set_option("language", "JA").unwrap();
     assert_eq!(app.language, "ja");
     assert!(app.set_option("language", "xx").is_err());
     assert_eq!(app.language, "ja");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "ja");
     restored.restore(r#"{"language":"xx"}"#);
@@ -396,7 +396,7 @@ fn language_persists_and_invalid_input_keeps_current_language() {
     app.set_option("language", AUTO).unwrap();
     assert_eq!(app.language, AUTO);
     // Settings written before the system-locale default (no key) follow the system.
-    let mut legacy = crate::RectoApp::default();
+    let mut legacy = crate::PagicApp::default();
     legacy.restore("{}");
     assert_eq!(legacy.language, AUTO);
 }
@@ -412,10 +412,10 @@ fn brazilian_portuguese_is_registered() {
     assert_eq!(lang_from_tag("pt_PT"), Some(pt));
     assert_eq!(tr(pt, "Arquivo do usuário.pdf"), "Arquivo do usuário.pdf");
     assert_eq!((0..=3).map(|n| (pt.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "pt-br").unwrap();
     assert_eq!(app.language, "pt-br");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "pt-br");
 }
@@ -429,10 +429,10 @@ fn spanish_is_registered() {
     assert_eq!(lang_from_tag("es-MX"), Some(es));
     assert_eq!(first_supported("es-ES\r\nen-US"), Some(es));
     assert_eq!(tr(es, "Informe del usuario.pdf"), "Informe del usuario.pdf");
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "es").unwrap();
     assert_eq!(app.language, "es");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "es");
 }
@@ -444,11 +444,11 @@ fn spanish_is_registered() {
 fn spanish_keeps_the_holes_in_what_the_engine_says() {
     let es = Lang::from_code("es").expect("es registered");
     let lists: [&[&str]; 5] = [
-        recto_engine::a11y::WORDINGS,
-        recto_engine::pdfa::WORDINGS,
-        recto_engine::sign::pdf::WORDINGS,
-        recto_engine::print::WORDINGS,
-        recto_engine::field_table::WORDINGS,
+        pagic_engine::a11y::WORDINGS,
+        pagic_engine::pdfa::WORDINGS,
+        pagic_engine::sign::pdf::WORDINGS,
+        pagic_engine::print::WORDINGS,
+        pagic_engine::field_table::WORDINGS,
     ];
     for wording in lists.into_iter().flatten() {
         let said = tr(es, wording);
@@ -468,10 +468,10 @@ fn telugu_is_registered() {
     assert_eq!(lang_from_tag("te_IN.UTF-8"), Some(te));
     assert_eq!(first_supported("te-IN\r\nen-US"), Some(te));
     assert_eq!(tr(te, "నివేదిక.pdf"), "నివేదిక.pdf");
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "te").unwrap();
     assert_eq!(app.language, "te");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "te");
 }
@@ -509,7 +509,7 @@ fn contextual_labels_fall_back_to_the_plain_translation() {
 /// it; Telugu labels must not need a Japanese or Arabic face).
 #[test]
 fn telugu_labels_have_glyphs() {
-    let telugu: Vec<String> = recto_fonts::ui_telugu_fonts().iter().map(|f| f.name()).collect();
+    let telugu: Vec<String> = pagic_fonts::ui_telugu_fonts().iter().map(|f| f.name()).collect();
     if telugu.is_empty() {
         eprintln!("skipping Telugu glyph checks: build with RECTO_FONTS_DIR and a Telugu face to run them");
         return;
@@ -519,7 +519,7 @@ fn telugu_labels_have_glyphs() {
     let labels: String = entries.iter().flat_map(|e| e.translation.chars()).chain(te.name().chars()).filter(|c| !c.is_control()).collect();
     let mut telugu_only = crate::theme::font_definitions();
     for family in telugu_only.families.values_mut() {
-        family.retain(|name| !recto_fonts::RECTO_FONTS.iter().any(|face| face.name() == *name) || telugu.contains(name));
+        family.retain(|name| !pagic_fonts::PAGIC_FONTS.iter().any(|face| face.name() == *name) || telugu.contains(name));
     }
     use egui::epaint::text::{Fonts, TextOptions};
     for (build, defs) in [("all faces", crate::theme::font_definitions()), ("Telugu face only", telugu_only)] {
@@ -536,11 +536,11 @@ fn czech_is_registered_and_persists() {
     assert_eq!(cs.name(), "Čeština");
     assert_eq!(tr(cs, "Žluťoučký kůň.pdf"), "Žluťoučký kůň.pdf");
     assert_eq!((0..=6).map(|n| (cs.0.plural)(n)).collect::<Vec<_>>(), [2, 0, 1, 1, 1, 2, 2]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "cs").unwrap();
     assert!(app.set_option("language", "cz").is_err());
     assert_eq!(app.language, "cs");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "cs");
 }
@@ -551,11 +551,11 @@ fn turkish_is_registered_and_persists() {
     assert_eq!(tr_lang.name(), "Türkçe");
     assert_eq!(tr(tr_lang, "Türkçe Belge.pdf"), "Türkçe Belge.pdf");
     assert_eq!((0..=6).map(|n| (tr_lang.0.plural)(n)).collect::<Vec<_>>(), [0; 7]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "tr").unwrap();
     assert!(app.set_option("language", "tu").is_err());
     assert_eq!(app.language, "tr");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "tr");
 }
@@ -603,10 +603,10 @@ fn french_is_registered() {
     assert_eq!(first_supported("fr-FR\r\nen-US"), Some(fr));
     assert_eq!(tr(fr, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
     assert_eq!((0..=3).map(|n| (fr.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "fr").unwrap();
     assert_eq!(app.language, "fr");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "fr");
 }
@@ -622,10 +622,10 @@ fn german_is_registered() {
     assert_eq!(first_supported("de-DE\r\nen-US"), Some(de));
     assert_eq!(tr(de, "Bericht des Nutzers.pdf"), "Bericht des Nutzers.pdf");
     assert_eq!((0..=3).map(|n| (de.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "de").unwrap();
     assert_eq!(app.language, "de");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "de");
 }
@@ -664,10 +664,10 @@ fn russian_is_registered() {
     assert_eq!(tr(ru, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
     // one (1), few (2-4), many (0, 5+), with 11-14 exception
     assert_eq!((0..=3).map(|n| (ru.0.plural)(n)).collect::<Vec<_>>(), [2, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "ru").unwrap();
     assert_eq!(app.language, "ru");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "ru");
 }
@@ -683,10 +683,10 @@ fn finnish_is_registered_and_persists() {
     // Filipino (`fil`) and Swedish in Finland (`sv-FI`) don't pick Finnish.
     assert_ne!(lang_from_tag("fil"), Some(fi));
     assert_ne!(lang_from_tag("sv-FI"), Some(fi));
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "FI").unwrap();
     assert_eq!(app.language, "fi");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "fi");
 }
@@ -699,10 +699,10 @@ fn lithuanian_is_registered_and_persists() {
     for tag in ["lt", "lt-LT", "lt_LT.UTF-8", "LT-lt"] {
         assert_eq!(lang_from_tag(tag), Some(lt), "{tag}");
     }
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "LT").unwrap();
     assert_eq!(app.language, "lt");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "lt");
     assert!(restored.set_option("language", "xx").is_err());
@@ -721,10 +721,10 @@ fn norwegian_bokmal_is_registered_and_persists() {
     assert_eq!(first_supported("(\n    \"nb-NO\",\n    \"en-US\"\n)\n"), Some(nb));
     assert_eq!(first_supported("nn-NO\r\nen-US\r\n"), Some(nb));
     assert_eq!((0..=3).map(|n| (nb.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "NB").unwrap();
     assert_eq!(app.language, "nb");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "nb");
 }
@@ -739,10 +739,10 @@ fn vietnamese_is_registered_and_persists() {
     }
     assert_eq!(first_supported("vi-VN\r\nen-US"), Some(vi));
     assert_eq!((0..=3).map(|n| (vi.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 0, 0]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "vi").unwrap();
     assert_eq!(app.language, "vi");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "vi");
     assert!(restored.set_option("language", "xx").is_err());
@@ -775,10 +775,10 @@ fn catalan_is_registered_and_persists() {
     assert_eq!(first_supported("ca-ES\r\nen-US"), Some(ca));
     // one (1), other (0, 2+), as in English
     assert_eq!((0..=3).map(|n| (ca.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "CA").unwrap();
     assert_eq!(app.language, "ca");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "ca");
     assert!(restored.set_option("language", "xx").is_err());
@@ -797,10 +797,10 @@ fn slovene_is_registered_and_persists() {
     assert_eq!(tr(sl, "Poročilo {n}.pdf"), "Poročilo {n}.pdf");
     // one (1), two (2), few (3, 4), other (0, 5+)
     assert_eq!((0..=5).map(|n| (sl.0.plural)(n)).collect::<Vec<_>>(), [3, 0, 1, 2, 2, 3]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "SL").unwrap();
     assert_eq!(app.language, "sl");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "sl");
     assert!(restored.set_option("language", "xx").is_err());
@@ -818,10 +818,10 @@ fn albanian_is_registered_and_persists() {
     assert_eq!(first_supported("sq-AL\r\nen-US"), Some(sq));
     // one (1), other (0, 2+)
     assert_eq!((0..=3).map(|n| (sq.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "SQ").unwrap();
     assert_eq!(app.language, "sq");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "sq");
     assert!(restored.set_option("language", "xx").is_err());
@@ -863,16 +863,16 @@ fn indonesian_and_vietnamese_are_registered_and_persist() {
     // One CLDR plural form (CLDR `id`, `vi`): the message reads the same for every count.
     assert_eq!((0..=3).map(|n| (id.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 0, 0]);
     assert_eq!((0..=3).map(|n| (vi.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 0, 0]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "ID").unwrap();
     assert_eq!(app.language, "id");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "id");
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "vi").unwrap();
     assert_eq!(app.language, "vi");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "vi");
     assert!(restored.set_option("language", "xx").is_err());
@@ -899,10 +899,10 @@ fn hindi_and_korean_are_registered_and_persist() {
     assert_eq!((0..=3).map(|n| (hi.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 0, 0]);
     assert_eq!((0..=3).map(|n| (ko.0.plural)(n)).collect::<Vec<_>>(), [0, 0, 0, 0]);
     for code in ["hi", "ko"] {
-        let mut app = crate::RectoApp::default();
+        let mut app = crate::PagicApp::default();
         app.set_option("language", &code.to_uppercase()).unwrap();
         assert_eq!(app.language, code);
-        let mut restored = crate::RectoApp::default();
+        let mut restored = crate::PagicApp::default();
         restored.restore(&app.persist());
         assert_eq!(restored.language, code);
         assert!(restored.set_option("language", "xx").is_err());
@@ -921,10 +921,10 @@ fn bulgarian_is_registered() {
     assert_eq!(tr(bg, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
     // one (1), other (0, 2+)
     assert_eq!((0..=3).map(|n| (bg.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "bg").unwrap();
     assert_eq!(app.language, "bg");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "bg");
 }
@@ -940,10 +940,10 @@ fn hungarian_is_registered() {
     assert_eq!(tr(hu, "Rapport de l'utilisateur.pdf"), "Rapport de l'utilisateur.pdf");
     // one (1), other (0, 2+)
     assert_eq!((0..=3).map(|n| (hu.0.plural)(n)).collect::<Vec<_>>(), [1, 0, 1, 1]);
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "hu").unwrap();
     assert_eq!(app.language, "hu");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "hu");
 }
@@ -959,10 +959,10 @@ fn ukrainian_is_registered_and_persists() {
     assert_eq!(first_supported("uk-UA\r\nen-US"), Some(uk));
     assert_eq!(first_supported("(\n    \"uk-UA\",\n    \"en-US\"\n)\n"), Some(uk));
     assert_eq!(tr(uk, "Звіт {n}.pdf"), "Звіт {n}.pdf");
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "UK").unwrap();
     assert_eq!(app.language, "uk");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "uk");
     assert!(restored.set_option("language", "xx").is_err());
@@ -1002,10 +1002,10 @@ fn arabic_is_registered_and_persists() {
     assert_eq!(first_supported("ar-MA\r\nen-US"), Some(ar));
     // Unknown strings and user text are never reordered by a lookup.
     assert_eq!(tr(ar, "تقرير نهائي {n}.pdf"), "تقرير نهائي {n}.pdf");
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "AR").unwrap();
     assert_eq!(app.language, "ar");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "ar");
     assert!(restored.set_option("language", "xx").is_err());
@@ -1019,7 +1019,7 @@ fn arabic_is_registered_and_persists() {
 fn arabic_catalog_stays_logical() {
     let ar = arabic();
     assert_eq!(tr(ar, "Save as…"), "حفظ باسم…");
-    assert_eq!(tr(ar, "About Recto"), "حول Recto");
+    assert_eq!(tr(ar, "About Pagic"), "حول Pagic");
     assert_eq!(tr(ar, "Name:"), "الاسم:");
     assert_eq!(tr(ar, "Issued by: "), "صادرة عن: ");
     // Placeholders survive in their logical positions.
@@ -1067,10 +1067,10 @@ fn persian_is_registered_and_persists() {
     assert_eq!(tr(fa, "File"), "فایل");
     // Unknown strings and user text are never reordered by a lookup.
     assert_eq!(tr(fa, "گزارش نهایی {n}.pdf"), "گزارش نهایی {n}.pdf");
-    let mut app = crate::RectoApp::default();
+    let mut app = crate::PagicApp::default();
     app.set_option("language", "FA").unwrap();
     assert_eq!(app.language, "fa");
-    let mut restored = crate::RectoApp::default();
+    let mut restored = crate::PagicApp::default();
     restored.restore(&app.persist());
     assert_eq!(restored.language, "fa");
     assert!(restored.set_option("language", "xx").is_err());
@@ -1082,7 +1082,7 @@ fn persian_is_registered_and_persists() {
 /// it; Arabic labels must not need a Japanese face).
 #[test]
 fn arabic_labels_have_glyphs() {
-    let faces: Vec<String> = recto_fonts::ui_arabic_fonts().iter().map(|f| f.name()).collect();
+    let faces: Vec<String> = pagic_fonts::ui_arabic_fonts().iter().map(|f| f.name()).collect();
     if faces.is_empty() {
         eprintln!("skipping Arabic glyph checks: build with RECTO_FONTS_DIR and an Arabic face to run them");
         return;
@@ -1092,7 +1092,7 @@ fn arabic_labels_have_glyphs() {
     let labels: String = entries.iter().flat_map(|e| e.translation.chars()).chain(ar.name().chars()).filter(|c| !c.is_control()).collect();
     let mut arabic_only = crate::theme::font_definitions();
     for family in arabic_only.families.values_mut() {
-        family.retain(|name| !recto_fonts::RECTO_FONTS.iter().any(|face| face.name() == *name) || faces.contains(name));
+        family.retain(|name| !pagic_fonts::PAGIC_FONTS.iter().any(|face| face.name() == *name) || faces.contains(name));
     }
     use egui::epaint::text::{Fonts, TextOptions};
     for (build, defs) in [("all faces", crate::theme::font_definitions()), ("Arabic face only", arabic_only)] {
@@ -1114,7 +1114,7 @@ fn bundled_catalogs_are_consistent() {
         let (entries, errors) = parse_entries(l.source, l.plural_forms());
         assert!(errors.is_empty(), "{}: {errors:?}", l.code);
         for e in entries.iter().filter(|e| e.context == "@id") {
-            let command = recto_engine::commands::command(&e.source);
+            let command = pagic_engine::commands::command(&e.source);
             let Some(command) = command else { panic!("{}: unknown command id {:?}", l.code, e.source) };
             assert_eq!(placeholders(&e.translation), placeholders(command.label), "{}: {}", l.code, e.source);
             assert_eq!(e.translation.ends_with('…'), command.label.ends_with('…'), "{}: ellipsis mismatch: {}", l.code, e.source);
@@ -1137,31 +1137,31 @@ fn translation_gaps_report() {
     let mut add = |s: &str| {
         plain.insert(s.to_string());
     };
-    for command in recto_engine::commands::COMMANDS {
+    for command in pagic_engine::commands::COMMANDS {
         add(command.label);
         command.menu.into_iter().for_each(&mut add);
     }
-    for group in recto_engine::catalog::TOOL_GROUPS {
+    for group in pagic_engine::catalog::TOOL_GROUPS {
         add(group.label);
         for section in group.sections {
             add(section.title);
             section.items.iter().for_each(|item| add(item.label));
         }
     }
-    recto_engine::catalog::TOOL_CATEGORIES.iter().for_each(|category| add(category.label));
+    pagic_engine::catalog::TOOL_CATEGORIES.iter().for_each(|category| add(category.label));
     let engine: [&[&str]; 9] = [
-        recto_engine::a11y::WORDINGS,
-        recto_engine::a11y::REPORT_WORDS,
-        recto_engine::pdfa::WORDINGS,
-        recto_engine::sign::pdf::WORDINGS,
-        recto_engine::sign::pdf::kind::ALL,
-        recto_engine::print::WORDINGS,
-        recto_engine::EDIT_LABELS,
-        recto_engine::BATCH_LABELS,
-        recto_engine::field_table::WORDINGS,
+        pagic_engine::a11y::WORDINGS,
+        pagic_engine::a11y::REPORT_WORDS,
+        pagic_engine::pdfa::WORDINGS,
+        pagic_engine::sign::pdf::WORDINGS,
+        pagic_engine::sign::pdf::kind::ALL,
+        pagic_engine::print::WORDINGS,
+        pagic_engine::EDIT_LABELS,
+        pagic_engine::BATCH_LABELS,
+        pagic_engine::field_table::WORDINGS,
     ];
     engine.into_iter().flatten().for_each(|s| add(s));
-    recto_engine::sign::AppearanceLabels::default().fields().into_iter().for_each(|(_, label)| add(label));
+    pagic_engine::sign::AppearanceLabels::default().fields().into_iter().for_each(|(_, label)| add(label));
     crate::credits::NameMode::ALL.iter().for_each(|mode| add(mode.label()));
     for key in crate::credits::SortKey::ALL {
         let (label, header) = key.label();
@@ -1214,6 +1214,28 @@ const REPORT_END: &str = "=== end of translation gaps ===";
 #[test]
 fn date_languages_are_the_interface_languages() {
     let interface: Vec<(&str, &str)> = Lang::all().map(|l| (l.code(), l.name())).collect();
-    let dates: Vec<(&str, &str)> = recto_engine::dates::DATE_LANGUAGES.iter().map(|l| (l.code, l.name)).collect();
+    let dates: Vec<(&str, &str)> = pagic_engine::dates::DATE_LANGUAGES.iter().map(|l| (l.code, l.name)).collect();
     assert_eq!(dates, interface);
+}
+
+#[test]
+fn pagic_branding_preserves_non_product_recto_printing_terms() {
+    for info in &LANGUAGES {
+        for line in info.source.lines().filter(|line| !line.starts_with('#')) {
+            if let Some(key) = line.split('\t').nth(1) {
+                assert!(
+                    !key.contains("Recto") || key == "Based on Recto and contributions from open-source developers",
+                    "{} has an old product key: {key}",
+                    info.code
+                );
+            }
+        }
+        let lang = Lang::from_code(info.code).unwrap();
+        for key in ["Welcome to Pagic", "About Pagic"] {
+            assert!(tr(lang, key).contains("Pagic"), "{}: {key}", info.code);
+        }
+    }
+    let french = Lang::from_code("fr").unwrap();
+    assert_eq!(tr(french, "Two-sided:"), "Recto verso :");
+    assert_eq!(tr(french, "Front side only"), "Recto seulement");
 }

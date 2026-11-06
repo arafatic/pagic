@@ -1,6 +1,6 @@
 # MCP conventions
 
-Start explicitly with `recto-cli mcp [--root DIR] [--compact] [--automation-read-root DIR] [--automation-write-root DIR]`. The server uses JSON lines on
+Start explicitly with `pagic-cli mcp [--root DIR] [--compact] [--automation-read-root DIR] [--automation-write-root DIR]`. The server uses JSON lines on
 stdin/stdout, opens no port, and stops on EOF. `--root` confines all reads and writes, including
 commands invoked through the common tools. Logs stay on stderr.
 
@@ -14,11 +14,11 @@ From the repository root, with Rust 1.95+ and a native linker installed
 (see [development](development.md) for build and environment notes):
 
 ```sh
-cargo install --path apps/recto-cli --locked
+cargo install --path apps/pagic-cli --locked
 # POSIX shells, for Cargo's default install location:
 export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
-recto-cli --help
-recto-cli mcp --help
+pagic-cli --help
+pagic-cli mcp --help
 ```
 
 The default features include MCP; do not pass `--no-default-features` for this use.
@@ -33,23 +33,23 @@ the client after changing its environment.
 Register the installed command explicitly (replace `/work/project` with an existing folder):
 
 ```sh
-claude mcp add recto -- recto-cli mcp --root /work/project
+claude mcp add pagic -- pagic-cli mcp --root /work/project
 ```
 
 Other MCP clients can use this bare-name configuration:
 
 ```json
-{"mcpServers":{"recto":{"command":"recto-cli","args":["mcp","--root","/work/project"]}}}
+{"mcpServers":{"pagic":{"command":"pagic-cli","args":["mcp","--root","/work/project"]}}}
 ```
 
-Linux `.deb` and `.rpm` packages already install `/usr/bin/recto-cli`; those users
+Linux `.deb` and `.rpm` packages already install `/usr/bin/pagic-cli`; those users
 can skip the source install. The [downloads list](../README.md#downloads) also includes
 standalone Linux CLI tarballs and a macOS CLI zip; unpack and copy the executable into
 a directory on the client's `PATH`. Installing does not start or register a server:
 MCP remains opt-in and uses stdio only.
 
 If a client reports `ENOENT` or "Executable not found in $PATH", verify the install with
-`command -v recto-cli` (PowerShell: `Get-Command recto-cli`) in the client's
+`command -v pagic-cli` (PowerShell: `Get-Command pagic-cli`) in the client's
 environment. If that environment cannot be changed, set JSON `command` to the absolute
 installed binary path, not a literal `~` or `$HOME` expression. Avoid symlinks into
 `target/release`: cleaning the build directory breaks them. A source build alone does
@@ -58,11 +58,11 @@ not put the CLI on `PATH`.
 ## Confining file access
 
 ```sh
-recto-cli mcp --automation-read-root /work/project --automation-write-root /work/project/out
+pagic-cli mcp --automation-read-root /work/project --automation-write-root /work/project/out
 ```
 
 ```json
-{"mcpServers": {"recto": {"command": "recto-cli",
+{"mcpServers": {"pagic": {"command": "pagic-cli",
   "args": ["mcp", "--automation-read-root", "/work/project", "--automation-write-root", "/work/project/out"]}}}
 ```
 
@@ -102,7 +102,7 @@ The two flags keep the agent confined to the folders you configure:
 - `--root DIR` still works and can be combined with these flags. Both then apply: a path must be
   inside `--root` and inside the matching automation root.
 
-`recto-cli mcp` always runs the session in its own process (there is no flag to connect it to a
+`pagic-cli mcp` always runs the session in its own process (there is no flag to connect it to a
 running app), so the roots cover every server it starts. The desktop app is not confined by them.
 
 What the roots do not cover: tools that take no path still read and change the open documents, and

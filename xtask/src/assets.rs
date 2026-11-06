@@ -1,7 +1,7 @@
 //! `cargo xtask assets`: enforce the asset policy (AGENTS.md §1).
 //!
 //! `ATTRIBUTION.toml` lists every asset: committed or vendored files (`[[asset]]`), files that
-//! Cargo dependencies compile into Recto (`[[bundled]]`), and files xtask downloads at build
+//! Cargo dependencies compile into Pagic (`[[bundled]]`), and files xtask downloads at build
 //! time (`[[fetched]]`). This gate fails when:
 //! - an asset-like file in the repository has no entry, or its SHA-256 is missing or differs
 //!   (translation catalogs are project files and carry none);
@@ -37,7 +37,7 @@ pub const ALLOWED_LICENCES: &[&str] = &[
 ];
 
 /// The closed list of Adobe-authored, non-visual technical data (AGENTS.md §1.1): (crate, path).
-/// Recto brand marks: shipped in the app and docs, but
+/// Pagic brand marks: shipped in the app and docs, but
 /// not licensed for reuse by forks. Allowed only for `kind = "logo"` entries under `docs/brand/`.
 pub const BRAND_LICENCE: &str = "LicenseRef-Storyteller-Trademark";
 
@@ -73,7 +73,7 @@ pub struct Manifest {
     pub build_input: Vec<BuildInput>,
 }
 
-/// Material compiled in only when the builder opts in (e.g. `RECTO_FONTS_DIR`): not in this
+/// Material compiled in only when the builder opts in (e.g. `PAGIC_FONTS_DIR`): not in this
 /// repository, not downloaded by it. Its own repository attributes each file.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -406,7 +406,7 @@ pub fn models(args: &[String]) -> Result<()> {
 
 /// The credits shipped beside the models (their licences require attribution).
 fn models_attribution(m: &Manifest) -> String {
-    let mut s = String::from("Recto's text recognition (Scan & OCR) uses these models, unmodified.\n");
+    let mut s = String::from("Pagic's text recognition (Scan & OCR) uses these models, unmodified.\n");
     for f in m.fetched.iter().filter(|f| f.kind == "model") {
         let _ = write!(
             s,
@@ -422,7 +422,7 @@ pub fn render_markdown(m: &Manifest) -> String {
     let mut s = String::new();
     s.push_str("# Attribution\n\n");
     s.push_str("<!-- Generated from ATTRIBUTION.toml by `cargo xtask assets --write`. Do not edit by hand. -->\n\n");
-    s.push_str("Every asset Recto includes, bundles or uses to build its published material, with its author, source and licence. ");
+    s.push_str("Every asset Pagic includes, bundles or uses to build its published material, with its author, source and licence. ");
     s.push_str(
         "The policy is in [AGENTS.md](AGENTS.md) §1. The machine-readable list, with the SHA-256 of every asset but the translation catalogs, is [ATTRIBUTION.toml](ATTRIBUTION.toml). ",
     );
@@ -537,7 +537,7 @@ mod tests {
     fn build_inputs_need_an_open_licence_and_https_links() {
         let input = |licence: &str, attribution: &str| BuildInput {
             name: "local-fonts".into(),
-            option: "RECTO_FONTS_DIR".into(),
+            option: "PAGIC_FONTS_DIR".into(),
             title: "t".into(),
             author: "a".into(),
             source: "https://example.org/fonts".into(),
@@ -661,11 +661,9 @@ mod tests {
     #[test]
     fn brand_licence_only_for_brand_logos() {
         let root = super::root();
-        for (path, kind, pass) in [
-            ("docs/brand/recto-mark.svg", "logo", true),
-            ("docs/brand/recto-mark.svg", "icon", false),
-            ("assets/icons/mark.svg", "logo", false),
-        ] {
+        for (path, kind, pass) in
+            [("docs/brand/pagic-mark.svg", "logo", true), ("docs/brand/pagic-mark.svg", "icon", false), ("assets/icons/mark.svg", "logo", false)]
+        {
             let mut a = asset(path, "Storyteller", kind, BRAND_LICENCE);
             a.licence_file = "docs/brand/LICENSE-brand.txt".into();
             let m = Manifest { asset: vec![a], ..Default::default() };

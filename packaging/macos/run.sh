@@ -4,7 +4,7 @@
 set -euo pipefail
 exe="$1"
 shift
-if [[ "$(basename "$exe")" != recto ]]; then
+if [[ "$(basename "$exe")" != pagic ]]; then
   exec "$exe" "$@"
 fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -15,22 +15,24 @@ for arg in "$@"; do
     exec "$exe" "$@"
   fi
 done
-APP="$(dirname "$exe")/Recto.app"
+APP="$(dirname "$exe")/Pagic.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-TEMP_EXE="$APP/Contents/MacOS/.recto.$$"
+TEMP_EXE="$APP/Contents/MacOS/.pagic.$$"
 TEMP_PLIST="$APP/Contents/.Info.plist.$$"
 trap 'rm -f "$TEMP_EXE" "$TEMP_PLIST"' EXIT
 # Replace atomically so a previous development instance can keep running.
 cp -p "$exe" "$TEMP_EXE"
-mv -f "$TEMP_EXE" "$APP/Contents/MacOS/recto"
+mv -f "$TEMP_EXE" "$APP/Contents/MacOS/pagic"
 version="$("$exe" --version)"
-version="${version#Recto }"
+version="${version#Pagic }"
 short="${version%%-*}"
 short="${short%%+*}"
 sed -e "s/@VERSION@/$version/g" -e "s/@SHORT_VERSION@/$short/g" \
   -e "s/@BUILD_SHA@/development/g" "$ROOT/packaging/macos/Info.plist.in" >"$TEMP_PLIST"
 mv -f "$TEMP_PLIST" "$APP/Contents/Info.plist"
-cp "$ROOT/assets/app-icon/recto.icns" "$APP/Contents/Resources/recto.icns"
+if [[ -f "$ROOT/assets/app-icon/pagic.icns" ]]; then
+  cp "$ROOT/assets/app-icon/pagic.icns" "$APP/Contents/Resources/pagic.icns"
+fi
 for notice in NOTICE LICENSE LICENSE-MIT LICENSE-APACHE ATTRIBUTION.md; do
   if [[ -f "$ROOT/$notice" ]]; then
     cp "$ROOT/$notice" "$APP/Contents/Resources/$notice"
@@ -39,4 +41,4 @@ done
 cp "$ROOT/packaging/macos/Credits.rtf" "$APP/Contents/Resources/Credits.rtf"
 codesign --force --options runtime --entitlements "$ROOT/packaging/macos/entitlements.plist" --sign - "$APP"
 trap - EXIT
-exec "$APP/Contents/MacOS/recto" "$@"
+exec "$APP/Contents/MacOS/pagic" "$@"

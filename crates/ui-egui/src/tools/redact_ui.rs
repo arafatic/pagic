@@ -4,12 +4,12 @@
 //! confirmation, as Acrobat asks) or clear them.
 
 use egui::{Color32, CornerRadius, Pos2, Rect, Stroke};
-use recto_engine::{Edit, NewAnnotation, REDACT_PATTERNS, REDACTION_CODE_SETS, RedactPattern, RedactionCodeSet, Rgb, Shape, Style, rect_quad};
-use recto_render::DocInfo;
+use pagic_engine::{Edit, NewAnnotation, REDACT_PATTERNS, REDACTION_CODE_SETS, RedactPattern, RedactionCodeSet, Rgb, Shape, Style, rect_quad};
+use pagic_render::DocInfo;
 
 use crate::canvas::{DocView, PageToolContext, PageXform};
 use crate::theme::Tokens;
-use crate::{RectoApp, widgets};
+use crate::{PagicApp, widgets};
 
 const MARK_RED: Color32 = Color32::from_gray(0x80);
 
@@ -25,7 +25,7 @@ pub struct RedactPrefs {
     pub code_set: RedactionCodeSet,
     pub codes: Vec<&'static str>,
     /// Overlay text font, size (0 = auto), colour, alignment and repetition.
-    pub look: recto_engine::OverlayLook,
+    pub look: pagic_engine::OverlayLook,
     /// How an unapplied mark looks on the page: its outline colour (`/C`), the fill shown while
     /// the pointer is over it (a preference, not written to the file) and its opacity (`/CA`).
     pub outline: Rgb,
@@ -140,7 +140,7 @@ impl RedactPrefs {
             d.codes = d.code_set.codes.iter().copied().filter(|c| codes.iter().any(|x| x.as_str() == Some(c))).collect();
         }
         if let Some(f) = v["font"].as_str() {
-            d.look.font = recto_engine::OverlayFont::from_resource(f);
+            d.look.font = pagic_engine::OverlayFont::from_resource(f);
         }
         if let Some(n) = v["size"].as_f64().filter(|n| (0.0..=400.0).contains(n)) {
             d.look.size = n;
@@ -287,7 +287,7 @@ pub(crate) fn paint(painter: &egui::Painter, page: usize, view: &DocView, pointe
     }
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Mark every match of the search draft on every page; returns how many were marked.
     pub fn redact_search(&mut self) -> usize {
         let Some((_, id)) = self.active_ids() else { return 0 };
@@ -295,21 +295,21 @@ impl RectoApp {
         let d = self.redact_search.clone();
         let needles = match d.mode {
             SearchMode::Phrase if !d.text.trim().is_empty() => vec![d.text.clone()],
-            SearchMode::Words => recto_engine::redact_word_list(&d.words),
+            SearchMode::Words => pagic_engine::redact_word_list(&d.words),
             SearchMode::Phrase | SearchMode::Patterns => Vec::new(),
         };
         if d.mode != SearchMode::Patterns && needles.is_empty() {
             return 0;
         }
-        let config = recto_render::RenderConfig { password: doc.password.as_deref().map(std::sync::Arc::from), ..Default::default() };
-        let mut r = recto_render::PageRenderer::new(doc.bytes.clone(), config);
+        let config = pagic_render::RenderConfig { password: doc.password.as_deref().map(std::sync::Arc::from), ..Default::default() };
+        let mut r = pagic_render::PageRenderer::new(doc.bytes.clone(), config);
         let mut edits = Vec::new();
         let author = self.comment_prefs.author.clone();
         for (page, page_info) in doc.info.pages.iter().enumerate() {
-            let out = r.render(recto_render::RenderRequest { page, kind: recto_render::RequestKind::Text, scale: 1.0, ..Default::default() });
+            let out = r.render(pagic_render::RenderRequest { page, kind: pagic_render::RequestKind::Text, scale: 1.0, ..Default::default() });
             let Some(text) = out.text else { continue };
             let hits = match d.mode {
-                SearchMode::Patterns => text.find_with(|c| recto_engine::find_pattern(d.pattern, c)),
+                SearchMode::Patterns => text.find_with(|c| pagic_engine::find_pattern(d.pattern, c)),
                 _ => needles.iter().flat_map(|w| text.find_opts(w, d.case_sensitive, d.whole_words)).collect(),
             };
             for h in hits {
@@ -391,7 +391,7 @@ pub(crate) fn search_body(ui: &mut egui::Ui, d: &mut SearchDraft, t: &Tokens) ->
         });
         ui.horizontal(|ui| {
             import = ui.button(tl!("Import list…")).clicked();
-            let n = recto_engine::redact_word_list(&d.words).len();
+            let n = pagic_engine::redact_word_list(&d.words).len();
             ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{n} word(s) or phrase(s)"), &[("n", &n.to_string())])).small().color(t.text_faint));
         });
     });
@@ -496,7 +496,7 @@ pub(crate) fn props_body(ui: &mut egui::Ui, d: &mut RedactPrefs, _t: &Tokens) ->
                 ui.label(tl!("Font:"));
                 ui.add_enabled_ui(on, |ui| {
                     craft_ui::ComboBox::from_id_salt("overlay-font").selected_text(look.font.name()).show_ui(ui, |ui| {
-                        for f in recto_engine::OverlayFont::ALL {
+                        for f in pagic_engine::OverlayFont::ALL {
                             ui.selectable_value(&mut look.font, f, f.name());
                         }
                     });
@@ -610,10 +610,10 @@ fn buttons(ui: &mut egui::Ui, ok: &str, primary: bool) -> (bool, bool) {
 /// something was.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct HiddenDraft {
-    pub found: Vec<(recto_engine::Hidden, usize, bool)>,
+    pub found: Vec<(pagic_engine::Hidden, usize, bool)>,
 }
 
-impl RectoApp {
+impl PagicApp {
     pub fn open_remove_hidden(&mut self) {
         let Some((_, id)) = self.active_ids() else { return };
         let Some(doc) = self.session.get(id) else { return };

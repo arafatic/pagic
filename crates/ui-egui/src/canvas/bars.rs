@@ -1,6 +1,5 @@
 use super::{
-    Color32, CornerRadius, DocInfo, DocView, Edit, RectoApp, Pos2, QuickTool, Rect, Sense, SnapshotKind, Stroke, Tokens, comments, icons, theme,
-    vec2,
+    Color32, CornerRadius, DocInfo, DocView, Edit, PagicApp, Pos2, QuickTool, Rect, Sense, SnapshotKind, Stroke, Tokens, comments, icons, theme, vec2,
 };
 
 /// Whether `p` lies in the bottom-left quadrant of `area`, where the page size shows (#1855).
@@ -66,7 +65,7 @@ pub(super) enum Notice {
 /// off, security, forms and warnings.
 pub(super) fn notices(
     view: &mut DocView,
-    doc: &recto_engine::Document,
+    doc: &pagic_engine::Document,
     secured: bool,
     repaired: bool,
     signed: Option<(&str, Color32, &str, String)>,
@@ -160,19 +159,19 @@ pub(super) fn notices(
             text.push('.');
         }
         Some(("text-cursor-input", text, true))
-    } else if info.xfa == Some(recto_render::Xfa::Dynamic) {
+    } else if info.xfa == Some(pagic_render::Xfa::Dynamic) {
         Some((
             "triangle-alert",
-            tl!("This is a dynamic XFA form, which Recto can't display yet. What you see is the file's placeholder page.").to_string(),
+            tl!("This is a dynamic XFA form, which Pagic can't display yet. What you see is the file's placeholder page.").to_string(),
             false,
         ))
-    } else if info.xfa == Some(recto_render::Xfa::Static) {
+    } else if info.xfa == Some(pagic_render::Xfa::Static) {
         Some((
             "text-cursor-input",
             tl!("XFA form: its fields and its XFA data are kept in step, so other viewers show what you fill in.").to_string(),
             true,
         ))
-    } else if info.fields.iter().any(|f| f.kind != recto_render::FieldKind::PushButton) {
+    } else if info.fields.iter().any(|f| f.kind != pagic_render::FieldKind::PushButton) {
         // Push buttons alone (LaTeX `animate` frames, navigation buttons) leave nothing to fill in.
         Some((
             "text-cursor-input",
@@ -277,7 +276,7 @@ fn notice_bar(ui: &mut egui::Ui, t: &Tokens, icon: &str, icon_color: Color32, te
 }
 
 /// The floating quick-action bar at the left edge of the document area.
-pub(super) fn quick_bar(app: &mut RectoApp, area: Rect, ui: &mut egui::Ui) {
+pub(super) fn quick_bar(app: &mut PagicApp, area: Rect, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let pos = area.left_top() + vec2(14.0, 14.0);
     egui::Area::new(egui::Id::unique("quick-bar")).order(egui::Order::Middle).fixed_pos(pos).show(ui.ctx(), |ui| {

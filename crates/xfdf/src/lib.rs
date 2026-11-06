@@ -15,8 +15,8 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 use std::io::Write as _;
 
-use recto_cos::{Dict, Document, ObjRef, Object, PdfString};
-use recto_forms::{FieldKind, FieldValue};
+use pagic_cos::{Dict, Document, ObjRef, Object, PdfString};
+use pagic_forms::{FieldKind, FieldValue};
 
 mod common;
 mod fdf;
@@ -48,7 +48,7 @@ pub enum DataError {
     #[error("FDF export exceeds the {0} limit; no data was exported")]
     ExportLimit(&'static str),
     #[error(transparent)]
-    Cos(#[from] recto_cos::CosError),
+    Cos(#[from] pagic_cos::CosError),
 }
 
 /// What export writes.
@@ -89,7 +89,7 @@ pub struct Report {
 
 /// Form data as XML, CSV or tab-delimited text (Acrobat's Export data formats).
 pub fn export_data(doc: &Document, format: Format) -> String {
-    let fields: Vec<(String, String)> = recto_forms::fields(doc)
+    let fields: Vec<(String, String)> = pagic_forms::fields(doc)
         .into_iter()
         .filter(|f| !matches!(f.kind, FieldKind::PushButton | FieldKind::Signature))
         .map(|f| {
@@ -144,7 +144,7 @@ pub fn data_values(bytes: &[u8]) -> Result<Vec<(String, Vec<String>)>, DataError
     }
     if bytes.starts_with(b"%PDF") || bytes.windows(5).take(1024).any(|w| w == b"%PDF-") {
         let doc = Document::open(std::sync::Arc::new(bytes.to_vec())).map_err(|e| DataError::Malformed(e.to_string()))?;
-        return Ok(recto_forms::fields(&doc)
+        return Ok(pagic_forms::fields(&doc)
             .into_iter()
             .filter(|f| !matches!(f.kind, FieldKind::PushButton | FieldKind::Signature))
             .map(|f| {

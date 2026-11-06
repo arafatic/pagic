@@ -14,7 +14,7 @@ pub enum Availability {
     Ready,
     /// Planned; ships in the named milestone.
     Planned(&'static str),
-    /// Cloud-only in Acrobat; Recto offers an optional pluggable provider instead.
+    /// Cloud-only in Acrobat; Pagic offers an optional pluggable provider instead.
     Provider,
 }
 
@@ -124,7 +124,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         icon: "file-pen-line",
         hue: PINK,
         badge: None,
-        availability: Planned("M7"),
+        availability: Ready,
         sections: &[
             ToolSection {
                 title: "Modify page",

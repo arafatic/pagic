@@ -9,8 +9,8 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-recto-oracle = { workspace = true }
-recto-cos = { workspace = true }
+pagic-oracle = { workspace = true }
+pagic-cos = { workspace = true }
 anyhow = "1"
 lopdf = "0.45"
 png = "0.18"

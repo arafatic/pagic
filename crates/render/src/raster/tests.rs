@@ -1918,7 +1918,7 @@ fn no_rotate_notes_stay_upright_at_their_corner_on_rotated_pages() {
             "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
             format!("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 140] /Rotate {rotation} /Annots [4 0 R 5 0 R] >>"),
-            // NoRotate (and Print), as Recto and Acrobat save notes.
+            // NoRotate (and Print), as Pagic and Acrobat save notes.
             "<< /Type /Annot /Subtype /Text /F 20 /Rect [40 50 70 70] /AP << /N 6 0 R >> >>".to_string(),
             // The same appearance without the flag.
             "<< /Type /Annot /Subtype /Text /F 4 /Rect [120 50 150 70] /AP << /N 6 0 R >> >>".to_string(),
@@ -2051,7 +2051,7 @@ trailer << /Root 1 0 R >>
 
 /// A Highlight annotation without an appearance stream (common in older and generated files)
 /// was not drawn at all. Vendored hayro-interpret patch: its /QuadPoints are filled with /C at
-/// /CA, blended with Multiply, as Recto draws its own highlights (recto-annot); MuPDF,
+/// /CA, blended with Multiply, as Pagic draws its own highlights (pagic-annot); MuPDF,
 /// Poppler and PDFium draw these fixtures the same way. An /AP still wins, malformed
 /// /QuadPoints or no /C draw nothing, and Hidden, NoView and "Hide all comments" still apply.
 #[test]
@@ -6457,7 +6457,7 @@ trailer << /Root 1 0 R >>
         let p = r.render(RenderRequest { page: 0, kind: RequestKind::Pixels, tile: None, scale: 1.0, tag: 0, ..Default::default() });
         assert!(p.error.is_none(), "{base_font}: {:?}", p.error);
         let inked = p.rgba.as_chunks::<4>().0.iter().filter(|c| c[0] < 128).count();
-        if recto_fonts::document_japanese_font().is_none() {
+        if pagic_fonts::document_japanese_font().is_none() {
             eprintln!("built without bundled fonts (no matching local font assets): no Japanese face to check");
             continue;
         }
@@ -6490,7 +6490,7 @@ trailer << /Root 1 0 R >>
 
 #[test]
 fn japanese_substitute_missing_spaces_draw_no_ink() {
-    if recto_fonts::document_japanese_font().is_none() {
+    if pagic_fonts::document_japanese_font().is_none() {
         eprintln!("built without bundled fonts (no matching local font assets): no Japanese face to check");
         return;
     }
@@ -6500,7 +6500,7 @@ fn japanese_substitute_missing_spaces_draw_no_ink() {
 
 #[test]
 fn japanese_substitute_spaces_keep_pdf_widths_and_unicode() {
-    if recto_fonts::document_japanese_font().is_none() {
+    if pagic_fonts::document_japanese_font().is_none() {
         eprintln!("built without bundled fonts (no matching local font assets): no Japanese face to check");
         return;
     }
@@ -6550,7 +6550,7 @@ fn mincho_substitute_covers_half_width_katakana() {
 /// the substitutes have, still draws.
 #[test]
 fn cids_a_substitute_lacks_are_not_drawn_as_other_glyphs() {
-    if recto_fonts::document_japanese_font().is_none() {
+    if pagic_fonts::document_japanese_font().is_none() {
         eprintln!("built without bundled fonts (no matching local font assets): no Japanese face to check");
         return;
     }
@@ -6614,7 +6614,7 @@ fn japanese_font_names_pick_mincho_or_gothic() {
 /// draws the substitute's glyph for that form now, and its 噂 for a form it doesn't have.
 #[test]
 fn variation_sequences_draw_their_kanji_in_a_substitute() {
-    if recto_fonts::document_japanese_font().is_none() {
+    if pagic_fonts::document_japanese_font().is_none() {
         eprintln!("built without bundled fonts (no matching local font assets): no Japanese face to check");
         return;
     }

@@ -2,8 +2,8 @@
 
 use std::sync::{Arc, OnceLock};
 
-use recto_cos::{SaveOptions, write_incremental};
-use recto_render::{DocInfo, RenderConfig, RenderPool};
+use pagic_cos::{SaveOptions, write_incremental};
+use pagic_render::{DocInfo, RenderConfig, RenderPool};
 
 use crate::history::Editor;
 use crate::{
@@ -35,22 +35,22 @@ pub struct Document {
     /// Why the document cannot be edited (e.g. encryption), if so.
     pub read_only_reason: Option<String>,
     /// Interactive form fields of the current state (empty without a form).
-    pub form: Arc<Vec<recto_forms::Field>>,
-    pub(crate) marker_scan: OnceLock<recto_edit::MarkerScan>,
-    pub(crate) links: OnceLock<Vec<recto_annot::links::LinkItem>>,
+    pub form: Arc<Vec<pagic_forms::Field>>,
+    pub(crate) marker_scan: OnceLock<pagic_edit::MarkerScan>,
+    pub(crate) links: OnceLock<Vec<pagic_annot::links::LinkItem>>,
     /// Signature fields, validated against the session's trust store (Signatures panel).
     pub signatures: Arc<Vec<SignatureInfo>>,
     pub(crate) trust: Arc<TrustStore>,
-    pub(crate) sig_cache: Arc<recto_sign::DigestCache>,
+    pub(crate) sig_cache: Arc<pagic_sign::DigestCache>,
     pub(crate) editor: Option<Editor>,
     pub(crate) config: RenderConfig,
     /// What field scripts printed or asked for (see [`Session::take_js_output`]).
     pub(crate) js_output: js::JsOutput,
     /// Dynamic XFA forms: what laying the template out produced (pages and fields are
-    /// Recto's; Adobe's viewers draw the form from the XFA packets themselves).
+    /// Pagic's; Adobe's viewers draw the form from the XFA packets themselves).
     pub xfa: Option<XfaLayout>,
     /// The parsed template of a laid-out XFA form, for its scripts.
-    pub(crate) xfa_template: Option<Arc<recto_xfa::model::Template>>,
+    pub(crate) xfa_template: Option<Arc<pagic_xfa::model::Template>>,
     /// A script of the XFA form ran away, so its scripts are off (see [`Document::xfa_scripts_off`]).
     pub(crate) xfa_scripts_off: bool,
     /// A content-only refresh keeps `info` from before the edit; an edit may have added or
@@ -66,7 +66,7 @@ pub struct Document {
 
 /// Text an edit stored as typed but drew with `?` in place of `ch`, because the font it is drawn
 /// with (a form field's, or the standard fonts for comments) can't draw that character. Acrobat
-/// keeps such text too, drawing it with fonts Recto can't embed yet.
+/// keeps such text too, drawing it with fonts Pagic can't embed yet.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextNotice {
     /// The form field's full name, or `None` for a comment.
@@ -86,7 +86,7 @@ impl std::fmt::Display for TextNotice {
         match (&self.field, self.redrawn_elsewhere) {
             (Some(name), true) => write!(
                 f,
-                "form field {name:?} (page {page}) holds {ch}, which its font can't draw: the value is saved, Recto shows ? in its place, and other PDF viewers redraw the field from the value"
+                "form field {name:?} (page {page}) holds {ch}, which its font can't draw: the value is saved, Pagic shows ? in its place, and other PDF viewers redraw the field from the value"
             ),
             (Some(name), false) => write!(
                 f,
@@ -101,26 +101,26 @@ impl std::fmt::Display for TextNotice {
 }
 
 /// What `next` drew with `?` that `prev` didn't (a new or redrawn appearance carrying
-/// `recto_fonts::UNDRAWN_MARK`), one notice per field or comment, in page order.
-pub(crate) fn undrawn_notices(prev: &recto_cos::Document, next: &recto_cos::Document) -> Vec<TextNotice> {
-    let Ok(pages) = recto_annot::page_refs(next) else { return Vec::new() };
-    let redrawn_elsewhere = recto_forms::need_appearances(next);
-    let mut names: Option<std::collections::HashMap<recto_cos::ObjRef, String>> = None;
+/// `pagic_fonts::UNDRAWN_MARK`), one notice per field or comment, in page order.
+pub(crate) fn undrawn_notices(prev: &pagic_cos::Document, next: &pagic_cos::Document) -> Vec<TextNotice> {
+    let Ok(pages) = pagic_annot::page_refs(next) else { return Vec::new() };
+    let redrawn_elsewhere = pagic_forms::need_appearances(next);
+    let mut names: Option<std::collections::HashMap<pagic_cos::ObjRef, String>> = None;
     let mut out: Vec<TextNotice> = Vec::new();
     for (page, p) in pages.iter().enumerate() {
         let annots = next.get(*p).as_dict().and_then(|d| d.get(b"Annots").cloned()).map(|a| next.resolve(&a));
-        for r in annots.as_deref().and_then(recto_cos::Object::as_array).into_iter().flatten().filter_map(recto_cos::Object::as_ref) {
+        for r in annots.as_deref().and_then(pagic_cos::Object::as_array).into_iter().flatten().filter_map(pagic_cos::Object::as_ref) {
             let now = next.get(r);
             let Some(d) = now.as_dict() else { continue };
-            let Some(ch) = recto_fonts::undrawn_mark(d) else { continue };
+            let Some(ch) = pagic_fonts::undrawn_mark(d) else { continue };
             // Only what this edit drew: a new annotation, or a new appearance.
             let was = prev.get(r);
-            if was.as_dict().is_some_and(|w| w.get(b"AP") == d.get(b"AP") && recto_fonts::undrawn_mark(w) == Some(ch)) {
+            if was.as_dict().is_some_and(|w| w.get(b"AP") == d.get(b"AP") && pagic_fonts::undrawn_mark(w) == Some(ch)) {
                 continue;
             }
             let field = (d.name(b"Subtype") == Some(b"Widget")).then(|| {
                 let names = names.get_or_insert_with(|| {
-                    recto_forms::fields(next)
+                    pagic_forms::fields(next)
                         .into_iter()
                         .flat_map(|f| f.widgets.iter().map(|w| (w.obj, f.name.clone())).collect::<Vec<_>>())
                         .collect()
@@ -157,15 +157,15 @@ impl Document {
     }
 
     /// Edit a PDF: the images `page` draws (0-based).
-    pub fn page_images(&self, page: usize) -> Vec<recto_edit::PageImage> {
-        self.editor.as_ref().and_then(|e| recto_edit::page_images(&e.cos, page).ok()).unwrap_or_default()
+    pub fn page_images(&self, page: usize) -> Vec<pagic_edit::PageImage> {
+        self.editor.as_ref().and_then(|e| pagic_edit::page_images(&e.cos, page).ok()).unwrap_or_default()
     }
 
     /// Mixed editable objects on one page. Source inventories are zero-based and added items
     /// appear once. Rectangles are user-space points, independent of the viewer's zoom.
     pub fn editable_objects(&self, page: usize) -> Result<Vec<EditableObject>, String> {
         let editor = self.editor.as_ref().ok_or("the document can't be read")?;
-        recto_edit::editable_objects(&editor.cos, page).map_err(|e| e.to_string())
+        pagic_edit::editable_objects(&editor.cos, page).map_err(|e| e.to_string())
     }
 
     /// Displayed top-left-origin motion to a user-space vector. Use the linear map only,
@@ -195,11 +195,11 @@ impl Document {
         if img.is_form {
             return Err("grouped Form artwork is not a bitmap; Save Image As is only available for raster images".into());
         }
-        recto_create::image_file(&editor.cos, img.object.ok_or("the image has no object")?)
+        pagic_create::image_file(&editor.cos, img.object.ok_or("the image has no object")?)
     }
 
     /// Edit a PDF ▸ Edit text: the paragraphs on `page` (0-based).
-    pub fn text_blocks(&self, page: usize) -> Vec<recto_edit::TextBlock> {
+    pub fn text_blocks(&self, page: usize) -> Vec<pagic_edit::TextBlock> {
         self.editor.as_ref().and_then(|e| e.text_blocks(page).ok()).map(|b| b.as_ref().clone()).unwrap_or_default()
     }
 
@@ -238,14 +238,14 @@ impl Document {
     }
 
     /// Edit a PDF ▸ Edit text: the lines of existing text on `page` (0-based).
-    pub fn text_lines(&self, page: usize) -> Vec<recto_edit::TextLine> {
-        self.editor.as_ref().and_then(|e| recto_edit::text_lines(&e.cos, page).ok()).unwrap_or_default()
+    pub fn text_lines(&self, page: usize) -> Vec<pagic_edit::TextLine> {
+        self.editor.as_ref().and_then(|e| pagic_edit::text_lines(&e.cos, page).ok()).unwrap_or_default()
     }
 
     /// The form's calculation order: its calculated fields in the order they calculate, what each
     /// formula reads, what is wrong with the order, and the order Fix order writes.
     pub fn calculation_order(&self) -> CalculationOrder {
-        self.editor.as_ref().map(|e| recto_forms::calculation_order(&e.cos, &self.form)).unwrap_or_default()
+        self.editor.as_ref().map(|e| pagic_forms::calculation_order(&e.cos, &self.form)).unwrap_or_default()
     }
 
     /// Add alternate text: the figures, in document order.
@@ -259,7 +259,7 @@ impl Document {
     }
 
     /// Marked-content items directly owned by one reachable indirect structure tag.
-    pub fn tag_content(&self, object: recto_cos::ObjRef) -> Result<Vec<a11y::TagContentItem>, a11y::TagError> {
+    pub fn tag_content(&self, object: pagic_cos::ObjRef) -> Result<Vec<a11y::TagContentItem>, a11y::TagError> {
         self.editor.as_ref().map(|e| a11y::tag_content(&e.cos, object)).unwrap_or_else(|| Ok(Vec::new()))
     }
 
@@ -292,7 +292,7 @@ impl Document {
     }
 
     pub fn initial_view(&self) -> InitialView {
-        self.editor.as_ref().map(|e| recto_organize::initial_view(&e.cos)).unwrap_or_default()
+        self.editor.as_ref().map(|e| pagic_organize::initial_view(&e.cos)).unwrap_or_default()
     }
 
     /// Signed: at least one signature field holds a signature.
@@ -328,7 +328,7 @@ impl Document {
     }
 
     /// What the opening password allows; `None` when the document is not encrypted.
-    pub fn permissions(&self) -> Option<recto_cos::Permissions> {
+    pub fn permissions(&self) -> Option<pagic_cos::Permissions> {
         self.editor.as_ref().and_then(|e| e.cos.permissions())
     }
 
@@ -369,7 +369,7 @@ impl Document {
                     .map(|e| {
                         #[cfg(test)]
                         record_marker_scan();
-                        recto_edit::scan_markers(&e.cos)
+                        pagic_edit::scan_markers(&e.cos)
                     })
                     .unwrap_or_default()
             })
@@ -377,7 +377,7 @@ impl Document {
     }
 
     /// Text and images added with Edit a PDF ▸ Add content (still editable).
-    pub fn added(&self) -> &[recto_edit::Added] {
+    pub fn added(&self) -> &[pagic_edit::Added] {
         &self
             .marker_scan
             .get_or_init(|| {
@@ -386,7 +386,7 @@ impl Document {
                     .map(|e| {
                         #[cfg(test)]
                         record_marker_scan();
-                        recto_edit::scan_markers(&e.cos)
+                        pagic_edit::scan_markers(&e.cos)
                     })
                     .unwrap_or_default()
             })
@@ -394,14 +394,14 @@ impl Document {
     }
 
     /// Link annotations, for Edit a PDF ▸ Link.
-    pub fn links(&self) -> &[recto_annot::links::LinkItem] {
+    pub fn links(&self) -> &[pagic_annot::links::LinkItem] {
         self.links.get_or_init(|| {
             self.editor
                 .as_ref()
                 .map(|e| {
                     #[cfg(test)]
                     record_link_scan();
-                    recto_annot::links::list(&e.cos)
+                    pagic_annot::links::list(&e.cos)
                 })
                 .unwrap_or_default()
         })
@@ -454,74 +454,74 @@ impl Document {
         let stream = d.crypt_filters.iter().find(|(name, _)| *name == d.stm_f).map(|(_, m)| *m);
         let method = match (d.v, stream) {
             (1..=3, _) if d.length_bits <= 40 => "RC4, 40-bit",
-            (1..=3, _) | (_, Some(recto_cos::CryptMethod::Rc4)) => "RC4, 128-bit",
-            (_, Some(recto_cos::CryptMethod::Aes128)) => "AES, 128-bit",
-            (_, Some(recto_cos::CryptMethod::Aes256)) => "AES, 256-bit",
+            (1..=3, _) | (_, Some(pagic_cos::CryptMethod::Rc4)) => "RC4, 128-bit",
+            (_, Some(pagic_cos::CryptMethod::Aes128)) => "AES, 128-bit",
+            (_, Some(pagic_cos::CryptMethod::Aes256)) => "AES, 256-bit",
             _ => "Attachments only",
         };
         let pending = editor.cos.encryption_changed();
-        let permissions = if pending { recto_cos::Permissions { bits: h.permissions().bits, owner: false } } else { h.permissions() };
-        Some(SecuritySummary { method: method.into(), owner: h.auth() == recto_cos::Auth::Owner && !pending, permissions, pending })
+        let permissions = if pending { pagic_cos::Permissions { bits: h.permissions().bits, owner: false } } else { h.permissions() };
+        Some(SecuritySummary { method: method.into(), owner: h.auth() == pagic_cos::Auth::Owner && !pending, permissions, pending })
     }
 
     /// Comment properties of the comment at `(page, index)` (Comment Properties dialog).
-    pub fn comment_props(&self, page: usize, index: usize) -> Option<recto_annot::Props> {
-        self.editor.as_ref().and_then(|e| recto_annot::props(&e.cos, page, index))
+    pub fn comment_props(&self, page: usize, index: usize) -> Option<pagic_annot::Props> {
+        self.editor.as_ref().and_then(|e| pagic_annot::props(&e.cos, page, index))
     }
 
     /// A form field's Appearance-tab look (borders, colours, font).
-    pub fn field_look(&self, name: &str) -> Option<recto_forms::Look> {
+    pub fn field_look(&self, name: &str) -> Option<pagic_forms::Look> {
         let e = self.editor.as_ref()?;
         let f = self.form.iter().find(|f| f.name == name)?;
-        Some(recto_forms::look(&e.cos, f))
+        Some(pagic_forms::look(&e.cos, f))
     }
 
     /// A check box's or radio button's mark (Field Properties ▸ Options), `None` for other fields.
     pub fn field_check_style(&self, name: &str) -> Option<CheckStyle> {
         let e = self.editor.as_ref()?;
         let f = self.form.iter().find(|f| f.name == name)?;
-        matches!(f.kind, FormFieldKind::CheckBox | FormFieldKind::Radio).then(|| recto_forms::check_style(&e.cos, f))
+        matches!(f.kind, FormFieldKind::CheckBox | FormFieldKind::Radio).then(|| pagic_forms::check_style(&e.cos, f))
     }
 
     /// Whether text field `name`'s value is cut off by its box at the field's font size (#4018):
     /// the page (0-based) of the first widget that cuts it, and how.
-    pub fn field_overflow(&self, name: &str) -> Option<(Option<usize>, recto_forms::appearance::Overflow)> {
+    pub fn field_overflow(&self, name: &str) -> Option<(Option<usize>, pagic_forms::appearance::Overflow)> {
         let e = self.editor.as_ref()?;
         let f = self.form.iter().find(|f| f.name == name)?;
-        f.widgets.iter().find_map(|w| recto_forms::appearance::value_overflow(&e.cos, f, w).map(|o| (w.page, o)))
+        f.widgets.iter().find_map(|w| pagic_forms::appearance::value_overflow(&e.cos, f, w).map(|o| (w.page, o)))
     }
 
     /// Remove Hidden Information: what each category would remove.
     pub fn hidden_info(&self) -> Vec<(Hidden, usize)> {
-        self.editor.as_ref().map(|e| recto_redact::sanitize::scan(&e.cos)).unwrap_or_default()
+        self.editor.as_ref().map(|e| pagic_redact::sanitize::scan(&e.cos)).unwrap_or_default()
     }
 
     /// Verification: faux redactions (opaque covers over extractable text) and redaction
     /// marks that were never applied. Fails closed: any read error is returned, never an
     /// empty list.
-    pub fn audit_redactions(&self) -> Result<Vec<recto_audit::AuditFinding>, String> {
+    pub fn audit_redactions(&self) -> Result<Vec<pagic_audit::AuditFinding>, String> {
         let editor = self.editor.as_ref().ok_or("the document can't be read")?;
-        recto_audit::audit_redactions(&editor.cos).map_err(|e| e.to_string())
+        pagic_audit::audit_redactions(&editor.cos).map_err(|e| e.to_string())
     }
 
     /// Every page's media, crop, bleed, trim and art boxes (user space), for Set Page Boxes.
     pub fn page_boxes(&self) -> Vec<[[f64; 4]; 5]> {
-        self.editor.as_ref().and_then(|e| recto_organize::page_boxes(&e.cos).ok()).unwrap_or_default()
+        self.editor.as_ref().and_then(|e| pagic_organize::page_boxes(&e.cos).ok()).unwrap_or_default()
     }
 
     /// Current value of a document-information entry (Title, Author, …).
     pub fn info_value(&self, key: &str) -> Option<String> {
-        self.editor.as_ref().and_then(|e| recto_organize::info(&e.cos, key))
+        self.editor.as_ref().and_then(|e| pagic_organize::info(&e.cos, key))
     }
 
     /// Whether the document information has an entry `key`, of any type, listed or not.
     pub fn has_info(&self, key: &str) -> bool {
-        self.editor.as_ref().is_some_and(|e| recto_organize::has_info(&e.cos, key))
+        self.editor.as_ref().is_some_and(|e| pagic_organize::has_info(&e.cos, key))
     }
 
     /// The custom document properties as they are now (name, text), Document Properties ▸ Custom.
     pub fn custom_info(&self) -> Vec<(String, String)> {
-        self.editor.as_ref().map(|e| recto_organize::custom_info(&e.cos)).unwrap_or_default()
+        self.editor.as_ref().map(|e| pagic_organize::custom_info(&e.cos)).unwrap_or_default()
     }
 
     /// The name shown on the tab and window: the document title when the document asks for it
@@ -529,8 +529,8 @@ impl Document {
     pub fn display_name(&self) -> String {
         self.editor
             .as_ref()
-            .filter(|e| recto_organize::displays_doc_title(&e.cos))
-            .and_then(|e| recto_organize::info(&e.cos, "Title"))
+            .filter(|e| pagic_organize::displays_doc_title(&e.cos))
+            .and_then(|e| pagic_organize::info(&e.cos, "Title"))
             .map(|t| t.trim().to_owned())
             .filter(|t| !t.is_empty() && !is_placeholder_title(t))
             .unwrap_or_else(|| self.name.clone())
@@ -569,8 +569,8 @@ pub(crate) fn is_placeholder_title(title: &str) -> bool {
 /// viewer and never enter these bytes, which image/text exports and Print as Image also consume.
 pub(crate) fn display_bytes(editor: Option<&mut Editor>, bytes: &Arc<Vec<u8>>) -> Arc<Vec<u8>> {
     let Some(e) = editor else { return bytes.clone() };
-    let comments = recto_annot::with_missing_appearances_cached(&e.cos, &mut e.appearances);
-    let fields = recto_forms::with_field_appearances_cached(comments.as_ref().unwrap_or(&e.cos), &mut e.field_appearances);
+    let comments = pagic_annot::with_missing_appearances_cached(&e.cos, &mut e.appearances);
+    let fields = pagic_forms::with_field_appearances_cached(comments.as_ref().unwrap_or(&e.cos), &mut e.field_appearances);
     let Some(display) = fields.or(comments) else {
         return bytes.clone();
     };
@@ -585,20 +585,20 @@ pub(crate) fn display_bytes(editor: Option<&mut Editor>, bytes: &Arc<Vec<u8>>) -
 
 /// `comments` (the display copy with comment appearances, if it needed any; else the document
 /// itself) with its form fields drawn from their values where the file leaves that to the viewer.
-fn with_field_appearances(comments: Option<recto_cos::Document>, doc: &recto_cos::Document) -> Option<recto_cos::Document> {
-    recto_forms::with_field_appearances(comments.as_ref().unwrap_or(doc)).or(comments)
+fn with_field_appearances(comments: Option<pagic_cos::Document>, doc: &pagic_cos::Document) -> Option<pagic_cos::Document> {
+    pagic_forms::with_field_appearances(comments.as_ref().unwrap_or(doc)).or(comments)
 }
 
 /// The reader shows the same pages in `a` and `b`: count, displayed size and rotation.
-pub(crate) fn same_pages(a: &[recto_render::PageInfo], b: &[recto_render::PageInfo]) -> bool {
+pub(crate) fn same_pages(a: &[pagic_render::PageInfo], b: &[pagic_render::PageInfo]) -> bool {
     a.len() == b.len()
         && a.iter().zip(b).all(|(x, y)| (x.width - y.width).abs() < 0.01 && (x.height - y.height).abs() < 0.01 && x.rotation == y.rotation)
 }
 
 /// Each document-information field of `info` with its value in `cos` (`/Info`, else XMP), read
 /// the way the full inspection reads them: NULs and spaces trimmed, empty is none.
-pub(crate) fn info_fields<'a>(info: &'a mut DocInfo, cos: &recto_cos::Document) -> [(&'a mut Option<String>, Option<String>); 6] {
-    let read = |key| recto_organize::info(cos, key).map(|v| v.trim_matches('\0').trim().to_string()).filter(|v| !v.is_empty());
+pub(crate) fn info_fields<'a>(info: &'a mut DocInfo, cos: &pagic_cos::Document) -> [(&'a mut Option<String>, Option<String>); 6] {
+    let read = |key| pagic_organize::info(cos, key).map(|v| v.trim_matches('\0').trim().to_string()).filter(|v| !v.is_empty());
     [
         (&mut info.title, read("Title")),
         (&mut info.author, read("Author")),
@@ -609,15 +609,15 @@ pub(crate) fn info_fields<'a>(info: &'a mut DocInfo, cos: &recto_cos::Document) 
     ]
 }
 
-/// The copy Recto displays when opening `bytes`: with appearances drawn, in memory only, for
+/// The copy Pagic displays when opening `bytes`: with appearances drawn, in memory only, for
 /// comments that have none and form fields the file leaves to the viewer. Render paths outside the app, such as the CLI, use this so their page
 /// images agree with the app and independent viewers. It never changes the source document, and an
 /// unparseable file, a write failure or a parser panic falls back to the original bytes.
 pub fn display_bytes_for(bytes: Arc<Vec<u8>>, password: Option<&str>) -> Arc<Vec<u8>> {
     guard(|| {
-        recto_cos::Document::open_with_password(bytes.clone(), password)
+        pagic_cos::Document::open_with_password(bytes.clone(), password)
             .ok()
-            .and_then(|cos| with_field_appearances(recto_annot::with_missing_appearances(&cos), &cos))
+            .and_then(|cos| with_field_appearances(pagic_annot::with_missing_appearances(&cos), &cos))
             .and_then(|display| write_incremental(&display, &SaveOptions::default()).ok())
             .map(Arc::new)
     })
@@ -635,12 +635,12 @@ pub fn display_bytes_for(bytes: Arc<Vec<u8>>, password: Option<&str>) -> Arc<Vec
 pub fn render_password_for(bytes: Arc<Vec<u8>>, password: Option<&str>) -> Option<String> {
     let password = password?;
     let recovered =
-        guard(|| recto_cos::Document::open_with_password(bytes, Some(password)).ok().and_then(|d| recovered_render_password(&d))).ok().flatten();
+        guard(|| pagic_cos::Document::open_with_password(bytes, Some(password)).ok().and_then(|d| recovered_render_password(&d))).ok().flatten();
     Some(recovered.unwrap_or_else(|| password.to_owned()))
 }
 
 /// The user password owner authentication recovered from an R2–R4 `cos`, as the renderer takes it.
-pub(crate) fn recovered_render_password(cos: &recto_cos::Document) -> Option<String> {
+pub(crate) fn recovered_render_password(cos: &pagic_cos::Document) -> Option<String> {
     cos.security().and_then(|s| s.recovered_user_password()).map(|user| renderer_password(&user))
 }
 
@@ -656,14 +656,14 @@ pub(crate) fn recovered_render_password(cos: &recto_cos::Document) -> Option<Str
 /// text is extracted, and a glyph still mostly inside a mark fails the edit: the caller keeps
 /// the document as it was.
 pub(crate) fn shown_under_redactions(
-    after: &recto_cos::Document,
-    marks: &[recto_redact::Mark],
-    overlays: &[recto_cos::ObjRef],
-    pages: &[recto_render::PageInfo],
+    after: &pagic_cos::Document,
+    marks: &[pagic_redact::Mark],
+    overlays: &[pagic_cos::ObjRef],
+    pages: &[pagic_render::PageInfo],
     password: Option<&str>,
 ) -> Result<(), EditError> {
-    use recto_cos::Object;
-    use recto_redact::RedactError;
+    use pagic_cos::Object;
+    use pagic_redact::RedactError;
     let mut marked: Vec<usize> = marks.iter().map(|m| m.page).collect();
     marked.sort_unstable();
     marked.dedup();
@@ -671,7 +671,7 @@ pub(crate) fn shown_under_redactions(
         return Ok(());
     }
     let mut shown = after.clone();
-    let model = recto_model::pages(&shown);
+    let model = pagic_model::pages(&shown);
     for &pi in &marked {
         let Some(page) = model.get(pi) else { continue };
         let Some(Object::Array(list)) = page.dict.get(b"Contents").map(|c| (*shown.resolve(c)).clone()) else { continue };
@@ -680,10 +680,10 @@ pub(crate) fn shown_under_redactions(
     }
     let bytes = write_incremental(&shown, &SaveOptions::default()).map_err(|e| EditError::Write(e.to_string()))?;
     let config = RenderConfig { password: password.map(Arc::from), ..Default::default() };
-    let mut renderer = recto_render::PageRenderer::new(Arc::new(bytes), config);
+    let mut renderer = pagic_render::PageRenderer::new(Arc::new(bytes), config);
     let mut residue = 0;
     for &pi in &marked {
-        let request = recto_render::RenderRequest { page: pi, kind: recto_render::RequestKind::Text, scale: 1.0, ..Default::default() };
+        let request = pagic_render::RenderRequest { page: pi, kind: pagic_render::RequestKind::Text, scale: 1.0, ..Default::default() };
         // A page that cannot be read back cannot be confirmed clean.
         let (Some(info), Some(text)) = (pages.get(pi), renderer.render(request).text) else { return Err(RedactError::Unreadable(pi + 1).into()) };
         let rects: Vec<[f64; 4]> = marks

@@ -1,18 +1,18 @@
-//! Recto workspace: document actions, pinned folders and local recent files.
+//! Pagic workspace: document actions, pinned folders and local recent files.
 
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, vec2};
 
 use crate::theme::{self, Tokens};
-use crate::{RectoApp, icons, panels::human_size, widgets};
+use crate::{PagicApp, icons, panels::human_size, widgets};
 
 pub mod folders_ui;
 
 /// Draw the workspace and recent documents. Actions reuse the existing workflows.
-pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
+pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
         egui::Frame::NONE.inner_margin(egui::Margin::symmetric(28, 28)).show(ui, |ui| {
-            ui.label(egui::RichText::new(tl!("Welcome to Recto")).font(theme::semibold(30.0)).color(t.text));
+            ui.label(egui::RichText::new(tl!("Welcome to Pagic")).font(theme::semibold(30.0)).color(t.text));
             ui.add_space(6.0);
             ui.label(egui::RichText::new("Your document workspace.").font(theme::regular(14.0)).color(t.text_muted));
             ui.add_space(28.0);
@@ -22,7 +22,7 @@ pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
                     ("Open PDF", "folder-open", "Browse your files"),
                     ("Edit PDF", "type", "Edit text and images"),
                     ("Merge PDFs", "files", "Combine documents"),
-                    ("Convert", "file-output", "Word, images and more"),
+                    ("Export", "file-output", "Word, images and more"),
                     ("Compress PDF", "file-down", "Reduce file size"),
                 ] {
                     let width = ui.max_rect().width().clamp(1.0, 204.0);
@@ -36,12 +36,15 @@ pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
                         Stroke::new(1.0, t.border),
                         egui::StrokeKind::Inside,
                     );
+                    if resp.has_focus() {
+                        ui.painter().rect_stroke(rect, CornerRadius::same(3), Stroke::new(2.0, t.accent), egui::StrokeKind::Inside);
+                    }
                     let painter = ui.painter().with_clip_rect(rect);
                     icons::paint(ui, Rect::from_min_size(rect.min + vec2(16.0, 14.0), vec2(22.0, 22.0)), icon, 21.0, t.icon);
                     painter.text(rect.min + vec2(16.0, 58.0), Align2::LEFT_CENTER, label, theme::semibold(14.0), t.text);
                     painter.text(rect.min + vec2(16.0, 84.0), Align2::LEFT_CENTER, detail, theme::regular(12.0), t.text_muted);
                     let resp = theme::hand(resp).on_hover_text(detail);
-                    if label == "Convert" {
+                    if label == "Export" {
                         egui::Popup::menu(&resp).show(|ui| {
                             for (format, command) in [
                                 ("Word (.docx)", "export.docx"),
@@ -57,7 +60,8 @@ pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
                                 }
                             }
                         });
-                    } else if resp.clicked() {
+                    }
+                    if label != "Export" && resp.clicked() {
                         match label {
                             "Open PDF" => app.open_dialog(),
                             "Merge PDFs" => {
@@ -101,19 +105,26 @@ pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
                 let press = theme::Press::track(ui, &resp);
                 // The row, not its response: the pointer stays "in" the row over its remove button.
                 let hovered = ui.rect_contains_pointer(rect);
+                let focused = resp.has_focus();
                 if hovered && press.hover < 0.04 && press.down < 0.04 {
                     // The remove button sits in the row, so the row response may not be hovered.
                     ui.painter().rect_filled(rect, CornerRadius::same(3), t.hover);
                 } else {
                     press.wash(ui, rect, 3, false);
                 }
-                if hovered {
+                if focused {
+                    ui.painter().rect_stroke(rect, CornerRadius::same(3), Stroke::new(2.0, t.accent), egui::StrokeKind::Inside);
+                }
+                if focused && ui.input(|i| i.key_pressed(egui::Key::Delete) || i.key_pressed(egui::Key::Backspace)) {
+                    remove = Some(r.path.clone());
+                }
+                if hovered || focused {
                     // Remove just this file from the list (#430); the file itself is untouched.
                     let x_rect = Rect::from_center_size(rect.right_center() - vec2(26.0, 0.0), vec2(28.0, 28.0));
                     let x = ui.interact(x_rect, ui.scope_id().with(("remove-recent", &r.path)), Sense::click());
                     let label = crate::i18n::fmt(tl!("Remove {name} from Recent"), &[("name", &r.name)]);
                     x.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &label));
-                    if x.hovered() {
+                    if x.hovered() || x.has_focus() {
                         ui.painter().rect_filled(x_rect, CornerRadius::same(3), t.pressed);
                     }
                     icons::paint(ui, x_rect.shrink(6.0), "x", 16.0, t.icon);
@@ -135,6 +146,26 @@ pub fn show(app: &mut RectoApp, ui: &mut egui::Ui) {
                 let width = detail.left() - 16.0 - (body.left() + 46.0);
                 widgets::row_text(ui, body.min + vec2(46.0, 15.0), r.name.as_str(), theme::medium(13.5), t.text, width);
                 widgets::row_text(ui, body.min + vec2(46.0, 32.0), r.path.as_str(), theme::regular(11.0), t.text_faint, width);
+
+                resp.context_menu(|ui| {
+                    if ui.button(tl!("Open")).clicked() {
+                        open = Some(r.path.clone());
+                        ui.close();
+                    }
+                    if ui.button(tl!("Remove from Recent")).clicked() {
+                        remove = Some(r.path.clone());
+                        ui.close();
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    {
+                        let reveal_label = if cfg!(target_os = "macos") { tl!("Reveal in Finder") } else { tl!("Reveal in File Explorer") };
+                        if ui.button(reveal_label).clicked() {
+                            let _ = crate::menus::tab_context::reveal(std::path::Path::new(&r.path));
+                            ui.close();
+                        }
+                    }
+                });
+
                 if theme::hand(resp).on_hover_text(&r.path).clicked() {
                     open = Some(r.path.clone());
                 }

@@ -17,7 +17,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use recto_cos::{Dict, Document, ObjRef, Object, Stream};
+use pagic_cos::{Dict, Document, ObjRef, Object, Stream};
 
 use crate::{OptimizeError, Stage};
 

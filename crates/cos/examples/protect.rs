@@ -1,4 +1,4 @@
-//! Encrypt a PDF: `cargo run -p recto-cos --example protect in.pdf out.pdf rc4-40|rc4-128|aes-128|aes-256 USER OWNER`
+//! Encrypt a PDF: `cargo run -p pagic-cos --example protect in.pdf out.pdf rc4-40|rc4-128|aes-128|aes-256 USER OWNER`
 /// 32 fresh bytes for the file key. `RandomState` is seeded by the operating system (as the
 /// engine's `entropy` uses it), so every run encrypts with a different key.
 fn seed() -> [u8; 32] {
@@ -16,13 +16,13 @@ fn main() {
     let a: Vec<String> = std::env::args().skip(1).collect();
     let [input, output, alg, user, owner] = &a[..] else { panic!("usage: protect in out alg user owner") };
     let algorithm = match alg.as_str() {
-        "rc4-40" => recto_cos::Algorithm::Rc4_40,
-        "rc4-128" => recto_cos::Algorithm::Rc4_128,
-        "aes-128" => recto_cos::Algorithm::Aes128,
-        _ => recto_cos::Algorithm::Aes256,
+        "rc4-40" => pagic_cos::Algorithm::Rc4_40,
+        "rc4-128" => pagic_cos::Algorithm::Rc4_128,
+        "aes-128" => pagic_cos::Algorithm::Aes128,
+        _ => pagic_cos::Algorithm::Aes256,
     };
-    let mut doc = recto_cos::Document::open(std::sync::Arc::new(std::fs::read(input).unwrap())).unwrap();
-    doc.set_encryption(&recto_cos::NewEncryption {
+    let mut doc = pagic_cos::Document::open(std::sync::Arc::new(std::fs::read(input).unwrap())).unwrap();
+    doc.set_encryption(&pagic_cos::NewEncryption {
         algorithm,
         user_password: user,
         owner_password: owner,
@@ -31,5 +31,5 @@ fn main() {
         seed: seed(),
     })
     .unwrap();
-    std::fs::write(output, recto_cos::write_full(&doc, &Default::default()).unwrap()).unwrap();
+    std::fs::write(output, pagic_cos::write_full(&doc, &Default::default()).unwrap()).unwrap();
 }

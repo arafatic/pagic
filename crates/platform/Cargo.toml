@@ -1,6 +1,6 @@
 [package]
-name = "recto-platform"
-description = "Operating-system services shared by the Recto desktop app and automation tools"
+name = "pagic-platform"
+description = "Operating-system services shared by the Pagic desktop app and automation tools"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

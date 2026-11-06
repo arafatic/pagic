@@ -10,8 +10,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use recto_cos::{Dict, Document, ObjRef, Object, PdfString, Stream};
-use recto_fonts::{
+use pagic_cos::{Dict, Document, ObjRef, Object, PdfString, Stream};
+use pagic_fonts::{
     GlyphError, GlyphOutline, ShapedCluster, ShapedScript, Std14, literal, shape_arabic, shape_hebrew, shape_thai, shaped_glyph, win_ansi,
 };
 use unicode_bidi::{Level, ParagraphBidiInfo};

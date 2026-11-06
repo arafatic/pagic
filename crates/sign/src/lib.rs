@@ -48,5 +48,5 @@ pub enum SignError {
     #[error("{0}")]
     Pdf(String),
     #[error(transparent)]
-    Cos(#[from] recto_cos::CosError),
+    Cos(#[from] pagic_cos::CosError),
 }

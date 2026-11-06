@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result, bail};
 
 /// Find a Chrome/Chromium binary. `explicit` (from `--chrome`) wins, then the
-/// `RECTO_CHROME` / `CHROME` environment variables, then well-known
+/// `PAGIC_CHROME` (legacy `RECTO_CHROME`) / `CHROME` environment variables, then well-known
 /// install locations, then `PATH`.
 pub fn find(explicit: Option<&Path>) -> Result<PathBuf> {
     if let Some(path) = explicit {
@@ -20,7 +20,7 @@ pub fn find(explicit: Option<&Path>) -> Result<PathBuf> {
         }
         bail!("--chrome {} does not exist", path.display());
     }
-    for var in ["RECTO_CHROME", "CHROME"] {
+    for var in ["PAGIC_CHROME", "RECTO_CHROME", "CHROME"] {
         if let Some(path) = env::var_os(var).map(PathBuf::from)
             && path.is_file()
         {
@@ -63,7 +63,7 @@ pub fn find(explicit: Option<&Path>) -> Result<PathBuf> {
     }
     bail!(
         "could not find Google Chrome or Chromium; install one or pass --chrome <path> \
-         (or set RECTO_CHROME)"
+         (or set PAGIC_CHROME)"
     )
 }
 
@@ -157,7 +157,7 @@ struct TempProfile(PathBuf);
 
 impl TempProfile {
     fn new() -> Self {
-        Self(env::temp_dir().join(format!("recto-chrome-profile-{}", std::process::id())))
+        Self(env::temp_dir().join(format!("pagic-chrome-profile-{}", std::process::id())))
     }
 }
 
@@ -211,7 +211,7 @@ mod tests {
 
     impl TestDir {
         fn new(tag: &str) -> Self {
-            let dir = env::temp_dir().join(format!("recto-chrome-{tag}-{}", std::process::id()));
+            let dir = env::temp_dir().join(format!("pagic-chrome-{tag}-{}", std::process::id()));
             let _ = fs::remove_dir_all(&dir);
             fs::create_dir_all(&dir).unwrap();
             Self(dir)

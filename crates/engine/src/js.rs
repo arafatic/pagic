@@ -1,13 +1,13 @@
 //! Acrobat JavaScript in documents: field scripts run during form edits ([`JsRunner`], wired
-//! into `forms` through its [`recto_forms::Scripts`] hook), and button actions and console
+//! into `forms` through its [`pagic_forms::Scripts`] hook), and button actions and console
 //! input run on request ([`Session::run_javascript`]). What scripts ask of the viewer (alerts,
 //! printing, navigation, links) is kept for the front end in [`JsOutput`].
 //!
 //! Preferences ▸ JavaScript ▸ Enable Acrobat JavaScript is [`Session::set_javascript`]; with it
 //! off, scripts don't run and AF calls keep working natively.
 
-use recto_forms::{Field, FieldChange, FieldEvent, FieldKind, FieldProps, ScriptResult, Scripts};
-pub use recto_js::{Limits, Outcome, Panel, Request};
+use pagic_forms::{Field, FieldChange, FieldEvent, FieldKind, FieldProps, ScriptResult, Scripts};
+pub use pagic_js::{Limits, Outcome, Panel, Request};
 
 use crate::{DocId, Edit, EditError, Session};
 
@@ -79,8 +79,8 @@ impl JsOutput {
     }
 }
 
-fn kind(k: FieldKind) -> recto_js::FieldType {
-    use recto_js::FieldType as T;
+fn kind(k: FieldKind) -> pagic_js::FieldType {
+    use pagic_js::FieldType as T;
     match k {
         FieldKind::Text => T::Text,
         FieldKind::CheckBox => T::CheckBox,
@@ -93,29 +93,29 @@ fn kind(k: FieldKind) -> recto_js::FieldType {
 }
 
 /// `field.display` from the first widget's annotation flags.
-fn display(doc: &recto_cos::Document, f: &Field) -> i32 {
+fn display(doc: &pagic_cos::Document, f: &Field) -> i32 {
     let flags = f.widgets.first().and_then(|w| doc.get(w.obj).as_dict().and_then(|d| d.int(b"F"))).unwrap_or(4);
     if flags & 2 != 0 {
-        recto_js::DISPLAY_HIDDEN
+        pagic_js::DISPLAY_HIDDEN
     } else if flags & 32 != 0 {
-        recto_js::DISPLAY_NO_VIEW
+        pagic_js::DISPLAY_NO_VIEW
     } else if flags & 4 == 0 {
-        recto_js::DISPLAY_NO_PRINT
+        pagic_js::DISPLAY_NO_PRINT
     } else {
-        recto_js::DISPLAY_VISIBLE
+        pagic_js::DISPLAY_VISIBLE
     }
 }
 
 /// A form field as scripts see it.
-pub fn field_state(doc: &recto_cos::Document, f: &Field) -> recto_js::FieldState {
+pub fn field_state(doc: &pagic_cos::Document, f: &Field) -> pagic_js::FieldState {
     field_state_with_display(f, display(doc, f))
 }
 
-fn field_state_with_display(f: &Field, display: i32) -> recto_js::FieldState {
-    let mut s = recto_js::FieldState::new(f.name.clone(), kind(f.kind), f.value.clone());
+fn field_state_with_display(f: &Field, display: i32) -> pagic_js::FieldState {
+    let mut s = pagic_js::FieldState::new(f.name.clone(), kind(f.kind), f.value.clone());
     s.default = f.default.clone();
     s.readonly = f.read_only();
-    s.required = f.has(recto_forms::flags::REQUIRED);
+    s.required = f.has(pagic_forms::flags::REQUIRED);
     s.display = display;
     s.char_limit = f.max_len;
     s.options = match f.kind {
@@ -126,7 +126,7 @@ fn field_state_with_display(f: &Field, display: i32) -> recto_js::FieldState {
 }
 
 /// The changes a script made, against the fields as they were.
-fn changes(before: &[recto_js::FieldState], after: &[recto_js::FieldState]) -> Vec<FieldChange> {
+fn changes(before: &[pagic_js::FieldState], after: &[pagic_js::FieldState]) -> Vec<FieldChange> {
     if after.is_empty() {
         return Vec::new();
     }
@@ -154,41 +154,40 @@ fn changes(before: &[recto_js::FieldState], after: &[recto_js::FieldState]) -> V
 
 /// Runs field scripts with the document's object model and keeps what they print or ask for.
 pub struct JsRunner {
-    pub doc: recto_js::DocInfo,
+    pub doc: pagic_js::DocInfo,
     pub doc_scripts: Vec<String>,
     pub output: JsOutput,
     /// Immutable document snapshot from the start of the edit (for widget `display`).
-    cos: recto_cos::Document,
+    cos: pagic_cos::Document,
     // `cos` is the same immutable pre-edit snapshot for the runner's lifetime. Cache only
     // its scalar display readings, not COS objects: large forms exceed the object cache and
     // otherwise reparse every widget for every calculation. Values/flags still come from
     // the live `fields` snapshot on each call. A new edit gets a new runner and cache.
-    displays: std::collections::HashMap<recto_cos::ObjRef, i32>,
+    displays: std::collections::HashMap<pagic_cos::ObjRef, i32>,
 }
 
 impl JsRunner {
     /// A runner for `cos`: what scripts read about the document (pages, info, whether it is
     /// an XFA form) and its document-level scripts, read once.
-    pub fn new(cos: &recto_cos::Document, file_name: &str) -> JsRunner {
-        let xfa = recto_xfa::xfa_shape(cos).is_some();
-        let doc =
-            recto_js::DocInfo { file_name: file_name.to_string(), num_pages: recto_model::pages(cos).len(), page: 0, info: info(cos), xfa };
+    pub fn new(cos: &pagic_cos::Document, file_name: &str) -> JsRunner {
+        let xfa = pagic_xfa::xfa_shape(cos).is_some();
+        let doc = pagic_js::DocInfo { file_name: file_name.to_string(), num_pages: pagic_model::pages(cos).len(), page: 0, info: info(cos), xfa };
         // Once XFA owns the form, the PDF container's scripts belong to its fallback view.
         // Keep them in the file and in Document JavaScripts, but do not initialize an
         // AcroForm context with them: a viewer-compatibility alert would be misleading.
         // Packets alone are not enough: static XFA and an unlaid-out shell keep their scripts.
-        let xfa_active = xfa && recto_xfa::existing_layout(cos).is_some();
-        let doc_scripts = if xfa_active { Vec::new() } else { recto_forms::document_scripts(cos) };
+        let xfa_active = xfa && pagic_xfa::existing_layout(cos).is_some();
+        let doc_scripts = if xfa_active { Vec::new() } else { pagic_forms::document_scripts(cos) };
         JsRunner { doc, doc_scripts, output: JsOutput::default(), cos: cos.clone(), displays: std::collections::HashMap::new() }
     }
 }
 
 /// The Info dictionary as `this.info` keys (lower-case).
-fn info(cos: &recto_cos::Document) -> Vec<(String, String)> {
+fn info(cos: &pagic_cos::Document) -> Vec<(String, String)> {
     let Some(d) = cos.trailer().get(b"Info").map(|i| cos.resolve(i)).and_then(|i| i.as_dict().cloned()) else { return Vec::new() };
     d.iter()
         .filter_map(|(k, v)| match &*cos.resolve(v) {
-            recto_cos::Object::String(s) => Some((String::from_utf8_lossy(k).to_lowercase(), s.to_text())),
+            pagic_cos::Object::String(s) => Some((String::from_utf8_lossy(k).to_lowercase(), s.to_text())),
             _ => None,
         })
         .collect()
@@ -201,14 +200,14 @@ impl Scripts for JsRunner {
             .map(|f| {
                 let display = match f.widgets.first() {
                     Some(w) => *self.displays.entry(w.obj).or_insert_with(|| display(&self.cos, f)),
-                    None => recto_js::DISPLAY_VISIBLE,
+                    None => pagic_js::DISPLAY_VISIBLE,
                 };
                 field_state_with_display(f, display)
             })
             .collect();
         let states = std::sync::Arc::new(states);
-        let ev = recto_js::Event::field(event.name(), &target.name, value);
-        let o = recto_js::run_shared(script, &ev, &self.doc, std::sync::Arc::clone(&states), &self.doc_scripts, Limits::default());
+        let ev = pagic_js::Event::field(event.name(), &target.name, value);
+        let o = pagic_js::run_shared(script, &ev, &self.doc, std::sync::Arc::clone(&states), &self.doc_scripts, Limits::default());
         self.output.absorb(&o);
         if o.error.is_some() {
             // As in Acrobat, a failing script leaves the value alone (the error goes to the console).
@@ -224,19 +223,19 @@ impl Scripts for JsRunner {
 }
 
 /// A document-level JavaScript: its name and source.
-pub fn document_scripts(cos: &recto_cos::Document) -> Vec<(String, String)> {
-    recto_forms::document_scripts_named(cos)
+pub fn document_scripts(cos: &pagic_cos::Document) -> Vec<(String, String)> {
+    pagic_forms::document_scripts_named(cos)
 }
 
 impl crate::Document {
     /// Field Properties ▸ Actions: field `name`'s action per trigger.
-    pub fn field_actions(&self, name: &str) -> Vec<(recto_forms::Trigger, recto_forms::FieldAction)> {
-        self.editor.as_ref().and_then(|e| recto_forms::field_actions(&e.cos, name).ok()).unwrap_or_default()
+    pub fn field_actions(&self, name: &str) -> Vec<(pagic_forms::Trigger, pagic_forms::FieldAction)> {
+        self.editor.as_ref().and_then(|e| pagic_forms::field_actions(&e.cos, name).ok()).unwrap_or_default()
     }
 
     /// Field Properties ▸ Actions: how many actions are chained after each trigger's first one.
-    pub fn field_action_chains(&self, name: &str) -> Vec<(recto_forms::Trigger, usize)> {
-        self.editor.as_ref().and_then(|e| recto_forms::field_action_chains(&e.cos, name).ok()).unwrap_or_default()
+    pub fn field_action_chains(&self, name: &str) -> Vec<(pagic_forms::Trigger, usize)> {
+        self.editor.as_ref().and_then(|e| pagic_forms::field_action_chains(&e.cos, name).ok()).unwrap_or_default()
     }
 
     /// Document JavaScripts (name, source), in name order.
@@ -269,7 +268,7 @@ impl Session {
         }
         let doc = self.get(id).ok_or(EditError::NoDocument)?;
         let cos = doc.editor.as_ref().map(|e| e.cos.clone()).ok_or_else(|| EditError::ReadOnly(doc.read_only_reason.clone().unwrap_or_default()))?;
-        // A button Recto generated from an XFA template runs its XFA click script.
+        // A button Pagic generated from an XFA template runs its XFA click script.
         if let Some(t) = target
             && let Some(tpl) = doc.xfa_template.clone()
             && let Some(field) = doc.form.iter().find(|f| f.name == t)
@@ -287,13 +286,13 @@ impl Session {
             });
         }
         let runner = JsRunner::new(&cos, &doc.name);
-        let fields = recto_forms::fields(&cos);
+        let fields = pagic_forms::fields(&cos);
         let states: Vec<_> = fields.iter().map(|f| field_state(&cos, f)).collect();
         let event = match target {
-            Some(t) => recto_js::Event { will_commit: false, ..recto_js::Event::field("Mouse Up", t, "") },
-            None => recto_js::Event::doc("Console"),
+            Some(t) => pagic_js::Event { will_commit: false, ..pagic_js::Event::field("Mouse Up", t, "") },
+            None => pagic_js::Event::doc("Console"),
         };
-        let mut o = recto_js::run(script, &event, &runner.doc, &states, &runner.doc_scripts, Limits::default());
+        let mut o = pagic_js::run(script, &event, &runner.doc, &states, &runner.doc_scripts, Limits::default());
         let changes = changes(&states, &o.changed);
         let resets: Vec<Vec<String>> = o
             .requests
@@ -323,13 +322,13 @@ impl Session {
 
 /// A page's words for form-field detection, in user space (underscore runs split from the
 /// text around them).
-fn detection_words(text: &recto_render::PageText, info: &recto_render::PageInfo) -> Vec<recto_forms::detect::Word> {
-    page_words(text, info).into_iter().map(|(text, rect)| recto_forms::detect::Word { text, rect }).collect()
+fn detection_words(text: &pagic_render::PageText, info: &pagic_render::PageInfo) -> Vec<pagic_forms::detect::Word> {
+    page_words(text, info).into_iter().map(|(text, rect)| pagic_forms::detect::Word { text, rect }).collect()
 }
 
 /// A page's words in reading order, in user space ([x0, y0, x1, y1]); runs of underscores are
 /// words of their own.
-pub(crate) fn page_words(text: &recto_render::PageText, info: &recto_render::PageInfo) -> Vec<(String, [f64; 4])> {
+pub(crate) fn page_words(text: &pagic_render::PageText, info: &pagic_render::PageInfo) -> Vec<(String, [f64; 4])> {
     words_with(text, |x, y| info.view_to_user(x, y))
         .into_iter()
         .map(|(text, r)| (text, [f64::from(r[0]), f64::from(r[1]), f64::from(r[2]), f64::from(r[3])]))
@@ -344,7 +343,7 @@ thread_local! {
 
 /// A page's words in reading order, their boxes mapped from view space by `map` (and ordered
 /// again, so that [x0, y0, x1, y1] holds whatever way `map` turns them).
-pub(crate) fn words_with(text: &recto_render::PageText, map: impl Fn(f32, f32) -> [f32; 2]) -> Vec<(String, [f32; 4])> {
+pub(crate) fn words_with(text: &pagic_render::PageText, map: impl Fn(f32, f32) -> [f32; 2]) -> Vec<(String, [f32; 4])> {
     let mut words: Vec<(String, [f32; 4])> = Vec::new();
     let mut last_line = u32::MAX;
     // A space glyph ends the word before it.
@@ -391,30 +390,30 @@ impl Session {
     /// Prepare a form ▸ automatic field detection: the fields `pages` (0-based; empty = all)
     /// seem to ask for, named from their labels, as (page, candidate). Scanned pages (a picture
     /// and no drawn shapes) are read from their pixels, see [`crate::scan_fields`].
-    pub fn detect_fields(&self, id: DocId, pages: &[usize]) -> Vec<(usize, recto_forms::detect::Candidate)> {
+    pub fn detect_fields(&self, id: DocId, pages: &[usize]) -> Vec<(usize, pagic_forms::detect::Candidate)> {
         self.detect_fields_turned(id, pages).into_iter().map(|(page, c, _)| (page, c)).collect()
     }
 
     /// [`Self::detect_fields`], with how far each field turns (`/MK /R`) to read upright.
-    fn detect_fields_turned(&self, id: DocId, pages: &[usize]) -> Vec<(usize, recto_forms::detect::Candidate, i64)> {
+    fn detect_fields_turned(&self, id: DocId, pages: &[usize]) -> Vec<(usize, pagic_forms::detect::Candidate, i64)> {
         let Some(doc) = self.get(id) else { return Vec::new() };
         let Some(cos) = doc.editor.as_ref().map(|e| &e.cos) else { return Vec::new() };
-        let config = recto_render::RenderConfig { password: doc.password.as_deref().map(std::sync::Arc::from), ..Default::default() };
-        let mut r = recto_render::PageRenderer::new(doc.bytes.clone(), config);
+        let config = pagic_render::RenderConfig { password: doc.password.as_deref().map(std::sync::Arc::from), ..Default::default() };
+        let mut r = pagic_render::PageRenderer::new(doc.bytes.clone(), config);
         let mut taken: Vec<String> = doc.form.iter().map(|f| f.name.clone()).collect();
         let all = doc.info.pages.len();
         let list: Vec<usize> = if pages.is_empty() { (0..all).collect() } else { pages.iter().copied().filter(|p| *p < all).collect() };
         let mut out = Vec::new();
         for page in list {
             let Some(info) = doc.info.pages.get(page) else { continue };
-            let res = r.render(recto_render::RenderRequest { page, kind: recto_render::RequestKind::Text, scale: 1.0, ..Default::default() });
-            let shapes = recto_forms::detect::page_shapes(cos, page);
+            let res = r.render(pagic_render::RenderRequest { page, kind: pagic_render::RequestKind::Text, scale: 1.0, ..Default::default() });
+            let shapes = pagic_forms::detect::page_shapes(cos, page);
             let existing: Vec<[f64; 4]> = doc.form.iter().flat_map(|f| f.widgets.iter()).filter(|w| w.page == Some(page)).map(|w| w.rect).collect();
             let (found, turn) = if shapes.boxes.is_empty() && shapes.rules.is_empty() && crate::scan_fields::is_scan(doc, page, info) {
                 self.detect_on_scan(id, &mut r, page, res.text.as_deref(), &existing, &taken)
             } else {
                 let words = res.text.map(|t| detection_words(&t, info)).unwrap_or_default();
-                (recto_forms::detect::detect(&words, &shapes, &existing, &taken), 0)
+                (pagic_forms::detect::detect(&words, &shapes, &existing, &taken), 0)
             };
             for c in found {
                 taken.push(c.name.clone());
@@ -435,14 +434,14 @@ impl Session {
         for (page, c, turn) in found {
             let tall = if turn % 180 == 0 { c.rect[3] - c.rect[1] } else { c.rect[2] - c.rect[0] };
             let (kind, comb) = match c.kind {
-                recto_forms::detect::Kind::Text => (recto_forms::NewField::Text { multiline: tall > 30.0 }, None),
-                recto_forms::detect::Kind::CheckBox => (recto_forms::NewField::CheckBox, None),
-                recto_forms::detect::Kind::Comb { cells } => (recto_forms::NewField::Text { multiline: false }, Some(cells)),
+                pagic_forms::detect::Kind::Text => (pagic_forms::NewField::Text { multiline: tall > 30.0 }, None),
+                pagic_forms::detect::Kind::CheckBox => (pagic_forms::NewField::CheckBox, None),
+                pagic_forms::detect::Kind::Comb { cells } => (pagic_forms::NewField::Text { multiline: false }, Some(cells)),
             };
             // The page already draws the line or box the field sits on, so the field gets no
             // border or fill of its own: an opaque fill would hide the printed form (#294, #2831).
             let mut props = FieldProps {
-                appearance: Some(recto_forms::LookPatch { border: Some(None), fill: Some(None), ..Default::default() }),
+                appearance: Some(pagic_forms::LookPatch { border: Some(None), fill: Some(None), ..Default::default() }),
                 ..Default::default()
             };
             if turn != 0 {
@@ -452,7 +451,7 @@ impl Session {
             }
             if let Some(cells) = comb {
                 props.max_len = Some(Some(cells));
-                props.flags = vec![(recto_forms::flags::COMB, true)];
+                props.flags = vec![(pagic_forms::flags::COMB, true)];
             }
             edits.push(Edit::AddField { page, rect: c.rect, kind, name: Some(c.name.clone()) });
             edits.push(Edit::SetFieldProps { name: c.name, props: Box::new(props) });
@@ -471,7 +470,7 @@ mod review_tests {
     #[test]
     fn a_long_underscore_run_is_read_in_one_pass() {
         let n = 10_000;
-        let glyph = |i: usize, t: &str| recto_render::TextGlyph {
+        let glyph = |i: usize, t: &str| pagic_render::TextGlyph {
             text: t.into(),
             rect: [i as f32, 0.0, i as f32 + 1.0, 10.0],
             quad: [[0.0; 2]; 4],
@@ -479,7 +478,7 @@ mod review_tests {
         };
         let mut glyphs: Vec<_> = (0..n).map(|i| glyph(i, "_")).collect();
         glyphs.push(glyph(n, "x"));
-        let text = recto_render::PageText { line_of: vec![0; glyphs.len()], space_before: vec![false; glyphs.len()], glyphs };
+        let text = pagic_render::PageText { line_of: vec![0; glyphs.len()], space_before: vec![false; glyphs.len()], glyphs };
         UNDERSCORE_CHARS_READ.with(|c| c.set(0));
         let words = words_with(&text, |x, y| [x, y]);
         assert_eq!(words.iter().map(|(w, _)| w.len()).collect::<Vec<_>>(), [n, 1]);
@@ -515,26 +514,21 @@ mod review_tests {
 
     #[test]
     fn duplicate_field_names_diff_against_first_original() {
-        let first = recto_js::FieldState::new("duplicate", recto_js::FieldType::Text, vec!["first".into()]);
+        let first = pagic_js::FieldState::new("duplicate", pagic_js::FieldType::Text, vec!["first".into()]);
         let mut second = first.clone();
         second.value = vec!["second".into()];
-        second.display = recto_js::DISPLAY_HIDDEN;
+        second.display = pagic_js::DISPLAY_HIDDEN;
         let before = vec![first.clone(), second.clone()];
         assert!(changes(&before, std::slice::from_ref(&first)).is_empty());
         let actual = changes(&before, std::slice::from_ref(&second));
         assert_eq!(
             actual,
-            vec![FieldChange {
-                name: "duplicate".into(),
-                value: Some(second.value),
-                display: Some(recto_js::DISPLAY_HIDDEN),
-                ..Default::default()
-            }]
+            vec![FieldChange { name: "duplicate".into(), value: Some(second.value), display: Some(pagic_js::DISPLAY_HIDDEN), ..Default::default() }]
         );
-        let outcome = recto_js::run_shared(
+        let outcome = pagic_js::run_shared(
             "event.value = getField('duplicate').value; getField('duplicate').value = 'updated';",
-            &recto_js::Event::field("Calculate", "duplicate", ""),
-            &recto_js::DocInfo::default(),
+            &pagic_js::Event::field("Calculate", "duplicate", ""),
+            &pagic_js::DocInfo::default(),
             std::sync::Arc::new(before.clone()),
             &[],
             Limits::default(),

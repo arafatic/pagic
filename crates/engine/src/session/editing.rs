@@ -50,7 +50,7 @@ impl Session {
             other => other,
         };
         // Nothing to bake: leave undo history and the dirty flag alone.
-        if matches!(&edit, Edit::FlattenFillSign) && !recto_annot::has_visible_fill_sign(&editor.cos) {
+        if matches!(&edit, Edit::FlattenFillSign) && !pagic_annot::has_visible_fill_sign(&editor.cos) {
             return Ok(());
         }
         let mut next = editor.cos.clone();
@@ -65,8 +65,8 @@ impl Session {
         // Redaction removed what its own interpreter places under the marks. The marks were drawn
         // over the page as the renderer shows it, so the renderer has the last word.
         if let Edit::ApplyRedactions { pages } = &edit {
-            let marks: Vec<recto_redact::Mark> =
-                recto_redact::marks(&editor.cos).into_iter().filter(|m| pages.as_ref().is_none_or(|p| p.contains(&m.page))).collect();
+            let marks: Vec<pagic_redact::Mark> =
+                pagic_redact::marks(&editor.cos).into_iter().filter(|m| pages.as_ref().is_none_or(|p| p.contains(&m.page))).collect();
             guard(|| shown_under_redactions(&next, &marks, &cx.redaction_overlays, &doc.info.pages, doc.password.as_deref()))
                 .unwrap_or_else(|m| Err(EditError::Invalid(format!("{} failed unexpectedly ({m}); the document was not changed", edit.label()))))?;
         }
@@ -162,7 +162,7 @@ impl Session {
         // Signed documents are only ever saved incrementally: an edit that needs a full rewrite
         // (applying redactions, changing security, sanitizing) would invalidate the signatures.
         // So does any edit to a file rebuilt from object headers: it has no chain to append to.
-        let rewrites = |c: &recto_cos::Document| c.full_save_required() || c.encryption_changed();
+        let rewrites = |c: &pagic_cos::Document| c.full_save_required() || c.encryption_changed();
         if signed && ((rewrites(&next) && !rewrites(&editor.cos)) || (next.is_modified() && next.revisions().is_empty())) {
             return Err(EditError::SignedRewrite(edit.label().to_string()));
         }
@@ -328,7 +328,7 @@ impl Session {
             for (field, value) in info_fields(&mut doc.info, &editor.cos) {
                 *field = value;
             }
-            doc.info.custom = recto_organize::custom_info(&editor.cos);
+            doc.info.custom = pagic_organize::custom_info(&editor.cos);
             doc.info.file_size = bytes.len();
             #[cfg(test)]
             check_refresh_panic();
@@ -339,7 +339,7 @@ impl Session {
             doc.bytes = bytes;
             return Ok(());
         }
-        let mut form = recto_forms::fields(&editor.cos);
+        let mut form = pagic_forms::fields(&editor.cos);
         xfa::mark_script_buttons(&editor.cos, &mut form);
         let form = Arc::new(form);
         match scope {
@@ -360,7 +360,7 @@ impl Session {
                 for f in &mut doc.info.fields {
                     if let Some(ff) = by_name.get(f.name.as_str()) {
                         f.value = match ff.kind {
-                            recto_forms::FieldKind::CheckBox | recto_forms::FieldKind::Radio => {
+                            pagic_forms::FieldKind::CheckBox | pagic_forms::FieldKind::Radio => {
                                 Some(ff.value.first().cloned().unwrap_or_else(|| "Off".into()))
                             }
                             _ if ff.value.is_empty() => None,
@@ -428,7 +428,7 @@ impl Session {
             editor.cos.bytes().clone()
         };
         // The edit must still leave a file the viewer can open; anything else rolls back above.
-        recto_render::check_pages(bytes.clone(), doc.password.as_deref(), doc.info.pages.len()).map_err(|e| EditError::Reopen(e.to_string()))?;
+        pagic_render::check_pages(bytes.clone(), doc.password.as_deref(), doc.info.pages.len()).map_err(|e| EditError::Reopen(e.to_string()))?;
         let (touches_added, touches_marks) = Self::content_refresh_lists(edit);
         if touches_added || touches_marks {
             doc.marker_scan = OnceLock::new();
@@ -509,7 +509,7 @@ impl Session {
         }
         doc.info = info;
         doc.fonts_stale = false;
-        let mut form = recto_forms::fields(&editor.cos);
+        let mut form = pagic_forms::fields(&editor.cos);
         xfa::mark_script_buttons(&editor.cos, &mut form);
         doc.form = Arc::new(form);
         if invalidate_markers {

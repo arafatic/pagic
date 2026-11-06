@@ -5,11 +5,11 @@
 use std::sync::{Arc, Mutex};
 
 use egui::{Align, Layout};
-use recto_engine::DocId;
-use recto_engine::ocr::{LANGUAGES, OcrPage, OcrSettings};
+use pagic_engine::DocId;
+use pagic_engine::ocr::{LANGUAGES, OcrPage, OcrSettings};
 
 use crate::theme::{self, Tokens};
-use crate::{RectoApp, widgets};
+use crate::{PagicApp, widgets};
 
 /// Which pages to read.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -62,7 +62,7 @@ pub struct BatchProgress {
     pub message: Option<String>,
 }
 
-/// A page Edit should read now (see [`RectoApp::scan_to_read`]).
+/// A page Edit should read now (see [`PagicApp::scan_to_read`]).
 struct ScanToRead {
     view: usize,
     doc: DocId,
@@ -90,9 +90,9 @@ pub struct AutoOcr {
     pub generation: u64,
 }
 
-pub(crate) fn body(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> (bool, bool) {
+pub(crate) fn body(ui: &mut egui::Ui, app: &mut PagicApp, t: &Tokens) -> (bool, bool) {
     let pages = app.active_ids().and_then(|(_, id)| app.session.get(id)).map_or(1, |d| d.info.pages.len().max(1));
-    let available = recto_engine::ocr::available();
+    let available = pagic_engine::ocr::available();
     let d = &mut app.ocr_draft;
     d.to = d.to.clamp(1, pages);
     d.from = d.from.clamp(1, d.to);
@@ -148,9 +148,11 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> (bool, 
     });
     if !available {
         ui.label(
-            egui::RichText::new(tl!("Text recognition isn't installed: its model files are missing. Reinstall Recto, or set RECTO_MODELS to the folder that holds them."))
-                .small()
-                .color(t.text_muted),
+            egui::RichText::new(tl!(
+                "Text recognition isn't installed: its model files are missing. Reinstall Pagic, or set PAGIC_MODELS to the folder that holds them."
+            ))
+            .small()
+            .color(t.text_muted),
         );
         ui.add_space(6.0);
     }
@@ -169,7 +171,7 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut RectoApp, t: &Tokens) -> (bool, 
     (go, cancel)
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Recognize text on the pages chosen in the dialog, in the background.
     pub fn start_ocr(&mut self) {
         let Some((vi, id)) = self.active_ids() else { return };
@@ -201,7 +203,7 @@ impl RectoApp {
     /// is one undoable step, "Recognize text", and is not run again for that page after Undo.
     pub(crate) fn auto_ocr_scanned_page(&mut self) {
         let Some(scan) = self.scan_to_read() else { return };
-        if !recto_engine::ocr::available() {
+        if !pagic_engine::ocr::available() {
             self.views[scan.view].auto_ocr_skipped.insert(scan.page, scan.generation);
             return;
         }
@@ -275,7 +277,7 @@ impl RectoApp {
         let work = move || {
             crate::i18n::set_current(lang);
             let result = recognize_guarded(|| {
-                recto_engine::ocr::engine().map(|ocr| {
+                pagic_engine::ocr::engine().map(|ocr| {
                     job.run(&ocr, |done, total| {
                         let Ok(mut s) = p.lock() else { return false };
                         s.done = done;
@@ -292,7 +294,7 @@ impl RectoApp {
         if self.run_inline {
             work();
         } else {
-            std::thread::Builder::new().name("recto-ocr".into()).spawn(work).ok();
+            std::thread::Builder::new().name("pagic-ocr".into()).spawn(work).ok();
         }
         #[cfg(target_arch = "wasm32")]
         work();
@@ -336,9 +338,9 @@ impl RectoApp {
             crate::i18n::set_current(lang);
             // A panic in the recognizer still ends the batch with a summary (#3919).
             #[cfg(not(target_arch = "wasm32"))]
-            let summary = recto_engine::guard(|| recognize_files(files, &settings, &p, &dir));
+            let summary = pagic_engine::guard(|| recognize_files(files, &settings, &p, &dir));
             #[cfg(target_arch = "wasm32")]
-            let summary = recto_engine::guard(|| recognize_files(files, &settings, &p));
+            let summary = pagic_engine::guard(|| recognize_files(files, &settings, &p));
             let summary = summary.unwrap_or_else(|panic| failed(&panic));
             if let Ok(mut s) = p.lock() {
                 s.done = s.total;
@@ -349,7 +351,7 @@ impl RectoApp {
         if self.run_inline {
             work();
         } else {
-            std::thread::Builder::new().name("recto-ocr-files".into()).spawn(work).ok();
+            std::thread::Builder::new().name("pagic-ocr-files".into()).spawn(work).ok();
         }
         #[cfg(target_arch = "wasm32")]
         work();
@@ -366,14 +368,14 @@ fn recognize_files(
     #[cfg(not(target_arch = "wasm32"))] dir: &std::path::Path,
 ) -> String {
     let (mut ok, mut words, mut failed) = (0, 0, Vec::new());
-    match recto_engine::ocr::engine() {
+    match pagic_engine::ocr::engine() {
         Err(e) => failed.push(e),
         Ok(ocr) => {
             for (i, (name, bytes)) in files.into_iter().enumerate() {
                 if let Ok(mut s) = p.lock() {
                     s.done = i;
                 }
-                let r = recto_engine::ocr::recognize_file(&name, Arc::new(bytes), None, settings.clone(), &ocr, |_, _| true);
+                let r = pagic_engine::ocr::recognize_file(&name, Arc::new(bytes), None, settings.clone(), &ocr, |_, _| true);
                 let saved = r.and_then(|r| {
                     #[cfg(not(target_arch = "wasm32"))]
                     crate::editing::write_atomically(&dir.join(&name).to_string_lossy(), &r.bytes).map_err(|e| e.to_string())?;
@@ -403,7 +405,7 @@ fn recognize_files(
     msg
 }
 
-impl RectoApp {
+impl PagicApp {
     /// Stop a running recognition (the pages read so far are kept).
     pub fn cancel_ocr(&mut self) {
         if let Some(r) = &self.ocr_run
@@ -540,14 +542,14 @@ fn failed(e: &str) -> String {
 /// `recognize`, with a panic in it (a damaged model, a page the recognizer can't take) turned into
 /// the run's error: the run has to end either way, or it refuses every later one (#3919).
 fn recognize_guarded<T>(recognize: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
-    recto_engine::guard(recognize).unwrap_or_else(|panic| Err(failed(&panic)))
+    pagic_engine::guard(recognize).unwrap_or_else(|panic| Err(failed(&panic)))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{Dialog, LeftPanel, Mode, QuickTool};
-    use recto_engine::{Edit, Session};
+    use pagic_engine::{Edit, Session};
 
     /// A one-page PDF that is one picture covering the page.
     fn scan() -> Vec<u8> {
@@ -558,14 +560,14 @@ mod tests {
         Session::new().create_from_images(&[("scan.png".into(), png.into_inner())]).unwrap().to_vec()
     }
 
-    fn app_with(pdf: Vec<u8>) -> RectoApp {
-        let mut app = RectoApp::new();
+    fn app_with(pdf: Vec<u8>) -> PagicApp {
+        let mut app = PagicApp::new();
         app.open_bytes("doc.pdf", None, pdf).unwrap();
         app.quick_tool = QuickTool::EditText;
         app
     }
 
-    fn found(app: &mut RectoApp) -> Option<usize> {
+    fn found(app: &mut PagicApp) -> Option<usize> {
         app.scan_to_read().map(|s| s.page)
     }
 
@@ -629,14 +631,14 @@ mod tests {
     /// asked for is applied at once. The result is made up, so no OCR models are needed.
     #[test]
     fn the_result_of_an_automatic_run_waits_for_read_mode_and_dialogs() {
-        let word = || recto_engine::ocr::PlacedWord { text: "scanned".into(), origin: [72.0, 700.0], across: [60.0, 0.0], up: [0.0, 12.0] };
-        let finished = |app: &RectoApp, automatic: bool| {
+        let word = || pagic_engine::ocr::PlacedWord { text: "scanned".into(), origin: [72.0, 700.0], across: [60.0, 0.0], up: [0.0, 12.0] };
+        let finished = |app: &PagicApp, automatic: bool| {
             let generation = app.session.get(app.active_ids().unwrap().1).unwrap().edit_generation();
-            let page = recto_engine::ocr::OcrPage { page: 0, words: vec![word()], already_on_page: 0, skipped: None };
+            let page = pagic_engine::ocr::OcrPage { page: 0, words: vec![word()], already_on_page: 0, skipped: None };
             let progress = Arc::new(Mutex::new(OcrProgress { done: 1, total: 1, result: Some(Ok(vec![page])), cancel: false }));
             OcrRun { doc: app.active_ids().unwrap().1, progress, automatic: automatic.then_some(AutoOcr { page: 0, generation }) }
         };
-        let label = |app: &RectoApp| app.session.get(app.active_ids().unwrap().1).unwrap().can_undo().map(String::from);
+        let label = |app: &PagicApp| app.session.get(app.active_ids().unwrap().1).unwrap().can_undo().map(String::from);
 
         let mut app = app_with(scan());
         app.ocr_run = Some(finished(&app, true));
@@ -667,9 +669,9 @@ mod tests {
         let mut app = app_with(scan());
         let id = app.active_ids().unwrap().1;
         let generation = app.session.get(id).unwrap().edit_generation();
-        let page = recto_engine::ocr::OcrPage {
+        let page = pagic_engine::ocr::OcrPage {
             page: 0,
-            words: vec![recto_engine::ocr::PlacedWord { text: "scanned".into(), origin: [72.0, 700.0], across: [60.0, 0.0], up: [0.0, 12.0] }],
+            words: vec![pagic_engine::ocr::PlacedWord { text: "scanned".into(), origin: [72.0, 700.0], across: [60.0, 0.0], up: [0.0, 12.0] }],
             already_on_page: 0,
             skipped: None,
         };
@@ -710,7 +712,7 @@ mod tests {
 
     #[test]
     fn a_run_whose_worker_died_ends_instead_of_waiting_forever() {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         let progress = Arc::new(Mutex::new(OcrProgress { total: 3, ..Default::default() }));
         poison(&progress);

@@ -12,7 +12,7 @@ impl Automation {
                 ("Untitled.pdf".to_string(), self.session.create_blank(w, h, n).map_err(failed)?)
             }
             "images" => {
-                let resolution = a.opt_num("dpi")?.map_or(recto_engine::ImageResolution::Embedded, recto_engine::ImageResolution::Dpi);
+                let resolution = a.opt_num("dpi")?.map_or(pagic_engine::ImageResolution::Embedded, pagic_engine::ImageResolution::Dpi);
                 let mut images = Vec::new();
                 for p in a.strs("paths")? {
                     let path = self.resolve(p, false)?;
@@ -32,14 +32,14 @@ impl Automation {
                     (None, Some(p)) => {
                         let path = self.resolve(p, false)?;
                         let t = read_input(&path)?;
-                        (path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default(), recto_engine::decode_text(&t))
+                        (path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default(), pagic_engine::decode_text(&t))
                     }
                     (None, None) => return Err(ToolError::InvalidArgs("text needs `text` or `path`".into())),
                 };
                 // The page font is Helvetica/WinAnsi: text it would turn into `?` is refused (with
-                // its line) by `recto_create::from_text`, as for every other caller.
+                // its line) by `pagic_create::from_text`, as for every other caller.
                 let bytes = self.session.create_from_text(&title, &text).map_err(|e| match e {
-                    recto_engine::EditError::Create(recto_engine::CreateError::Invalid(m)) => ToolError::InvalidArgs(m),
+                    pagic_engine::EditError::Create(pagic_engine::CreateError::Invalid(m)) => ToolError::InvalidArgs(m),
                     e => failed(e),
                 })?;
                 (format!("{title}.pdf"), bytes)
@@ -52,7 +52,7 @@ impl Automation {
     }
 
     pub(crate) fn page_transition_set(&mut self, a: &Args) -> Result<Value> {
-        use recto_engine::{Transition, TransitionSpec};
+        use pagic_engine::{Transition, TransitionSpec};
         let n = self.doc(a)?.info.pages.len();
         let pages = match a.opt_ints("pages")? {
             Some(_) => self.pages(a, "pages")?,
@@ -104,7 +104,7 @@ impl Automation {
     }
 
     pub(crate) fn page_set_box(&mut self, a: &Args) -> Result<Value> {
-        use recto_engine::{BoxSpec, PageBox};
+        use pagic_engine::{BoxSpec, PageBox};
         let doc = self.doc(a)?;
         let n = doc.info.pages.len();
         let pages = match a.opt_ints("pages")? {
@@ -162,7 +162,7 @@ impl Automation {
         let bytes = read_input(&path)?;
         let pages = a.opt_ints("pages")?.map(|p| one_based(&p)).transpose()?;
         let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        self.apply(a, Edit::InsertPagesFrom { name, bytes: Arc::new(bytes), pages, at, field_conflicts: recto_organize::FieldConflicts::Rename })
+        self.apply(a, Edit::InsertPagesFrom { name, bytes: Arc::new(bytes), pages, at, field_conflicts: pagic_organize::FieldConflicts::Rename })
     }
 
     /// Write freshly created bytes to `out` and/or open them as a new document.
@@ -200,7 +200,7 @@ impl Automation {
             Some(_) => return Err(ToolError::InvalidArgs("pages must list a range (or null) for each path".into())),
         };
         // Each file is read, converted and copied in turn, so a long list holds one file at a time.
-        let sources = paths.into_iter().zip(ranges).map(|(p, range)| -> std::result::Result<recto_engine::CombineSource, ToolError> {
+        let sources = paths.into_iter().zip(ranges).map(|(p, range)| -> std::result::Result<pagic_engine::CombineSource, ToolError> {
             let path = self.resolve(p, false)?;
             let bytes = read_input(&path)?;
             let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
@@ -226,7 +226,7 @@ impl Automation {
                 Ok((kind, stem, pdf))
             });
             out.push(match converted {
-                Ok((recto_engine::SourceKind::Pdf, ..)) => json!({ "path": p, "skipped": "already a PDF" }),
+                Ok((pagic_engine::SourceKind::Pdf, ..)) => json!({ "path": p, "skipped": "already a PDF" }),
                 Ok((_, stem, pdf)) => {
                     let target = unused(&dir, &stem);
                     write_atomic(&target, &pdf)?;
@@ -300,8 +300,8 @@ impl Automation {
             Some(_) => return Err(ToolError::InvalidArgs("groups must list a number (or null) for each path".into())),
         };
         let field_conflicts = match a.opt_str("field_conflicts")? {
-            None | Some("rename") => recto_organize::FieldConflicts::Rename,
-            Some("merge") => recto_organize::FieldConflicts::Merge,
+            None | Some("rename") => pagic_organize::FieldConflicts::Rename,
+            Some("merge") => pagic_organize::FieldConflicts::Merge,
             Some(other) => {
                 return Err(ToolError::InvalidArgs(format!("field_conflicts must be \"rename\" or \"merge\", not {other:?}")));
             }
@@ -380,14 +380,14 @@ impl Automation {
             self.session.split_by_size(id, (mb * 1_048_576.0) as usize).map_err(failed)?
         } else {
             let by = match (a.opt_int("every")?, a.opt_ints("before")?) {
-                (Some(n), None) if n > 0 => recto_organize::SplitBy::PageCount(n as usize),
-                (None, Some(b)) => recto_organize::SplitBy::Before(one_based(&b)?),
+                (Some(n), None) if n > 0 => pagic_organize::SplitBy::PageCount(n as usize),
+                (None, Some(b)) => pagic_organize::SplitBy::Before(one_based(&b)?),
                 _ if bookmarks => {
                     titles = self.session.bookmark_splits(id);
                     if titles.is_empty() {
                         return Err(failed("the document has no top-level bookmarks"));
                     }
-                    recto_organize::SplitBy::Before(titles.iter().map(|t| t.0).collect())
+                    pagic_organize::SplitBy::Before(titles.iter().map(|t| t.0).collect())
                 }
                 _ => return Err(ToolError::InvalidArgs("every must be a positive page count".into())),
             };

@@ -662,7 +662,7 @@ fn attachments_of_both_kinds_are_listed_and_extracted() {
             subset: true,
             encoding: None,
             substitute: Some("Helvetica".into()),
-            substitution: Some(recto_fonts::fallback::Why::NamedStandard14.note().into()),
+            substitution: Some(pagic_fonts::fallback::Why::NamedStandard14.note().into()),
         }]
     );
 }
@@ -1162,8 +1162,8 @@ fn rebuilt_file_prefers_a_trailer_whose_root_is_the_catalog() {
 fn lazy_structure_matches_the_compatibility_inspector() {
     // Each fixture as lopdf writes it, and with its objects in object streams.
     let packed = |bytes: &[u8]| {
-        let doc = recto_cos::Document::open(Arc::new(bytes.to_vec())).unwrap();
-        recto_cos::write_full(&doc, &recto_cos::SaveOptions { object_streams: true, ..Default::default() }).unwrap()
+        let doc = pagic_cos::Document::open(Arc::new(bytes.to_vec())).unwrap();
+        pagic_cos::write_full(&doc, &pagic_cos::SaveOptions { object_streams: true, ..Default::default() }).unwrap()
     };
     let fixtures = [ATTACHMENTS, LAYERS, DESTS].into_iter().flat_map(|bytes| {
         let mut original = Document::load_mem(bytes).unwrap();

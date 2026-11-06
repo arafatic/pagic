@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use recto_cos::{Document, Object, SaveOptions, write_full, write_incremental};
+use pagic_cos::{Document, Object, SaveOptions, write_full, write_incremental};
 
 use super::*;
 
@@ -438,11 +438,11 @@ fn inserts_blank_page() {
 fn document_info_edits_round_trip_with_unicode() {
     let mut doc = open(fixture());
     set_info(&mut doc, "Title", "Résumé — 履歴書").unwrap();
-    set_info(&mut doc, "Author", "Recto").unwrap();
+    set_info(&mut doc, "Author", "Pagic").unwrap();
     set_info(&mut doc, "Producer", "").unwrap(); // clearing removes the key
     let doc = save_and_reopen(&doc);
     assert_eq!(info(&doc, "Title").as_deref(), Some("Résumé — 履歴書"));
-    assert_eq!(info(&doc, "Author").as_deref(), Some("Recto"));
+    assert_eq!(info(&doc, "Author").as_deref(), Some("Pagic"));
     assert_eq!(info(&doc, "Producer"), None);
 }
 
@@ -559,7 +559,7 @@ fn custom_document_properties_drop_padding_before_the_cap() {
     let mut doc = open(fixture());
     set_info(&mut doc, "Title", "Report").unwrap();
     let Some(Object::Ref(info_ref)) = doc.trailer().get(b"Info").cloned() else { panic!("an /Info reference") };
-    let text = |s: &str| Object::String(recto_cos::PdfString { bytes: s.as_bytes().to_vec(), hex: false });
+    let text = |s: &str| Object::String(pagic_cos::PdfString { bytes: s.as_bytes().to_vec(), hex: false });
     doc.update_dict(info_ref, |d| {
         d.set(b"Mixed".to_vec(), text(" \0Lab\0 "));
         d.set(b"Pad".to_vec(), text(" \0 \0"));
@@ -589,14 +589,14 @@ fn doc_with_xmp(xmp: &[u8]) -> Document {
     let mut dict = Dict::new();
     dict.set(b"Type".to_vec(), Object::name("Metadata"));
     dict.set(b"Subtype".to_vec(), Object::name("XML"));
-    let m = doc.add(Object::Stream(recto_cos::Stream::flate(dict, xmp)));
+    let m = doc.add(Object::Stream(pagic_cos::Stream::flate(dict, xmp)));
     let root = doc.root().unwrap();
     doc.update_dict(root, |c| c.set(b"Metadata".to_vec(), Object::Ref(m))).unwrap();
     full_roundtrip(&doc)
 }
 
 /// The catalog's metadata stream.
-fn xmp_stream(doc: &Document) -> Option<recto_cos::Stream> {
+fn xmp_stream(doc: &Document) -> Option<pagic_cos::Stream> {
     match &*doc.get(catalog(doc).reference(b"Metadata")?) {
         Object::Stream(s) => Some(s.clone()),
         _ => None,
@@ -2064,7 +2064,7 @@ fn page_label_limits_reject_cyclic_old_trees_without_rewriting() {
 fn page_label_limits_reject_oversized_old_arrays_without_rewriting() {
     let mut d = doc_a();
     let mut dict = Dict::new();
-    dict.set(b"Kids".to_vec(), Object::Array(vec![Object::Null; recto_cos::page_labels::MAX_LABEL_TREE_WORK + 1]));
+    dict.set(b"Kids".to_vec(), Object::Array(vec![Object::Null; pagic_cos::page_labels::MAX_LABEL_TREE_WORK + 1]));
     let tree = d.add(Object::Dict(dict));
     d.update_dict(d.root().unwrap(), |c| c.set(b"PageLabels".to_vec(), Object::Ref(tree))).unwrap();
     let before = d.modified_objects();
@@ -2205,7 +2205,7 @@ fn page_label_missing_kids_are_not_a_cycle() {
     leaf.set(b"Nums".to_vec(), Object::Array(vec![Object::Int(0), Object::Dict(spec)]));
     let leaf = d.add(Object::Dict(leaf));
     let mut tree = Dict::new();
-    let missing = |n| Object::Ref(recto_cos::ObjRef { num: n, generation: 0 });
+    let missing = |n| Object::Ref(pagic_cos::ObjRef { num: n, generation: 0 });
     tree.set(b"Kids".to_vec(), Object::Array(vec![missing(9_000), missing(9_001), Object::Ref(leaf)]));
     let tree = d.add(Object::Dict(tree));
     d.update_dict(d.root().unwrap(), |c| c.set(b"PageLabels".to_vec(), Object::Ref(tree))).unwrap();
@@ -2304,7 +2304,7 @@ fn page_label_prefixes_are_bounded_in_total() {
     assert!(crate::number_pages(&mut d, 0, 1, crate::LabelStyle::Decimal, "", 1).is_err());
     assert_eq!(d.modified_objects(), before, "a refused relabelling changes nothing");
     // Exactly 4 MiB of prefixes is still read.
-    let max = recto_cos::page_labels::MAX_PREFIX_TOTAL_BYTES / 1024;
+    let max = pagic_cos::page_labels::MAX_PREFIX_TOTAL_BYTES / 1024;
     assert!(crate::page_labels(&shared(max as i64, 1024)).unwrap().iter().all(|l| l.len() == 1024));
 }
 
@@ -2418,9 +2418,9 @@ fn initial_view_round_trips_and_keeps_scripts() {
     // A script opening action survives a change that needs no destination.
     let mut doc = doc;
     let root = doc.root().unwrap();
-    let mut js = recto_cos::Dict::new();
+    let mut js = pagic_cos::Dict::new();
     js.set(b"S".to_vec(), Object::name("JavaScript"));
-    js.set(b"JS".to_vec(), recto_cos::PdfString::text("app.alert('hi')"));
+    js.set(b"JS".to_vec(), pagic_cos::PdfString::text("app.alert('hi')"));
     doc.update_dict(root, |c| c.set(b"OpenAction".to_vec(), Object::Dict(js))).unwrap();
     crate::set_initial_view(&mut doc, &crate::InitialView { layout: Layout::SinglePage, ..Default::default() }).unwrap();
     assert!(doc.get(root).as_dict().unwrap().get(b"OpenAction").and_then(|o| o.as_dict()).is_some_and(|d| d.name(b"S") == Some(b"JavaScript")));
@@ -2430,14 +2430,14 @@ fn initial_view_round_trips_and_keeps_scripts() {
 #[test]
 fn an_unchanged_opening_destination_keeps_its_position_and_name() {
     use crate::view::{Magnification, Navigation};
-    let page2 = Object::Ref(recto_cos::ObjRef::new(5, 0));
+    let page2 = Object::Ref(pagic_cos::ObjRef::new(5, 0));
     let xyz = Object::Array(vec![page2.clone(), Object::name("XYZ"), Object::Int(100), Object::Int(500), Object::Int(2)]);
-    let mut named = recto_cos::Dict::new();
+    let mut named = pagic_cos::Dict::new();
     named.set(b"S".to_vec(), Object::name("GoTo"));
     named.set(b"D".to_vec(), Object::name("there"));
-    let mut dests = recto_cos::Dict::new();
+    let mut dests = pagic_cos::Dict::new();
     dests.set(b"there".to_vec(), Object::Array(vec![page2, Object::name("Fit")]));
-    let mut prefs = recto_cos::Dict::new();
+    let mut prefs = pagic_cos::Dict::new();
     prefs.set(b"NonFullScreenPageMode".to_vec(), Object::name("UseOutlines"));
     for action in [xyz, Object::Dict(named)] {
         let mut doc = open(fixture());
@@ -2470,13 +2470,13 @@ fn an_unchanged_opening_destination_keeps_its_position_and_name() {
 /// A document whose `/OpenAction` is `action`, with the named destination `there` (page 3 at
 /// 200%) in the catalog `/Dests` and `here` (page 1, fit) in a `/Names /Dests` tree.
 fn doc_opening_at(action: Object) -> Document {
-    let page1 = Object::Ref(recto_cos::ObjRef::new(4, 0));
-    let page3 = Object::Ref(recto_cos::ObjRef::new(6, 0));
-    let mut dests = recto_cos::Dict::new();
+    let page1 = Object::Ref(pagic_cos::ObjRef::new(4, 0));
+    let page3 = Object::Ref(pagic_cos::ObjRef::new(6, 0));
+    let mut dests = pagic_cos::Dict::new();
     dests.set(b"there".to_vec(), Object::Array(vec![page3, Object::name("XYZ"), Object::Null, Object::Null, Object::Int(2)]));
-    let mut tree = recto_cos::Dict::new();
+    let mut tree = pagic_cos::Dict::new();
     tree.set(b"Names".to_vec(), Object::Array(vec![Object::String(PdfString::text("here")), Object::Array(vec![page1, Object::name("Fit")])]));
-    let mut names = recto_cos::Dict::new();
+    let mut names = pagic_cos::Dict::new();
     names.set(b"Dests".to_vec(), Object::Dict(tree));
     let mut doc = open(fixture());
     let root = doc.root().unwrap();
@@ -2499,8 +2499,8 @@ fn open_action(doc: &Document) -> Option<Object> {
 #[test]
 fn choosing_page_one_replaces_a_named_opening_destination() {
     use crate::view::Magnification;
-    let page1 = Object::Ref(recto_cos::ObjRef::new(4, 0));
-    let mut goto = recto_cos::Dict::new();
+    let page1 = Object::Ref(pagic_cos::ObjRef::new(4, 0));
+    let mut goto = pagic_cos::Dict::new();
     goto.set(b"S".to_vec(), Object::name("GoTo"));
     goto.set(b"D".to_vec(), Object::name("there"));
     for action in [Object::Dict(goto), Object::name("there"), Object::String(PdfString::text("there"))] {
@@ -2527,7 +2527,7 @@ fn choosing_page_one_replaces_a_named_opening_destination() {
 #[test]
 fn a_named_opening_destination_is_kept_while_it_still_holds() {
     use crate::view::Magnification;
-    let page2 = Object::Ref(recto_cos::ObjRef::new(5, 0));
+    let page2 = Object::Ref(pagic_cos::ObjRef::new(5, 0));
     for (action, magnification) in
         [(Object::String(PdfString::text("here")), Magnification::FitPage), (Object::name("nowhere"), Magnification::Default)]
     {
@@ -2683,20 +2683,20 @@ fn extract_still_prunes_page_xobjects_when_type3_resources_are_separate() {
 
 fn doc_type3_glyph_form_with_shared_resources(cycle: bool) -> Document {
     let mut doc = doc_type3_shared_xobjects("<< >>");
-    let mut resources = recto_cos::Dict::new();
+    let mut resources = pagic_cos::Dict::new();
     resources.set(b"XObject".to_vec(), Object::Ref(ObjRef::new(6, 0)));
-    let mut form = recto_cos::Dict::new();
+    let mut form = pagic_cos::Dict::new();
     form.set(b"Type".to_vec(), Object::name("XObject"));
     form.set(b"Subtype".to_vec(), Object::name("Form"));
     form.set(b"BBox".to_vec(), Object::Array(vec![Object::Int(0), Object::Int(0), Object::Int(1), Object::Int(1)]));
     form.set(b"Resources".to_vec(), Object::Dict(resources));
-    let form = doc.add(Object::Stream(recto_cos::Stream::from_raw(form, b"/ImB Do".to_vec())));
-    let mut xobjects = recto_cos::Dict::new();
+    let form = doc.add(Object::Stream(pagic_cos::Stream::from_raw(form, b"/ImB Do".to_vec())));
+    let mut xobjects = pagic_cos::Dict::new();
     xobjects.set(b"Fm".to_vec(), Object::Ref(form));
-    let mut resources = recto_cos::Dict::new();
+    let mut resources = pagic_cos::Dict::new();
     resources.set(b"XObject".to_vec(), Object::Dict(xobjects));
     doc.update_dict(ObjRef::new(7, 0), |font| font.set(b"Resources".to_vec(), Object::Dict(resources))).unwrap();
-    doc.set(ObjRef::new(8, 0), Object::Stream(recto_cos::Stream::from_raw(recto_cos::Dict::new(), b"1 0 0 0 1 1 d1 /Fm Do".to_vec())));
+    doc.set(ObjRef::new(8, 0), Object::Stream(pagic_cos::Stream::from_raw(pagic_cos::Dict::new(), b"1 0 0 0 1 1 d1 /Fm Do".to_vec())));
     if cycle {
         doc.update_dict(ObjRef::new(6, 0), |xobjects| xobjects.set(b"Again".to_vec(), Object::Ref(form))).unwrap();
     }
@@ -2742,12 +2742,12 @@ fn doc_type3_resources_of_undecodable_content(form: bool) -> Document {
         resources.remove(b"Font");
     })
     .unwrap();
-    doc.set(ObjRef::new(4, 0), Object::Stream(recto_cos::Stream::from_raw(recto_cos::Dict::new(), b"/ImA Do".to_vec())));
-    let mut fonts = recto_cos::Dict::new();
+    doc.set(ObjRef::new(4, 0), Object::Stream(pagic_cos::Stream::from_raw(pagic_cos::Dict::new(), b"/ImA Do".to_vec())));
+    let mut fonts = pagic_cos::Dict::new();
     fonts.set(b"T3".to_vec(), Object::Ref(ObjRef::new(7, 0)));
-    let mut glyph_resources = recto_cos::Dict::new();
+    let mut glyph_resources = pagic_cos::Dict::new();
     glyph_resources.set(b"Font".to_vec(), Object::Dict(fonts));
-    let mut unreadable = recto_cos::Dict::new();
+    let mut unreadable = pagic_cos::Dict::new();
     unreadable.set(b"Filter".to_vec(), Object::name("NoSuchFilter"));
     if form {
         unreadable.set(b"Type".to_vec(), Object::name("XObject"));
@@ -2755,18 +2755,18 @@ fn doc_type3_resources_of_undecodable_content(form: bool) -> Document {
         unreadable.set(b"BBox".to_vec(), Object::Array(vec![Object::Int(0), Object::Int(0), Object::Int(200), Object::Int(200)]));
         unreadable.set(b"Resources".to_vec(), Object::Dict(glyph_resources.clone()));
     }
-    let unreadable = doc.add(Object::Stream(recto_cos::Stream::from_raw(unreadable, b"BT /T3 50 Tf 50 80 Td (A) Tj ET".to_vec())));
+    let unreadable = doc.add(Object::Stream(pagic_cos::Stream::from_raw(unreadable, b"BT /T3 50 Tf 50 80 Td (A) Tj ET".to_vec())));
     let (contents, resources) = if form {
-        let contents = doc.add(Object::Stream(recto_cos::Stream::from_raw(recto_cos::Dict::new(), b"/Fm Do".to_vec())));
-        let mut xobjects = recto_cos::Dict::new();
+        let contents = doc.add(Object::Stream(pagic_cos::Stream::from_raw(pagic_cos::Dict::new(), b"/Fm Do".to_vec())));
+        let mut xobjects = pagic_cos::Dict::new();
         xobjects.set(b"Fm".to_vec(), Object::Ref(unreadable));
-        let mut resources = recto_cos::Dict::new();
+        let mut resources = pagic_cos::Dict::new();
         resources.set(b"XObject".to_vec(), Object::Dict(xobjects));
         (contents, resources)
     } else {
         (unreadable, glyph_resources)
     };
-    let mut page = recto_cos::Dict::new();
+    let mut page = pagic_cos::Dict::new();
     page.set(b"Type".to_vec(), Object::name("Page"));
     page.set(b"Parent".to_vec(), Object::Ref(ObjRef::new(2, 0)));
     page.set(b"Contents".to_vec(), Object::Ref(contents));
@@ -2799,7 +2799,7 @@ fn extract_keeps_type3_glyph_resources_of_an_undecodable_form() {
 #[test]
 fn extract_still_prunes_separate_resources_when_many_pages_share_a_type3_font() {
     let mut src = doc_type3_shared_xobjects("<< /XObject << /ImB 10 0 R >> >>");
-    src.set(ObjRef::new(4, 0), Object::Stream(recto_cos::Stream::from_raw(recto_cos::Dict::new(), b"/ImA Do".to_vec())));
+    src.set(ObjRef::new(4, 0), Object::Stream(pagic_cos::Stream::from_raw(pagic_cos::Dict::new(), b"/ImA Do".to_vec())));
     let page = src.get(ObjRef::new(3, 0)).as_dict().unwrap().clone();
     let mut kids = vec![Object::Ref(ObjRef::new(3, 0))];
     for _ in 1..4_000 {
@@ -2820,8 +2820,8 @@ fn extract_still_prunes_separate_resources_when_many_pages_share_a_type3_font() 
 // It skips where pdftoppm is absent and fails where RECTO_ORACLES_REQUIRED is set.
 #[test]
 fn extract_type3_shared_xobjects_matches_poppler_pixels() {
-    let pdftoppm = recto_oracle::or_skip!(recto_oracle::pdftoppm());
-    let dir = std::env::temp_dir().join(format!("recto-type3-extract-{}", std::process::id()));
+    let pdftoppm = pagic_oracle::or_skip!(pagic_oracle::pdftoppm());
+    let dir = std::env::temp_dir().join(format!("pagic-type3-extract-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let fixtures = [
         doc_type3_shared_xobjects("<< /XObject 6 0 R >>"),
@@ -3649,7 +3649,7 @@ fn a_form_drawing_itself_repeatedly_is_analysed_once() {
 
 /// One page whose /Contents names the same 1 MiB stream 300 times (a few kilobytes on disk).
 fn repeated_contents() -> Document {
-    use recto_cos::{Dict, Stream};
+    use pagic_cos::{Dict, Stream};
     let mut doc = Document::new_empty();
     let stream = doc.add(Stream::flate(Dict::new(), &vec![b' '; 1 << 20]));
     let pages = doc.add(Object::Null);
@@ -3683,7 +3683,7 @@ fn repeated_content_references_share_one_decode_budget() {
     if let Ok((form, _)) = page_as_form(&mut dst, &src, 0) {
         let Object::Stream(s) = &*dst.get(form) else { panic!("not a stream") };
         let len = s.decoded().unwrap().len();
-        assert!(len <= recto_cos::MAX_PAGE_DECODED + 300, "{len} bytes");
+        assert!(len <= pagic_cos::MAX_PAGE_DECODED + 300, "{len} bytes");
     }
 }
 

@@ -1,11 +1,11 @@
 //! Edit text on a scanned page: an OCR word is invisible text over the scan, so rewriting it must
 //! also hide the scanned word. The paper colour around the word becomes the cover drawn over it
-//! ([`recto_edit::BlockStyle::cover`]) and the colour of its ink becomes the new text's.
+//! ([`pagic_edit::BlockStyle::cover`]) and the colour of its ink becomes the new text's.
 
 use std::sync::Arc;
 
-use recto_edit::TextBlock;
-use recto_render::{PageInfo, PageRenderer, RenderConfig, RenderRequest, Tile};
+use pagic_edit::TextBlock;
+use pagic_render::{PageInfo, PageRenderer, RenderConfig, RenderRequest, Tile};
 
 /// Device pixels per point the word's surroundings are read at.
 const SCALE: f32 = 3.0;
@@ -16,7 +16,7 @@ const RING: f32 = 4.0;
 
 /// The paper and ink colours (RGB 0–1) of invisible paragraph `b` on `page`, or `None` when the
 /// paragraph is visible text or the page can't be read.
-pub(crate) fn sample(cos: &recto_cos::Document, info: &PageInfo, page: usize, b: &TextBlock) -> Option<([f64; 3], [f64; 3])> {
+pub(crate) fn sample(cos: &pagic_cos::Document, info: &PageInfo, page: usize, b: &TextBlock) -> Option<([f64; 3], [f64; 3])> {
     if !b.invisible {
         return None;
     }
@@ -42,11 +42,8 @@ pub(crate) fn sample(cos: &recto_cos::Document, info: &PageInfo, page: usize, b:
     let tile = Tile { x: tx0, y: ty0, w: tx1 - tx0, h: ty1 - ty0 };
     // The working file as it is: written out only if the document holds unsaved changes, which
     // it doesn't between edits (each one reopens the file it wrote).
-    let bytes = if cos.is_modified() {
-        Arc::new(recto_cos::write_incremental(cos, &recto_cos::SaveOptions::default()).ok()?)
-    } else {
-        cos.bytes().clone()
-    };
+    let bytes =
+        if cos.is_modified() { Arc::new(pagic_cos::write_incremental(cos, &pagic_cos::SaveOptions::default()).ok()?) } else { cos.bytes().clone() };
     // The document's true colours, whatever the reading colours are set to.
     let shot = PageRenderer::new(bytes, RenderConfig::default()).render(RenderRequest { page, scale, tile: Some(tile), ..Default::default() });
     if shot.error.is_some() {

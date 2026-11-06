@@ -235,9 +235,9 @@ pub(super) fn selection_actions(
         SelectionAction::Markup(tool) => {
             // Every markup button carries a markup tool; anything else adds nothing.
             let Some(kind) = tool.markup() else { return false };
-            view.pending_edit = Some(Edit::AddAnnotation(recto_engine::NewAnnotation {
+            view.pending_edit = Some(Edit::AddAnnotation(pagic_engine::NewAnnotation {
                 page,
-                shape: recto_engine::Shape::TextMarkup { kind, quads },
+                shape: pagic_engine::Shape::TextMarkup { kind, quads },
                 style: prefs.style(tool),
                 contents: String::new(),
                 author: prefs.author.clone(),

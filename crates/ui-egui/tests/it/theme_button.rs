@@ -3,11 +3,11 @@
 
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
-use recto_ui_egui::RectoApp;
+use pagic_ui_egui::PagicApp;
 
-fn harness() -> Harness<'static, RectoApp> {
+fn harness() -> Harness<'static, PagicApp> {
     let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = RectoApp::new();
+        let mut app = PagicApp::new();
         app.set_option("language", "en").unwrap();
         app.set_option("theme", "system").unwrap();
         app
@@ -16,7 +16,7 @@ fn harness() -> Harness<'static, RectoApp> {
     h
 }
 
-fn preference(h: &Harness<'static, RectoApp>) -> String {
+fn preference(h: &Harness<'static, PagicApp>) -> String {
     format!("{:?}", h.state().theme_preference)
 }
 

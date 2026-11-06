@@ -716,7 +716,7 @@ pub fn action_label(text: &str) -> String {
 /// looked up whole and the document's own word goes into its `{}` afterwards, so a file or field
 /// name is never read as part of the wording. This is exact where [`action_label`] has to guess
 /// from the English text, and is what the engine's own labels go through.
-pub fn edit_label(label: &recto_engine::Label) -> String {
+pub fn edit_label(label: &pagic_engine::Label) -> String {
     // A batch's wording is only the hole: it carries its name as text, which from below L7 is one
     // of `BATCH_LABELS` and so is looked up too.
     if let Some(name) = label.value.as_deref().filter(|_| label.wording == "{batch}") {

@@ -55,7 +55,7 @@ impl TextState {
     /// A `gs` has no inverse, so a selection `current` has and this state doesn't stays in force:
     /// run these inside a `q`/`Q` that starts from `current`, one per state drawn.
     pub(crate) fn paint_ops(&self, current: &TextState) -> Vec<Op> {
-        let n = recto_content::num;
+        let n = pagic_content::num;
         let mut v = Vec::new();
         // The selections both share stay in force; the ones after them are selected again in order.
         let shared = self.ext_gstate.iter().zip(&current.ext_gstate).take_while(|(a, b)| a == b).count();
@@ -84,7 +84,7 @@ impl TextState {
 
     /// Operators that set this state (inside a text object).
     pub(crate) fn ops(&self) -> Vec<Op> {
-        let n = recto_content::num;
+        let n = pagic_content::num;
         let mut v = Vec::new();
         if let Some((f, size)) = &self.font {
             v.push(Op::new("Tf", vec![Object::name(f), n(*size)]));

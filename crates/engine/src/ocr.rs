@@ -7,9 +7,9 @@
 
 use std::sync::{Arc, Mutex};
 
-use recto_render::{PageInfo, PageRenderer, RenderConfig, RenderRequest, RequestKind};
+use pagic_render::{PageInfo, PageRenderer, RenderConfig, RenderRequest, RequestKind};
 
-pub use recto_ocr::{LANGUAGES, Models, Ocr, OcrError, PlacedWord};
+pub use pagic_ocr::{LANGUAGES, Models, Ocr, OcrError, PlacedWord};
 
 use crate::{DocId, Edit, EditError, Session};
 

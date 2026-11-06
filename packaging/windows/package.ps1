@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Build, sign and package Recto for Windows.
+  Build, sign and package Pagic for Windows.
 
 .DESCRIPTION
   Produces, in $env:DIST (default: dist/release):
-    recto-<version>-windows-<arch>.msi            per-machine installer (WiX v5)
-    recto-<version>-windows-<arch>-portable.zip   recto.exe + recto-cli.exe + models\ + portable.txt
+    pagic-<version>-windows-<arch>.msi            per-machine installer (WiX v5)
+    pagic-<version>-windows-<arch>-portable.zip   pagic.exe + pagic-cli.exe + models\ + portable.txt
 
   The binaries link the C runtime statically (+crt-static), so neither the MSI nor the portable
   zip needs the Visual C++ redistributable. Signing is delegated to sign.ps1 (skipped with a
@@ -26,10 +26,20 @@ param(
   [switch] $BuiltWithoutCraftFonts
 )
 $ErrorActionPreference = 'Stop'
+foreach ($suffix in 'VERSION', 'BUILD_LABEL', 'BUILD_SHA', 'BUILD_DATE') {
+  $current = 'PAGIC_' + $suffix
+  $legacy = 'RECTO_' + $suffix
+  if (-not (Test-Path "Env:$current") -and (Test-Path "Env:$legacy")) {
+    Set-Item "Env:$current" (Get-Item "Env:$legacy").Value
+  }
+}
+
+$identity = Get-Content -Raw (Join-Path $PSScriptRoot '..\pagic-identity.json') | ConvertFrom-Json
+if (-not $identity.release_packaging_enabled) { throw 'Pagic installer packaging is disabled pending artwork and native ownership review.' }
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 
 if ($BuiltWithoutCraftFonts) {
-  Write-Warning '-BuiltWithoutCraftFonts is deprecated: local font notices are always included. For -SkipBuild, use the same RECTO_FONTS_DIR override as the original build.'
+  Write-Warning '-BuiltWithoutCraftFonts is deprecated: local font notices are always included. For -SkipBuild, use the same PAGIC_FONTS_DIR override as the original build.'
 }
 
 function Invoke-Native([string] $What, [scriptblock] $Block) {
@@ -39,7 +49,7 @@ function Invoke-Native([string] $What, [scriptblock] $Block) {
 }
 
 # The version lives in one place: [workspace.package] version in the root Cargo.toml.
-$Version = $env:RECTO_VERSION
+$Version = $env:PAGIC_VERSION
 if (-not $Version) {
   $inPkg = $false
   foreach ($line in Get-Content (Join-Path $Root 'Cargo.toml')) {
@@ -56,14 +66,14 @@ $Dist = if ($env:DIST) { $env:DIST } else { Join-Path $Root 'dist\release' }
 $TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $Root 'target' }
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 
-if (-not $env:RECTO_BUILD_SHA -and (Test-Path (Join-Path $Root '.git'))) {
-  $env:RECTO_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null)
+if (-not $env:PAGIC_BUILD_SHA -and (Test-Path (Join-Path $Root '.git'))) {
+  $env:PAGIC_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null)
 }
-if (-not $env:RECTO_BUILD_DATE) {
-  $env:RECTO_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+if (-not $env:PAGIC_BUILD_DATE) {
+  $env:PAGIC_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
 }
 
-Write-Output "Recto $Version for Windows $Arch ($Target)"
+Write-Output "Pagic $Version for Windows $Arch ($Target)"
 
 if (-not $SkipBuild) {
   # Static CRT: no VC++ redistributable needed. Scoped to the target so host build scripts and
@@ -71,8 +81,8 @@ if (-not $SkipBuild) {
   $flagVar = 'CARGO_TARGET_' + ($Target.ToUpper() -replace '-', '_') + '_RUSTFLAGS'
   [Environment]::SetEnvironmentVariable($flagVar, '-C target-feature=+crt-static')
   # Fail the build (rather than warn) if the icon/VERSIONINFO can't be embedded.
-  $env:RECTO_REQUIRE_WINRES = '1'
-  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p recto -p recto-cli --target $Target }
+  $env:PAGIC_REQUIRE_WINRES = '1'
+  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p pagic -p pagic-cli --target $Target }
 }
 
 $Bin = Join-Path $TargetDir "$Target\release"
@@ -87,7 +97,7 @@ function Get-PeHeader([string] $Path) {
   return @{ Machine = [BitConverter]::ToUInt16($bytes, $pe + 4); Subsystem = [BitConverter]::ToUInt16($bytes, $pe + 0x5C) }
 }
 $Machine = switch ($Arch) { 'x64' { 0x8664 } 'x86' { 0x14C } 'arm64' { 0xAA64 } }
-foreach ($check in @(@('recto.exe', 2), @('recto-cli.exe', 3))) {
+foreach ($check in @(@('pagic.exe', 2), @('pagic-cli.exe', 3))) {
   $h = Get-PeHeader (Join-Path $Bin $check[0])
   if ($h.Machine -ne $Machine) { throw "$($check[0]) is for machine 0x$('{0:X}' -f $h.Machine), expected 0x$('{0:X}' -f $Machine) ($Arch)" }
   if ($h.Subsystem -ne $check[1]) { throw "$($check[0]) has PE subsystem $($h.Subsystem), expected $($check[1])" }
@@ -96,8 +106,8 @@ foreach ($check in @(@('recto.exe', 2), @('recto-cli.exe', 3))) {
 $Stage = Join-Path $TargetDir "windows-package\$Arch"
 Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
-Copy-Item (Join-Path $Bin 'recto.exe') (Join-Path $Stage 'recto.exe')
-Copy-Item (Join-Path $Bin 'recto-cli.exe') $Stage
+Copy-Item (Join-Path $Bin 'pagic.exe') (Join-Path $Stage 'pagic.exe')
+Copy-Item (Join-Path $Bin 'pagic-cli.exe') $Stage
 # The document icon embeds Lucide artwork: carry its ISC notice and the project licences
 # beside the binaries in both distributions.
 foreach ($f in 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE') {
@@ -105,9 +115,9 @@ foreach ($f in 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE') {
 }
 Copy-Item (Join-Path $Root 'assets\app-icon\LICENSE-document.txt') $Stage
 
-& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'recto.exe') (Join-Path $Stage 'recto-cli.exe')
+& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'pagic.exe') (Join-Path $Stage 'pagic-cli.exe')
 
-# OCR models (#103): the app looks in models\ beside recto.exe. `cargo xtask models` fetches every
+# OCR models (#103): the app looks in models\ beside pagic.exe. `cargo xtask models` fetches every
 # ATTRIBUTION.toml `kind = "model"` file (verified by SHA-256) with its licence and ATTRIBUTION.txt;
 # the MSI and the portable zip take the whole folder, so new models ship without naming them here.
 $Models = Join-Path $Stage 'models'
@@ -124,16 +134,16 @@ if (-not (Test-Path (Join-Path $Models 'ATTRIBUTION.txt')) -or -not (Get-ChildIt
 $Docs = Join-Path $Stage 'font-licences'
 New-Item -ItemType Directory -Force -Path $Docs | Out-Null
 . (Join-Path $PSScriptRoot 'font-notices.ps1')
-Copy-RectoFontNotices $Root $Docs
+Copy-PagicFontNotices $Root $Docs
 $HasCraftFontLicences = 1
 # ---- end font notices for the MSI --------------------------------------------------------------
 
 # ---- MSI ---------------------------------------------------------------------------------------
-$Msi = Join-Path $Dist "recto-$Version-windows-$Arch.msi"
+$Msi = Join-Path $Dist "pagic-$Version-windows-$Arch.msi"
 Invoke-Native 'wix build' {
-  wix build (Join-Path $PSScriptRoot 'recto.wxs') -arch $Arch `
+  wix build (Join-Path $PSScriptRoot 'pagic.wxs') -arch $Arch `
     (Join-Path $PSScriptRoot 'installer-ui.wxs') `
-    -d "Version=$MsiVersion" -d "BinDir=$Stage" -d "ModelsDir=$Models" -d "IconPath=$(Join-Path $Root 'assets\app-icon\recto.ico')" `
+    -d "Version=$MsiVersion" -d "BinDir=$Stage" -d "ModelsDir=$Models" -d "IconPath=$(Join-Path $Root 'assets\app-icon\pagic.ico')" `
     -d "DocsDir=$Docs" -d "HasCraftFontLicences=$HasCraftFontLicences" `
     -o $Msi
 }
@@ -150,7 +160,7 @@ Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Ms
 & (Join-Path $PSScriptRoot 'sign.ps1') $Msi
 
 # ---- portable zip ------------------------------------------------------------------------------
-$Portable = Join-Path $TargetDir "windows-package\recto-$Version-windows-$Arch-portable"
+$Portable = Join-Path $TargetDir "windows-package\pagic-$Version-windows-$Arch-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
 Copy-Item (Join-Path $Stage '*.exe') $Portable
@@ -158,7 +168,7 @@ foreach ($f in 'NOTICE', 'LICENSE-document.txt') {
   Copy-Item (Join-Path $Stage $f) $Portable
 }
 Copy-Item -Recurse $Models (Join-Path $Portable 'models')
-Copy-Item (Join-Path $Root 'packaging\README-Recto.md') (Join-Path $Portable 'README.md')
+Copy-Item (Join-Path $Root 'packaging\README-Pagic.md') (Join-Path $Portable 'README.md')
 foreach ($f in 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE') {
   $p = Join-Path $Root $f
   if (Test-Path $p) { Copy-Item $p $Portable }
@@ -167,11 +177,11 @@ foreach ($f in 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE') {
 if ($HasCraftFontLicences -eq 1) {
   Copy-Item (Join-Path $Docs 'OFL-*.txt') $Portable
 }
-# portable.txt beside recto.exe switches on portable mode: settings, logs, recovery files and new
-# digital IDs go to RectoData\ next to the exe instead of %APPDATA% (#157; see
+# portable.txt beside pagic.exe switches on portable mode: settings, logs, recovery files and new
+# digital IDs go to PagicData\ next to the exe instead of %APPDATA% (#157; see
 # crates/ui-egui/src/portable.rs).
 Copy-Item (Join-Path $PSScriptRoot 'portable.txt') $Portable
-$Zip = Join-Path $Dist "recto-$Version-windows-$Arch-portable.zip"
+$Zip = Join-Path $Dist "pagic-$Version-windows-$Arch-portable.zip"
 Remove-Item -Force $Zip -ErrorAction SilentlyContinue
 Compress-Archive -Path $Portable -DestinationPath $Zip
 
@@ -179,8 +189,8 @@ Compress-Archive -Path $Portable -DestinationPath $Zip
 # here; .github/workflows/windows-arm64.yml installs and runs it on ARM64 instead.
 $HostArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($Arch -ne 'arm64' -or $HostArch -eq 'arm64') {
-  Invoke-Native 'recto-cli --version' { & (Join-Path $Stage 'recto-cli.exe') --version }
+  Invoke-Native 'pagic-cli --version' { & (Join-Path $Stage 'pagic-cli.exe') --version }
 } else {
-  Write-Output "skipping recto-cli --version: an $Arch build doesn't run on this $HostArch machine"
+  Write-Output "skipping pagic-cli --version: an $Arch build doesn't run on this $HostArch machine"
 }
 Get-Item $Msi, $Zip | Format-Table Name, Length

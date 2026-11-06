@@ -188,7 +188,7 @@ fn crop_input(cx: &ImageCx<'_>, view: &mut DocView, i: usize, b: Rect) -> bool {
             s.crop = None;
         }
         if keep_screen(keep) != b {
-            view.pending_edit = Some(Edit::EditPageImage { page, index: i, change: recto_engine::ImageEdit::Crop(keep) });
+            view.pending_edit = Some(Edit::EditPageImage { page, index: i, change: pagic_engine::ImageEdit::Crop(keep) });
         }
     } else if (clicked(cancel) || keys(egui::Key::Escape))
         && let Some(s) = view.image_selection.as_mut()
@@ -357,7 +357,7 @@ fn turn_preview(cx: &ImageCx<'_>, view: &mut DocView, i: usize, b: Rect, knob: P
             s.turning = false;
         }
         if degrees.abs() >= 0.05 {
-            view.pending_edit = Some(Edit::EditPageImage { page, index: i, change: recto_engine::ImageEdit::RotateBy(f64::from(degrees)) });
+            view.pending_edit = Some(Edit::EditPageImage { page, index: i, change: pagic_engine::ImageEdit::RotateBy(f64::from(degrees)) });
         }
     }
 }
@@ -374,7 +374,7 @@ struct Blanked {
 /// and on release the edit.
 fn drag_preview(
     cx: &ImageCx<'_>,
-    images: &[recto_engine::PageImage],
+    images: &[pagic_engine::PageImage],
     view: &mut DocView,
     (i, b): (usize, Rect),
     (start, opposite, p): (Pos2, Option<Pos2>, Pos2),
@@ -437,8 +437,7 @@ fn drag_preview(
             s.settled = (preview != b).then(|| (left_at.unwrap_or_else(|| norm(b)), norm(preview)));
         }
         if preview != b {
-            view.pending_edit =
-                Some(Edit::EditPageImage { page, index: i, change: recto_engine::ImageEdit::Move(user_box(xf, info, page, target)) });
+            view.pending_edit = Some(Edit::EditPageImage { page, index: i, change: pagic_engine::ImageEdit::Move(user_box(xf, info, page, target)) });
         }
     }
     ui.ctx().set_cursor_icon(match opposite {
@@ -449,7 +448,7 @@ fn drag_preview(
 }
 
 /// Images on a page: select, move, resize, right-click. Returns `true` when the pointer was used.
-pub(crate) fn image_input(cx: &ImageCx<'_>, images: &[recto_engine::PageImage], view: &mut DocView, action: &mut Option<ImageAction>) -> bool {
+pub(crate) fn image_input(cx: &ImageCx<'_>, images: &[pagic_engine::PageImage], view: &mut DocView, action: &mut Option<ImageAction>) -> bool {
     let ImageCx { ui, resp, xf, ptr, page, info, allow_interaction } = *cx;
     let boxes: Vec<Rect> = images.iter().map(|im| im.visible_rect.map_or(Rect::NOTHING, |r| xf.user_rect(info, page, r.map(|v| v as f32)))).collect();
     let painter = ui.painter();
@@ -550,7 +549,7 @@ pub(crate) fn image_input(cx: &ImageCx<'_>, images: &[recto_engine::PageImage], 
             && !ui.ctx().egui_wants_keyboard_input()
         {
             view.image_selection = None;
-            view.pending_edit = Some(Edit::EditPageImage { page, index: i, change: recto_engine::ImageEdit::Delete });
+            view.pending_edit = Some(Edit::EditPageImage { page, index: i, change: pagic_engine::ImageEdit::Delete });
             return true;
         }
     }
@@ -600,15 +599,8 @@ pub(crate) fn image_input(cx: &ImageCx<'_>, images: &[recto_engine::PageImage], 
 
 /// The right-click menu of the picture `hit` (its rotate, flip, replace, copy, cut, redact, link,
 /// recognize and delete items).
-fn image_menu(
-    ui: &mut egui::Ui,
-    page: usize,
-    hit: usize,
-    images: &[recto_engine::PageImage],
-    view: &mut DocView,
-    action: &mut Option<ImageAction>,
-) {
-    use recto_engine::ImageEdit as E;
+fn image_menu(ui: &mut egui::Ui, page: usize, hit: usize, images: &[pagic_engine::PageImage], view: &mut DocView, action: &mut Option<ImageAction>) {
+    use pagic_engine::ImageEdit as E;
     let items: [(&str, Option<E>); 4] = [
         (tl!("Rotate Clockwise"), Some(E::Rotate(1))),
         (tl!("Rotate Counterclockwise"), Some(E::Rotate(3))),

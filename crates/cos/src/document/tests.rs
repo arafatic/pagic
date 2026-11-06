@@ -1248,7 +1248,7 @@ fn a_decompression_bomb_in_an_xref_stream_is_refused_and_the_file_reconstructed(
     // /W [1 1 1]: at 3 bytes a row that is more than 8,388,607 objects' worth, so it is not
     // decoded (in full: the limit applies while inflating) and the objects are found by
     // reconstruction instead.
-    let bomb = recto_filters::encode_flate(&recto_filters::encode_flate(&vec![0u8; 32 << 20]));
+    let bomb = pagic_filters::encode_flate(&pagic_filters::encode_flate(&vec![0u8; 32 << 20]));
     let mut bytes = b"%PDF-1.7\n".to_vec();
     let o1 = bytes.len();
     bytes.extend_from_slice(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");

@@ -8,7 +8,7 @@ use super::*;
 
 /// Every comment as an XFDF element (one line per comment, replies included).
 fn xfdf_annots(doc: &Document, out: &mut String) {
-    let pages = recto_model::pages(doc);
+    let pages = pagic_model::pages(doc);
     // NM of every annotation, for inreplyto.
     let mut names: HashMap<ObjRef, String> = HashMap::new();
     for p in &pages {
@@ -150,7 +150,7 @@ fn xfdf_fields(doc: &Document, out: &mut String) {
         kids: Vec<(String, Node)>,
     }
     let mut root = Node::default();
-    for f in recto_forms::fields(doc) {
+    for f in pagic_forms::fields(doc) {
         if matches!(f.kind, FieldKind::PushButton | FieldKind::Signature) {
             continue;
         }
@@ -213,7 +213,7 @@ pub fn export_xfdf(doc: &Document, comments: bool, fields: bool, file: &str) -> 
 
 /// Set the values of fields named in `values` (full names), counting what took.
 pub(crate) fn apply_values(doc: &mut Document, values: &[(String, Vec<String>)], report: &mut Report) {
-    let all = recto_forms::fields(doc);
+    let all = pagic_forms::fields(doc);
     for (name, vals) in values {
         let Some(f) = all.iter().find(|f| &f.name == name) else { continue };
         let first = vals.first().cloned().unwrap_or_default();
@@ -223,7 +223,7 @@ pub(crate) fn apply_values(doc: &mut Document, values: &[(String, Vec<String>)],
             FieldKind::Radio => FieldValue::Radio((!first.is_empty() && first != "Off").then_some(first)),
             // XML, CSV and text hold a multi-select list's values in one cell, joined by ", "
             // (as export_data writes them); split it unless the whole cell is one option.
-            FieldKind::List if f.has(recto_forms::flags::MULTI_SELECT) && vals.len() == 1 && !f.options.iter().any(|(e, _)| *e == first) => {
+            FieldKind::List if f.has(pagic_forms::flags::MULTI_SELECT) && vals.len() == 1 && !f.options.iter().any(|(e, _)| *e == first) => {
                 FieldValue::Choice(first.split(", ").filter(|v| !v.is_empty()).map(str::to_string).collect())
             }
             FieldKind::Combo | FieldKind::List => FieldValue::Choice(vals.iter().filter(|v| !v.is_empty()).cloned().collect()),
@@ -232,9 +232,9 @@ pub(crate) fn apply_values(doc: &mut Document, values: &[(String, Vec<String>)],
         // Read-only fields still take imported data, as in Acrobat.
         let ro = f.read_only();
         if ro {
-            let _ = doc.update_dict(f.obj, |d| d.set(b"Ff".to_vec(), Object::Int((f.flags & !recto_forms::flags::READ_ONLY) as i64)));
+            let _ = doc.update_dict(f.obj, |d| d.set(b"Ff".to_vec(), Object::Int((f.flags & !pagic_forms::flags::READ_ONLY) as i64)));
         }
-        match recto_forms::set_value(doc, name, &v) {
+        match pagic_forms::set_value(doc, name, &v) {
             Ok(()) => report.fields += 1,
             Err(_) => report.rejected.push(name.clone()),
         }
@@ -448,7 +448,7 @@ pub(crate) fn place(doc: &mut Document, page_ref: ObjRef, mut d: Dict) -> Result
         None => doc.add(Object::Dict(d)),
     };
     // Our own appearance where we can draw one; others keep none (viewers draw a default).
-    let _ = recto_annot::set_appearance(doc, r);
+    let _ = pagic_annot::set_appearance(doc, r);
     kept.push(Object::Ref(r));
     doc.update_dict(page_ref, |p| p.set(b"Annots".to_vec(), Object::Array(kept)))?;
     Ok(r)
@@ -480,7 +480,7 @@ pub(crate) fn import_xfdf(doc: &mut Document, text: &str) -> Result<Report, Data
         return Err(DataError::UnknownFormat);
     }
     let mut report = Report::default();
-    let pages: Vec<ObjRef> = recto_model::pages(doc).iter().map(|p| p.obj).collect();
+    let pages: Vec<ObjRef> = pagic_model::pages(doc).iter().map(|p| p.obj).collect();
     // Comments: parents first, then replies (whose /IRT needs the parent's reference).
     let mut by_name: HashMap<String, ObjRef> = HashMap::new();
     let mut later: HashMap<ObjRef, String> = HashMap::new();
@@ -523,7 +523,7 @@ pub(crate) fn import_xfdf(doc: &mut Document, text: &str) -> Result<Report, Data
 }
 
 pub(crate) fn find_by_name(doc: &Document, nm: &str) -> Option<ObjRef> {
-    for p in recto_model::pages(doc) {
+    for p in pagic_model::pages(doc) {
         for a in p.dict.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default() {
             if let Some(r) = a.as_ref()
                 && doc.get(r).as_dict().and_then(|d| text_of(doc, d, b"NM")).as_deref() == Some(nm)

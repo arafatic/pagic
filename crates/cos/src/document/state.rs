@@ -206,5 +206,5 @@ pub(super) fn owned_bytes(object: &Object, data: &Arc<Vec<u8>>, depth: usize) ->
 /// that has the same encryption (an earlier revision of the same file).
 pub(super) enum Credentials<'a> {
     Password(Option<&'a str>),
-    Handler { handler: &'a Arc<recto_crypt::SecurityHandler>, id0: Vec<u8> },
+    Handler { handler: &'a Arc<pagic_crypt::SecurityHandler>, id0: Vec<u8> },
 }

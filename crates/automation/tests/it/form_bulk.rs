@@ -1,7 +1,7 @@
 //! End-to-end bulk Field Properties through the same tools used by CLI and MCP.
 
-use recto_automation::{Automation, Content, ToolError};
-use recto_engine::{DocId, Edit, FieldFont, FieldProps, FieldValue, NewField, Session, field_flags};
+use pagic_automation::{Automation, Content, ToolError};
+use pagic_engine::{DocId, Edit, FieldFont, FieldProps, FieldValue, NewField, Session, field_flags};
 use serde_json::{Value, json};
 
 fn call(a: &mut Automation, args: Value) -> Value {
@@ -19,7 +19,7 @@ fn tool(a: &mut Automation, name: &str, args: Value) -> Value {
 }
 
 fn setup(test: &str) -> (Automation, u64, std::path::PathBuf) {
-    let dir = std::env::temp_dir().join(format!("recto-form-bulk-{test}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pagic-form-bulk-{test}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let mut s = Session::new();
     let bytes = s.create_blank(300.0, 400.0, 2).unwrap();

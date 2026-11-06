@@ -4,8 +4,8 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod snap;
-use recto_annot::{Meta, NewAnnotation, Shape, Style};
-use recto_cos::{Dict, Document, ObjRef, Object, PdfString};
+use pagic_annot::{Meta, NewAnnotation, Shape, Style};
+use pagic_cos::{Dict, Document, ObjRef, Object, PdfString};
 use serde::Serialize;
 
 pub type Point = [f64; 2];
@@ -17,7 +17,7 @@ pub enum MeasureError {
     #[error("{0}")]
     Invalid(String),
     #[error(transparent)]
-    Annotation(#[from] recto_annot::AnnotError),
+    Annotation(#[from] pagic_annot::AnnotError),
 }
 type Result<T> = std::result::Result<T, MeasureError>;
 fn invalid(s: &str) -> MeasureError {
@@ -363,8 +363,8 @@ fn text(d: &Dict, k: &[u8]) -> String {
 fn nums(v: impl IntoIterator<Item = f64>) -> Object {
     Object::Array(v.into_iter().map(Object::Real).collect())
 }
-fn page(doc: &Document, index: usize) -> Result<recto_model::Page> {
-    recto_model::pages(doc).get(index).cloned().ok_or_else(|| invalid("measurement page does not exist"))
+fn page(doc: &Document, index: usize) -> Result<pagic_model::Page> {
+    pagic_model::pages(doc).get(index).cloned().ok_or_else(|| invalid("measurement page does not exist"))
 }
 fn annot(doc: &Document, page_index: usize, index: usize) -> Result<(ObjRef, Dict)> {
     let p = page(doc, page_index)?;
@@ -387,15 +387,13 @@ pub fn add(doc: &mut Document, new: &NewMeasurement, meta: &Meta) -> Result<usiz
         Kind::Distance => Shape::Line {
             from: new.points.first().copied().ok_or_else(|| invalid("missing start"))?,
             to: new.points.last().copied().ok_or_else(|| invalid("missing end"))?,
-            start: recto_annot::LineEnding::None,
-            end: recto_annot::LineEnding::OpenArrow,
+            start: pagic_annot::LineEnding::None,
+            end: pagic_annot::LineEnding::OpenArrow,
         },
-        Kind::Perimeter => {
-            Shape::PolyLine { vertices: new.points.clone(), start: recto_annot::LineEnding::None, end: recto_annot::LineEnding::None }
-        }
+        Kind::Perimeter => Shape::PolyLine { vertices: new.points.clone(), start: pagic_annot::LineEnding::None, end: pagic_annot::LineEnding::None },
         Kind::Area => Shape::Polygon { vertices: new.points.clone(), cloud: false },
     };
-    let index = recto_annot::add_annotation(
+    let index = pagic_annot::add_annotation(
         doc,
         &NewAnnotation { page: new.page, shape, style: new.style.clone(), contents: info.label.clone(), author: new.author.clone() },
         meta,
@@ -421,7 +419,7 @@ pub fn add(doc: &mut Document, new: &NewMeasurement, meta: &Meta) -> Result<usiz
         }
     }
     doc.update_dict(r, |target| *target = d).map_err(|e| invalid(&e.to_string()))?;
-    recto_annot::set_appearance(doc, r)?;
+    pagic_annot::set_appearance(doc, r)?;
     Ok(index)
 }
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -483,7 +481,7 @@ pub fn list(doc: &Document) -> Listing {
     let mut count = 0usize;
     let mut kept = 0usize;
     let mut seen = std::collections::HashSet::new();
-    for (page, p) in recto_model::pages(doc).iter().enumerate() {
+    for (page, p) in pagic_model::pages(doc).iter().enumerate() {
         let Some(o) = p.dict.get(b"Annots") else { continue };
         let o = doc.resolve(o);
         let Some(arr) = o.as_array() else { continue };
@@ -627,7 +625,7 @@ pub fn view_to_user(doc: &Document, page_index: usize, at: Point) -> Result<Poin
     check_points(&[at])?;
     let page = page(doc, page_index)?;
     let (_, height) = page.display_size(doc);
-    let m = recto_content::Matrix(page.view_matrix(doc));
+    let m = pagic_content::Matrix(page.view_matrix(doc));
     let (x, y) = m.apply(at[0], height - at[1]);
     check_points(&[[x, y]])?;
     Ok([x, y])
@@ -636,7 +634,7 @@ pub fn user_to_view(doc: &Document, page_index: usize, at: Point) -> Result<Poin
     check_points(&[at])?;
     let page = page(doc, page_index)?;
     let (_, height) = page.display_size(doc);
-    let m = recto_content::Matrix(page.view_matrix(doc)).invert().ok_or_else(|| invalid("invalid page transform"))?;
+    let m = pagic_content::Matrix(page.view_matrix(doc)).invert().ok_or_else(|| invalid("invalid page transform"))?;
     let (x, y) = m.apply(at[0], at[1]);
     Ok([x, height - y])
 }

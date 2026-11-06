@@ -1,5 +1,5 @@
 //! Portable mode (#157): a marker file beside the executable ([`MARKERS`]) keeps the settings,
-//! log files, crash-recovery autosaves and new digital IDs in `<exe dir>/RectoData`, so a
+//! log files, crash-recovery autosaves and new digital IDs in `<exe dir>/PagicData`, so a
 //! portable copy (on a USB stick, say) writes nothing to `%APPDATA%` or `%LOCALAPPDATA%`. The
 //! Windows portable zip ships with `portable.txt`; the MSI doesn't.
 //!
@@ -10,14 +10,14 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 /// Files beside the executable that switch on portable mode (either one; contents are ignored).
-pub const MARKERS: [&str; 2] = ["portable.txt", "recto.portable"];
+pub const MARKERS: [&str; 2] = ["portable.txt", pagic_engine::identity::PORTABLE_MARKER];
 /// The data folder created beside the executable in portable mode.
-pub const DATA_DIR: &str = "RectoData";
+pub const DATA_DIR: &str = pagic_engine::identity::PORTABLE_DATA;
 
 /// The outcome of looking for a portable marker.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Portable {
-    /// `<exe dir>/RectoData` when portable mode is on, `None` otherwise.
+    /// `<exe dir>/PagicData` when portable mode is on, `None` otherwise.
     pub dir: Option<PathBuf>,
     /// Set when a marker was found but its data folder can't be written.
     pub unwritable: Option<Unwritable>,
@@ -99,7 +99,7 @@ mod tests {
 
     fn temp(tag: &str) -> PathBuf {
         static N: AtomicUsize = AtomicUsize::new(0);
-        let d = std::env::temp_dir().join(format!("recto-portable-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!("pagic-portable-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn an_existing_data_folder_is_reused() {
         let exe = temp("reuse");
-        std::fs::write(exe.join("portable.txt"), b"Recto portable mode").unwrap();
+        std::fs::write(exe.join("portable.txt"), b"Pagic portable mode").unwrap();
         std::fs::create_dir_all(exe.join(DATA_DIR)).unwrap();
         std::fs::write(exe.join(DATA_DIR).join("app.ron"), b"()").unwrap();
         assert_eq!(resolve(Some(&exe)).dir, Some(exe.join(DATA_DIR)));
@@ -166,5 +166,26 @@ mod tests {
     #[test]
     fn no_exe_dir_leaves_portable_mode_off() {
         assert_eq!(resolve(None), Portable::default());
+    }
+}
+
+#[cfg(test)]
+mod identity_tests {
+    use super::*;
+    #[test]
+    fn legacy_portable_data_is_not_claimed_or_changed() {
+        let root = std::env::temp_dir().join(format!("pagic-portable-isolation-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("RectoData/Recovery")).unwrap();
+        std::fs::write(root.join("recto.portable"), b"legacy marker").unwrap();
+        std::fs::write(root.join("RectoData/Recovery/keep.pdf"), b"legacy encrypted snapshot").unwrap();
+        std::fs::write(root.join("RectoData/key.p12"), b"legacy private key").unwrap();
+        assert!(resolve(Some(&root)).dir.is_none());
+        std::fs::write(root.join(pagic_engine::identity::PORTABLE_MARKER), b"").unwrap();
+        assert_eq!(resolve(Some(&root)).dir, Some(root.join("PagicData")));
+        assert_eq!(std::fs::read(root.join("RectoData/Recovery/keep.pdf")).unwrap(), b"legacy encrypted snapshot");
+        assert_eq!(std::fs::read(root.join("RectoData/key.p12")).unwrap(), b"legacy private key");
+        assert!(!root.join("PagicData/key.p12").exists());
+        assert!(!root.join("PagicData/Recovery").exists());
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
