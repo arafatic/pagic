@@ -79,3 +79,30 @@ fn renderer_and_security_vendors_remain() {
         assert!(manifest.contains(&format!("path = \"{vendor}\"")), "{vendor} must stay a path patch");
     }
 }
+
+/// A fresh release checkout must resolve the shared libraries without their former Git host.
+#[test]
+fn craft_libraries_resolve_to_local_pinned_source() {
+    let compiler = std::process::Command::new("rustc").arg("-vV").output().expect("rustc host");
+    assert!(compiler.status.success(), "rustc host query failed");
+    let version = String::from_utf8(compiler.stdout).expect("rustc version UTF-8");
+    let host = version.lines().find_map(|line| line.strip_prefix("host: ")).expect("native host triple");
+    let output = std::process::Command::new("cargo")
+        .args(["metadata", "--locked", "--offline", "--format-version", "1", "--filter-platform", host])
+        .current_dir(root())
+        .output()
+        .expect("Cargo metadata");
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    let metadata: serde_json::Value = serde_json::from_slice(&output.stdout).expect("Cargo metadata JSON");
+    let packages = metadata["packages"].as_array().expect("resolved packages");
+    for name in ["docpath", "print", "ui", "menu", "keymap", "quit", "update", "fonts-build", "i18n"] {
+        let matches: Vec<_> = packages.iter().filter(|p| p["name"] == format!("craft-{name}")).collect();
+        assert_eq!(matches.len(), 1, "exactly one craft-{name}");
+        let package = matches[0];
+        assert_eq!(package["version"], "0.1.0", "craft-{name} version");
+        assert!(package["source"].is_null(), "craft-{name} must be a local path dependency");
+        let actual = std::path::Path::new(package["manifest_path"].as_str().expect("manifest path")).canonicalize().unwrap();
+        let expected = root().join(format!("vendor/pagic-libs/crates/{name}/Cargo.toml")).canonicalize().unwrap();
+        assert_eq!(actual, expected, "craft-{name} must use the vendored manifest");
+    }
+}

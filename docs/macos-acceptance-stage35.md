@@ -71,6 +71,9 @@ fallback in other locales. Existing Export/Fill & Sign/Settings translations are
 ## Verified Windows lock metadata correction
 
 Pinned upstream manifest:
+Historical source reference. Current builds use the same pinned source under
+`vendor/pagic-libs/`.
+
 https://github.com/arafatic/craft-libs/blob/e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/crates/print/Cargo.toml
 Git blob `1e6a63507e7a704ccc1994cb7a839848f60b0608` declares `storytold/winprint.rs`.
 Cargo.lock incorrectly retained `arafatic/winprint.rs` for exactly two records. Corrected URLs:

@@ -1,5 +1,7 @@
 # Vendored crates
 
+The pinned former `arafatic/craft-libs` subset is built locally from `vendor/pagic-libs/` at commit `e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545`. Internal `craft-*` crate names are unchanged. See [its provenance](pagic-libs/NOTICE-PAGIC-PROVENANCE.md).
+
 ## Window-stack provenance after the egui 0.37 migration
 
 The checked-in, resolved Cargo graph pins `winit` to arafatic/winit

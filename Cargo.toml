@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*", "apps/*", "xtask"]
-exclude = ["vendor"]
+exclude = ["vendor", "vendor/pagic-libs"]
 default-members = ["crates/*", "apps/pagic", "apps/pagic-cli", "xtask"]
 
 [workspace.package]
@@ -14,17 +14,17 @@ repository = "https://github.com/arafatic/pagic"
 
 [workspace.dependencies]
 # Shared frontend components; engines remain independent of egui.
-craft-ui = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545", features = ["serde"] }
+craft-ui = { path = "vendor/pagic-libs/crates/ui", version = "0.1.0", features = ["serde"] }
 # Quit the macOS way (#1136): ⌘Q asks about unsaved changes, and closing quits through `terminate:`.
-craft-quit = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }
+craft-quit = { path = "vendor/pagic-libs/crates/quit", version = "0.1.0" }
 # One menu definition for the native macOS menu bar and the in-window bar elsewhere.
-craft-menu = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }
-craft-keymap = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545", default-features = false }
+craft-menu = { path = "vendor/pagic-libs/crates/menu", version = "0.1.0" }
+craft-keymap = { path = "vendor/pagic-libs/crates/keymap", version = "0.1.0", default-features = false }
 # Shared system spooler; document composition remains in pagic-print.
-craft-print = { git = "https://github.com/arafatic/craft-libs", version = "0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }
+craft-print = { path = "vendor/pagic-libs/crates/print", version = "0.1.0" }
 # Whether a path stored in a document may be opened (GoToR link targets).
-craft-docpath = { version = "0.1.0", git = "https://github.com/arafatic/craft-libs", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545" }
-craft-update = { git = "https://github.com/arafatic/craft-libs", version = "=0.1.0", rev = "e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545", features = ["egui"] }
+craft-docpath = { version = "0.1.0", path = "vendor/pagic-libs/crates/docpath" }
+craft-update = { path = "vendor/pagic-libs/crates/update", version = "=0.1.0", features = ["egui"] }
 # internal
 pagic-geom = { path = "crates/geom", version = "0.14.0" }
 pagic-filters = { path = "crates/filters", version = "0.14.0" }

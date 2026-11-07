@@ -44,7 +44,7 @@ This change does not alter persistence of other print preferences.
 Headless `doc_print` defaults are unchanged.
 
 `spool` delegates discovery, driver options, preferences and submission to
-[`craft-print`](https://github.com/arafatic/craft-libs/tree/main/crates/print).
+[`craft-print`](../../vendor/pagic-libs/crates/print).
 Pagic retains page selection, imposition, annotations and print-permission checks.
 CUPS jobs stream through stdin with `fit-to-page=false`. Windows renders sheets through
 `Windows.Data.Pdf` and spools them at their physical PDF size with per-page paper and
@@ -53,7 +53,7 @@ use the corresponding Windows binding edges. Random, exclusively created Windows
 are removed on success and failure. Other targets offer the print-ready PDF instead.
 
 The shared dependency requires Rust 1.95. Transport and native Windows regression tests
-live in craft-libs; local tests retain composition, facade, engine, automation and UI coverage.
+live in `vendor/pagic-libs`; local tests retain composition, facade, engine, automation and UI coverage.
 The desktop UI discovers printers and submits jobs on workers, so neither operation blocks
 the dialog; the Windows backend starts without a console window. Physical printer output
 still needs hardware validation.
