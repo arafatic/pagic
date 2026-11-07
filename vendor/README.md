@@ -4,12 +4,15 @@ The pinned former `arafatic/craft-libs` subset is built locally from `vendor/pag
 
 ## Window-stack provenance after the egui 0.37 migration
 
-The checked-in, resolved Cargo graph pins `winit` to arafatic/winit
-`a517b3846ee8457d84ee4975110bfda6797c44dc` and the egui crates to arafatic/egui
-`6d518fc799681571963842f95b55a6b68431b15a`. Neither `vendor/winit` nor
-`vendor/egui-wgpu` is a root `[patch.crates-io]` path entry. The retained copies
-record the app's earlier patches; their source-reading tests establish provenance,
-while the resolved forks and their behavioral tests establish runtime behavior.
+The resolved `winit` 0.30.13 package uses the complete pinned source tree in
+`vendor/pagic-winit` through a local root Cargo patch. Its exact former fork
+revision is `a517b3846ee8457d84ee4975110bfda6797c44dc`; see
+[the pinned-source provenance](pagic-winit/NOTICE-PAGIC-PROVENANCE.md).
+The egui crates remain pinned to arafatic/egui
+`6d518fc799681571963842f95b55a6b68431b15a` without changes.
+Neither the older `vendor/winit` nor `vendor/egui-wgpu` is a runtime path patch.
+Their source-reading tests establish historical provenance. The local winit tree
+retains the fork's behavioral tests, and graph tests verify its resolved path.
 
 The retained winit copy has upstream base `e9809ef54b18499bb4f2cac945719ecc2a61061b`,
 as recorded in `vendor/winit/.cargo_vcs_info.json`. Its thirteen patch rows below

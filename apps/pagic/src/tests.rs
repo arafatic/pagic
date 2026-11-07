@@ -29,6 +29,11 @@ fn assert_window_stack_graph(root: &std::path::Path, name: &str, version: &str) 
     // which the root-manifest assertion below checks. A path entry carries no remote identity
     // to verify, so this test does not claim the resolved code is the published fork.
     let manifest = std::fs::read_to_string(root.join("Cargo.toml")).expect("root Cargo.toml");
+    if name == "winit" {
+        assert!(!package.lines().any(|line| line.starts_with("source = ")), "winit must use the pinned local source");
+        assert!(manifest.contains("winit = { path = \"vendor/pagic-winit\" }"));
+        return package;
+    }
     assert!(!manifest.contains(&format!("{name} = {{ path = \"vendor/")), "vendor/{name} must not be a published path patch");
     package
 }
@@ -406,7 +411,7 @@ fn pipeline_creation_error_is_returned_and_device_remains_usable() {
     }
 }
 
-/// Regression test: winit resolves to 0.30.13 without a published vendor path patch, the retained copy
+/// Regression test: winit resolves to the pinned local 0.30.13 tree, the retained copy
 /// still carries the W1 Windows 11 monitor-scale fix, and its upstream base is recorded.
 #[test]
 fn winit_carries_the_windows_11_monitor_scale_fix() {

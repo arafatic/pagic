@@ -36,9 +36,9 @@ unknown-git = "deny"
 # the winprint fork (Windows printing, #1107) to an immutable revision of its own.
 allow-git = [
     "https://github.com/storytold/winprint.rs",
-    # The reviewed egui 0.37 and winit 0.30.13 fork revisions (immutable pins in Cargo.toml).
+    # The reviewed egui 0.37 fork revision (immutable pin in Cargo.toml).
+    # winit 0.30.13 is vendored locally.
     "https://github.com/arafatic/egui",
-    "https://github.com/arafatic/winit",
 ]
 
 [advisories]

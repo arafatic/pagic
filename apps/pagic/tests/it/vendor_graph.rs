@@ -1,11 +1,9 @@
 //! Dependency-graph verification for the egui 0.37 window stack.
 //!
-//! The twelve `winit_*` modules next to this one read the retained `vendor/winit` /
-//! `vendor/egui-wgpu` copies. They are provenance for W1–W13 and E2+E3, not proof of what the app
-//! runs: the root manifest pins both crates to immutable arafatic git revisions, and the retained
-//! copies are not path patches. These tests check the resolved graph and the retained evidence
-//! instead of treating the copies as the runtime source. The winit fork's own W17 tests own patch
-//! behaviour.
+//! The `winit_*` modules retain source guards for the older `vendor/winit` copy.
+//! Runtime winit resolves to the exact pinned tree in `vendor/pagic-winit`; its own
+//! tests cover the fork's behavior. The egui graph and retained evidence are unchanged.
+//! These tests verify the runtime source as well as the historical provenance.
 
 /// Return the workspace root above the Pagic app crate.
 fn root() -> std::path::PathBuf {
@@ -44,11 +42,22 @@ fn assert_resolved(name: &str, version: &str, url: &str, rev: &str) {
     assert!(!manifest.contains(&format!("{name} = {{ path = \"vendor/")), "vendor/{name} cannot stay a published path patch");
 }
 
-/// Regression test: the resolved window stack points at the reviewed forks and the retained vendor provenance
+/// winit must resolve only to the complete local copy of the reviewed revision.
+fn assert_local_winit() {
+    let package = locked("winit");
+    assert!(package.lines().any(|line| line.trim() == "version = \"0.30.13\""));
+    assert!(!package.lines().any(|line| line.trim().starts_with("source = ")), "winit must be local: {package}");
+    let manifest = std::fs::read_to_string(root().join("Cargo.toml")).expect("root manifest");
+    assert!(manifest.contains("winit = { path = \"vendor/pagic-winit\" }"));
+    let provenance = std::fs::read_to_string(root().join("vendor/pagic-winit/NOTICE-PAGIC-PROVENANCE.md")).expect("winit provenance");
+    assert!(provenance.contains("a517b3846ee8457d84ee4975110bfda6797c44dc"));
+}
+
+/// Regression test: the resolved window stack points at the reviewed sources and the retained vendor provenance
 /// files remain.
 #[test]
 fn vendor_provenance_window_stack_graph_is_resolved() {
-    assert_resolved("winit", "0.30.13", "https://github.com/arafatic/winit.git", "a517b3846ee8457d84ee4975110bfda6797c44dc");
+    assert_local_winit();
     assert_resolved("egui-wgpu", "0.37.0", "https://github.com/arafatic/egui.git", "6d518fc799681571963842f95b55a6b68431b15a");
     // Retained provenance: the audited copies and their recorded W1–W13 / E2+E3 rows.
     let readme = std::fs::read_to_string(root().join("vendor/README.md")).expect("vendor/README.md");
@@ -105,4 +114,30 @@ fn craft_libraries_resolve_to_local_pinned_source() {
         let expected = root().join(format!("vendor/pagic-libs/crates/{name}/Cargo.toml")).canonicalize().unwrap();
         assert_eq!(actual, expected, "craft-{name} must use the vendored manifest");
     }
+}
+
+/// Every native desktop consumer must resolve the one exact local winit source.
+#[test]
+fn winit_resolves_to_local_pinned_source() {
+    assert_local_winit();
+    let compiler = std::process::Command::new("rustc").arg("-vV").output().expect("rustc host");
+    assert!(compiler.status.success(), "rustc host query failed");
+    let version = String::from_utf8(compiler.stdout).expect("rustc version UTF-8");
+    let host = version.lines().find_map(|line| line.strip_prefix("host: ")).expect("native host triple");
+    let output = std::process::Command::new("cargo")
+        .args(["metadata", "--locked", "--offline", "--format-version", "1", "--filter-platform", host])
+        .current_dir(root())
+        .output()
+        .expect("Cargo metadata");
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    let metadata: serde_json::Value = serde_json::from_slice(&output.stdout).expect("Cargo metadata JSON");
+    let packages = metadata["packages"].as_array().expect("resolved packages");
+    let matches: Vec<_> = packages.iter().filter(|p| p["name"] == "winit").collect();
+    assert_eq!(matches.len(), 1, "exactly one winit package");
+    let package = matches[0];
+    assert_eq!(package["version"], "0.30.13");
+    assert!(package["source"].is_null(), "winit must use the vendored source");
+    let actual = std::path::Path::new(package["manifest_path"].as_str().expect("winit manifest")).canonicalize().unwrap();
+    let expected = root().join("vendor/pagic-winit/Cargo.toml").canonicalize().unwrap();
+    assert_eq!(actual, expected, "all consumers must share the pinned local winit");
 }
