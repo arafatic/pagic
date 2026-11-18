@@ -196,13 +196,14 @@ pub fn ghost_button_sized(ui: &mut egui::Ui, icon: &str, label: &str, height: f3
 /// A search-field lookalike that opens the command palette.
 pub fn search_box(ui: &mut egui::Ui, placeholder: &str, width: f32) -> Response {
     let t = Tokens::get(ui.ctx());
-    let (rect, resp) = ui.allocate_exact_size(vec2(width, 32.0), Sense::click());
+    let height = ui.available_height().clamp(22.0, 32.0);
+    let (rect, resp) = ui.allocate_exact_size(vec2(width, height), Sense::click());
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, ui.is_enabled(), placeholder));
     let press = theme::Press::track(ui, &resp);
     let fill = press.fill(t.field, t.hover, t.pressed);
     let edge = t.border.lerp_to_gamma(t.text_muted, press.hover * 0.35);
     ui.painter().rect(rect, CornerRadius::same(3), fill, Stroke::new(1.0, edge), egui::StrokeKind::Inside);
-    icons::paint(ui, Rect::from_min_size(rect.min + vec2(10.0, 8.0), vec2(16.0, 16.0)), "search", 15.0, t.text_muted);
+    icons::paint(ui, Rect::from_min_size(rect.min + vec2(10.0, (height - 16.0) / 2.0), vec2(16.0, 16.0)), "search", 15.0, t.text_muted);
     let shortcut = crate::commands::command_shortcut_label(ui.ctx(), "view.palette");
     let shortcut = ui.painter().layout_no_wrap(shortcut, theme::regular(11.5), t.text_faint);
     let shortcut_pos = rect.right_center() - vec2(12.0 + shortcut.size().x, shortcut.size().y * 0.5);
@@ -217,6 +218,12 @@ pub fn search_box(ui: &mut egui::Ui, placeholder: &str, width: f32) -> Response 
     let text = ui.fonts_mut(|f| f.layout_job(job));
     let elided = text.elided;
     ui.painter().with_clip_rect(text_rect).galley(egui::pos2(text_left, rect.center().y - text.size().y * 0.5), text, t.text_faint);
+    let badge_rect = Rect::from_center_size(
+        shortcut_pos + vec2(shortcut.size().x * 0.5, shortcut.size().y * 0.5),
+        vec2(shortcut.size().x + 8.0, 16.0),
+    );
+    ui.painter().rect_filled(badge_rect, CornerRadius::same(3), t.border.lerp_to_gamma(t.field, 0.4));
+    ui.painter().rect_stroke(badge_rect, CornerRadius::same(3), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
     ui.painter().with_clip_rect(rect).galley(shortcut_pos, shortcut, t.text_faint);
     let resp = resp.on_hover_cursor(egui::CursorIcon::Text);
     if elided { resp.on_hover_text(placeholder) } else { resp }

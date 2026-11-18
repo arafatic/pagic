@@ -294,9 +294,14 @@ pub(crate) fn section(app: &mut PagicApp, ui: &mut egui::Ui) {
     let mut pin = false;
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(tl!("Folders")).font(theme::semibold(17.0)));
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            pin = widgets::ghost_button(ui, "folder-plus", tl!("Pin a folder…")).clicked();
-        });
+        ui.add_space(8.0);
+        let resp = ui.scope(|ui| {
+            ui.spacing_mut().button_padding = vec2(8.0, 3.0);
+            widgets::ghost_button(ui, "folder-plus", tl!("Pin a folder"))
+        }).inner;
+        if resp.clicked() {
+            pin = true;
+        }
     });
     ui.add_space(4.0);
     if app.pinned.folders.is_empty() {

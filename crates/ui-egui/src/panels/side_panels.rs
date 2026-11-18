@@ -15,6 +15,8 @@ use crate::{Mode, PagicApp};
 
 /// Default width of the Tools pane.
 pub const TOOLS_WIDTH: f32 = 272.0;
+/// Width of the Tools pane when collapsed to an icon rail.
+pub const TOOLS_COLLAPSED_WIDTH: f32 = 48.0;
 /// Default width of the side panel.
 pub const SIDE_WIDTH: f32 = 330.0;
 const TOOLS_RANGE: RangeInclusive<f32> = 240.0..=520.0;
@@ -329,11 +331,15 @@ impl PaneContent<Pane> for Content<'_> {
     }
 
     fn default_state(&self, pane: &Pane) -> PaneState {
-        state_of(&self.app.side_panels, *pane)
+        state_of(&self.app.side_panels, *pane, self.app.sidebar_collapsed)
     }
 
     fn size_range(&self, pane: &Pane) -> RangeInclusive<f32> {
-        pane.range()
+        if *pane == Pane::Tools && self.app.sidebar_collapsed {
+            TOOLS_COLLAPSED_WIDTH..=TOOLS_COLLAPSED_WIDTH
+        } else {
+            pane.range()
+        }
     }
 
     fn movable(&self, _pane: &Pane) -> bool {
@@ -346,12 +352,17 @@ impl PaneContent<Pane> for Content<'_> {
     }
 }
 
-fn state_of(panels: &SidePanels, pane: Pane) -> PaneState {
+fn state_of(panels: &SidePanels, pane: Pane, collapsed: bool) -> PaneState {
     let edge = match pane {
         Pane::Tools => panels.tools_edge(),
         Pane::Side => Edge::End,
     };
-    PaneState::docked(edge, panels.width(pane))
+    let width = if pane == Pane::Tools && collapsed {
+        TOOLS_COLLAPSED_WIDTH
+    } else {
+        panels.width(pane)
+    };
+    PaneState::docked(edge, width)
 }
 
 /// The panes that show this frame, outermost first on a shared edge.
@@ -388,6 +399,7 @@ pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = crate::theme::Tokens::get(ui.ctx());
     let labels = PaneLabels { resize: crate::i18n::t("Resize panels").to_owned(), ..PaneLabels::default() };
     let panels = app.side_panels;
+    let collapsed = app.sidebar_collapsed;
     // Columns: both panes may share the right edge, Tools outermost, as `open` lists them.
     let output = PaneHost::new(egui::Id::unique("pagic-side-panels"))
         .policy(SidePolicy::Columns)
@@ -395,10 +407,14 @@ pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
         .labels(labels)
         .frame(egui::Frame::NONE.fill(t.panel))
         .body_margin(egui::Margin::ZERO)
-        .show(ui, &open, |pane| Some(state_of(&panels, *pane)), &mut Content { app });
+        .show(ui, &open, |pane| Some(state_of(&panels, *pane, collapsed)), &mut Content { app });
     for request in output.requests {
         match request {
-            PaneRequest::Resize(pane, width) => app.side_panels.set_width(pane, width),
+            PaneRequest::Resize(pane, width) => {
+                if !(pane == Pane::Tools && app.sidebar_collapsed) {
+                    app.side_panels.set_width(pane, width);
+                }
+            }
             PaneRequest::Close(Pane::Tools) => app.left_open = false,
             PaneRequest::Close(Pane::Side) => app.choose_right_panel(None),
             _ => {}

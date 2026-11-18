@@ -256,6 +256,8 @@ pub struct PagicApp {
     mode_override: Option<Mode>,
     pub left: LeftPanel,
     pub left_open: bool,
+    /// When collapsed, the sidebar displays an icon-only rail with an expand button.
+    pub sidebar_collapsed: bool,
     pub right: Option<RightPanel>,
     /// The side panel F4 reopens: the one open last.
     pub(crate) last_right: RightPanel,

@@ -277,7 +277,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         icon: "shield-check",
         hue: BLUE,
         badge: None,
-        availability: Planned("M8"),
+        availability: Ready,
         sections: &[
             ToolSection {
                 title: "Protect",
@@ -289,7 +289,6 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             ToolSection {
                 title: "Advanced options",
                 items: &[
-                    item("Encrypt with certificate", "file-lock-2", "protect.certificate", Planned("M8")),
                     item("Security properties", "shield-check", "protect.properties", Ready),
                     item("Remove security", "lock-open", "protect.remove", Ready),
                 ],

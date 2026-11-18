@@ -1,21 +1,94 @@
 use super::edit::{actions_menu, edit_panel, stamp_palette};
 use super::{
-    Align2, Availability, Color32, CornerRadius, LeftPanel, PagicApp, Rect, Sense, Stroke, TOOL_GROUPS, Tokens, ToolGroup, catalog, icons, theme,
-    vec2, widgets,
+    Align2, Availability, Color32, CornerRadius, LeftPanel, PagicApp, Rect, Sense, Stroke, Tokens, ToolGroup, catalog, icons, theme, vec2, widgets,
 };
 
-const COLLAPSED_TOOLS: usize = 14;
+struct SidebarItem {
+    id: &'static str,
+    label: &'static str,
+    icon: &'static str,
+    enabled: bool,
+}
+
+struct SidebarCategory {
+    title: &'static str,
+    default_open: bool,
+    items: &'static [SidebarItem],
+}
+
+const SIDEBAR_CATEGORIES: &[SidebarCategory] = &[
+    SidebarCategory {
+        title: "CREATE & EDIT",
+        default_open: true,
+        items: &[
+            SidebarItem { id: "create", label: "Create PDF", icon: "file-plus", enabled: true },
+            SidebarItem { id: "edit", label: "Edit PDF", icon: "type", enabled: true },
+            SidebarItem { id: "form", label: "Prepare a form", icon: "align-left", enabled: true },
+            SidebarItem { id: "comment", label: "Add comments", icon: "message-square", enabled: true },
+            SidebarItem { id: "stamp", label: "Add a stamp", icon: "stamp", enabled: true },
+        ],
+    },
+    SidebarCategory {
+        title: "ORGANIZE",
+        default_open: true,
+        items: &[
+            SidebarItem { id: "combine", label: "Merge PDFs", icon: "files", enabled: true },
+            SidebarItem { id: "organize", label: "Organize pages", icon: "layout-grid", enabled: true },
+            SidebarItem { id: "compress", label: "Compress PDF", icon: "minimize-2", enabled: true },
+            SidebarItem { id: "compare", label: "Compare files", icon: "git-compare", enabled: true },
+        ],
+    },
+    SidebarCategory {
+        title: "CONVERT",
+        default_open: false,
+        items: &[
+            SidebarItem { id: "export", label: "Export PDF", icon: "file-output", enabled: true },
+            SidebarItem { id: "scan", label: "Scan & OCR", icon: "scan", enabled: true },
+        ],
+    },
+    SidebarCategory {
+        title: "PROTECT & SIGN",
+        default_open: false,
+        items: &[
+            SidebarItem { id: "fill_sign", label: "Fill & Sign", icon: "pen-tool", enabled: true },
+            SidebarItem { id: "certificate", label: "Use a certificate", icon: "badge-check", enabled: true },
+            SidebarItem { id: "protect", label: "Protect PDF", icon: "shield-check", enabled: true },
+            SidebarItem { id: "redact", label: "Redact PDF", icon: "eye-off", enabled: true },
+        ],
+    },
+    SidebarCategory {
+        title: "ADVANCED & AUTOMATE",
+        default_open: false,
+        items: &[
+            SidebarItem { id: "standards", label: "Apply PDF standards", icon: "file-check", enabled: true },
+            SidebarItem { id: "accessibility", label: "Accessibility check", icon: "accessibility", enabled: true },
+            SidebarItem { id: "actions", label: "Guided actions", icon: "list-checks", enabled: true },
+            SidebarItem { id: "ai", label: "AI assistant", icon: "sparkles", enabled: true },
+            SidebarItem { id: "measure", label: "Measure objects", icon: "ruler", enabled: true },
+        ],
+    },
+];
 
 pub fn left_panel(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
+    if app.sidebar_collapsed {
+        egui::Frame::NONE
+            .fill(t.panel)
+            .inner_margin(egui::Margin { left: 6, right: 6, top: 12, bottom: 10 })
+            .stroke(Stroke::NONE)
+            .show(ui, |ui| collapsed_rail(app, ui, &t));
+        return;
+    }
     // Organize closed another way (the grid's Close, or a page opened from it) closes the tool too,
     // as its panel's Close does, back to the workspace's own panel.
     if app.left == LeftPanel::Tool("organize") && app.active.and_then(|i| app.views.get(i)).is_some_and(|v| !v.organize) {
         app.left = crate::organize_panel::workspace_panel(app.mode);
     }
-    egui::Frame::NONE.fill(t.panel).inner_margin(egui::Margin { left: 14, right: 10, top: 12, bottom: 10 }).stroke(Stroke::new(1.0, t.divider)).show(
-        ui,
-        |ui| match app.left {
+    egui::Frame::NONE
+        .fill(t.panel)
+        .inner_margin(egui::Margin { left: 14, right: 10, top: 12, bottom: 10 })
+        .stroke(Stroke::NONE)
+        .show(ui, |ui| match app.left {
             // Organize pages has its own panel whenever the grid shows (with a document open).
             _ if app.active.is_some() && crate::organize_panel::showing(app) => crate::organize_panel::panel(app, ui, &t),
             LeftPanel::AllTools => all_tools(app, ui, &t),
@@ -24,26 +97,30 @@ pub fn left_panel(app: &mut PagicApp, ui: &mut egui::Ui) {
                 None => app.left = LeftPanel::AllTools,
             },
             LeftPanel::CalculationOrder => crate::calc_order_ui::panel(app, ui, &t),
-        },
-    );
+        });
 }
 
-/// A panel's title row: a leading button (`lead`: its icon and tooltip) when given, the title
-/// and Close. Returns whether the leading button and Close were clicked.
-pub(crate) fn panel_header(ui: &mut egui::Ui, t: &Tokens, title: &str, lead: Option<(&str, &str)>) -> (bool, bool) {
+pub(crate) fn panel_header_with_collapse(
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    title: &str,
+    lead: Option<(&str, &str)>,
+) -> (bool, bool, bool) {
     let mut go_back = false;
     let mut close = false;
+    let mut collapse = false;
     ui.horizontal(|ui| {
         if let Some((icon, tip)) = lead
             && icons::button(ui, icon, 26.0, false, tip).clicked()
         {
             go_back = true;
         }
-        // Reserve space for Close before laying out the translated title. Long tool names
-        // must never expand the fixed-width sidebar or push the Close control off-screen.
-        let title_width = (ui.available_width() - 26.0 - ui.spacing().item_spacing.x).max(1.0);
+        let title_width = (ui.available_width() - 56.0 - ui.spacing().item_spacing.x).max(1.0);
         ui.add_sized([title_width, 26.0], egui::Label::new(egui::RichText::new(tl!(title)).font(theme::semibold(15.5)).color(t.text)).truncate())
             .on_hover_text(tl!(title));
+        if icons::button(ui, "panel-left-close", 29.0, false, tl!("Collapse sidebar")).clicked() {
+            collapse = true;
+        }
         if icons::button(ui, "x", 26.0, false, tl!("Close panel")).clicked() {
             close = true;
         }
@@ -51,40 +128,157 @@ pub(crate) fn panel_header(ui: &mut egui::Ui, t: &Tokens, title: &str, lead: Opt
     ui.add_space(4.0);
     ui.separator();
     ui.add_space(6.0);
-    (go_back, close)
+    (go_back, close, collapse)
 }
 
-/// The All tools sidebar: Expand (the full view) and Close, then the tool list, the first few
-/// tools until View more shows them all.
-fn all_tools(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
-    // Labels distinct from the Combine grid's Expand and Collapse, which can show beside them.
-    let (expand, close) = panel_header(ui, t, "All tools", Some(("maximize-2", tl!("Expand all tools"))));
-    if expand {
-        app.expand_all_tools();
+/// A panel's title row: a leading button (`lead`: its icon and tooltip) when given, the title
+/// and Close. Returns whether the leading button and Close were clicked.
+pub(crate) fn panel_header(ui: &mut egui::Ui, t: &Tokens, title: &str, lead: Option<(&str, &str)>) -> (bool, bool) {
+    let (back, close, _) = panel_header_with_collapse(ui, t, title, lead);
+    (back, close)
+}
+
+fn category_header(ui: &mut egui::Ui, t: &Tokens, title: &str, open: bool) -> bool {
+    ui.add_space(4.0);
+    let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 26.0), Sense::click());
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!(title)));
+    if resp.hovered() {
+        ui.painter().rect_filled(rect, CornerRadius::same(5), t.hover);
     }
-    if close {
-        app.left_open = false;
+    row_label(
+        ui,
+        tl!(title),
+        theme::semibold(11.0),
+        t.text_faint,
+        rect.left_center() + vec2(6.0, 0.0),
+        rect.width() - 32.0,
+    );
+    let chevron = if open { "chevron-up" } else { "chevron-down" };
+    let chevron_rect = Rect::from_center_size(rect.right_center() - vec2(12.0, 0.0), vec2(14.0, 14.0));
+    icons::paint(ui, chevron_rect, chevron, 14.0, t.text_faint);
+    ui.add_space(2.0);
+    theme::hand(resp).clicked()
+}
+
+fn sidebar_item_row(ui: &mut egui::Ui, t: &Tokens, item: &SidebarItem, is_active: bool) -> egui::Response {
+    if !item.enabled {
+        let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 32.0), Sense::hover());
+        resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, false, tl!(item.label)));
+        let muted_icon = t.icon.gamma_multiply(0.38);
+        let muted_text = t.text_faint.gamma_multiply(0.65);
+        icons::paint(ui, Rect::from_min_size(rect.min + vec2(6.0, 6.0), vec2(20.0, 20.0)), item.icon, 18.0, muted_icon);
+        row_label(
+            ui,
+            tl!(item.label),
+            theme::regular(13.0),
+            muted_text,
+            rect.left_center() + vec2(34.0, 0.0),
+            rect.width() - 40.0,
+        );
+        return resp.on_hover_text(tl!("Coming soon"));
     }
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-        ui.add_space(2.0);
-        let shown = if app.all_tools_expanded { TOOL_GROUPS.len() } else { COLLAPSED_TOOLS.min(TOOL_GROUPS.len()) };
-        for g in &TOOL_GROUPS[..shown] {
-            if tool_row(ui, t, g).clicked() {
-                app.select_tool(g.id);
+
+    let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 32.0), Sense::click());
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!(item.label)));
+    let press = theme::Press::track(ui, &resp);
+    press.wash(ui, rect, 6, is_active);
+    let body = rect.translate(press.offset());
+    let icon_color = if is_active { t.accent } else { t.icon };
+    icons::paint(ui, Rect::from_min_size(body.min + vec2(6.0, 6.0), vec2(20.0, 20.0)), item.icon, 18.0, icon_color);
+    row_label(
+        ui,
+        tl!(item.label),
+        theme::regular(13.0),
+        if is_active { t.accent_text } else { t.text },
+        body.left_center() + vec2(34.0, 0.0),
+        rect.width() - 40.0,
+    );
+    theme::hand(resp).on_hover_text(tl!(item.label))
+}
+
+fn activate_sidebar_item(app: &mut PagicApp, id: &'static str) {
+    match id {
+        "more" => app.expand_all_tools(),
+        "combine" => {
+            if app.active.is_none() {
+                app.open_combine_tab();
+            } else {
+                app.select_tool("combine");
             }
         }
-        ui.add_space(4.0);
-        let more = if app.all_tools_expanded { "View less" } else { "View more" };
-        if ui
-            .add(
-                egui::Label::new(egui::RichText::new(tl!(more)).color(t.accent_text).font(theme::medium(13.0)))
-                    .selectable(false)
-                    .sense(Sense::click()),
-            )
-            .on_hover_cursor(egui::CursorIcon::PointingHand)
-            .clicked()
-        {
-            app.all_tools_expanded = !app.all_tools_expanded;
+        tool_id => app.select_tool(tool_id),
+    }
+}
+
+fn collapsed_rail(app: &mut PagicApp, ui: &mut egui::Ui, _t: &Tokens) {
+    ui.vertical_centered(|ui| {
+        if icons::button(ui, "panel-left-open", 34.0, false, tl!("Expand sidebar")).clicked() {
+            app.sidebar_collapsed = false;
+        }
+        ui.add_space(6.0);
+        ui.separator();
+        ui.add_space(6.0);
+        egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+            for (ci, cat) in SIDEBAR_CATEGORIES.iter().enumerate() {
+                if ci > 0 {
+                    ui.add_space(4.0);
+                    ui.separator();
+                    ui.add_space(4.0);
+                }
+                for item in cat.items {
+                    if !item.enabled {
+                        continue;
+                    }
+                    let is_active = match app.left {
+                        LeftPanel::Tool(id) => id == item.id,
+                        _ => false,
+                    };
+                    let tip = tl!(item.label);
+                    let resp = icons::button(ui, item.icon, 30.0, is_active, tip);
+                    if resp.clicked() {
+                        activate_sidebar_item(app, item.id);
+                    }
+                }
+            }
+        });
+    });
+}
+
+/// The All tools sidebar: categorized tools with top-right collapse button.
+fn all_tools(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
+    ui.horizontal(|ui| {
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if icons::button(ui, "panel-left-close", 29.0, false, tl!("Collapse sidebar")).clicked() {
+                app.sidebar_collapsed = true;
+            }
+        });
+    });
+    ui.add_space(2.0);
+    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+        for (ci, cat) in SIDEBAR_CATEGORIES.iter().enumerate() {
+            if ci > 0 {
+                ui.add_space(4.0);
+                ui.separator();
+                ui.add_space(2.0);
+            }
+            let cat_id = ui.scope_id().with(("sidebar_category_open", cat.title));
+            let mut open = ui.data(|d| d.get_temp::<bool>(cat_id)).unwrap_or(cat.default_open);
+            if category_header(ui, t, cat.title, open) {
+                open = !open;
+                ui.data_mut(|d| d.insert_temp(cat_id, open));
+            }
+            if open {
+                for item in cat.items {
+                    let is_active = item.enabled
+                        && match app.left {
+                            LeftPanel::Tool(id) => id == item.id,
+                            _ => false,
+                        };
+                    if sidebar_item_row(ui, t, item, is_active).clicked() && item.enabled {
+                        activate_sidebar_item(app, item.id);
+                    }
+                }
+            }
         }
     });
 }
@@ -101,6 +295,7 @@ pub(super) fn row_label(ui: &mut egui::Ui, text: &str, font: egui::FontId, color
 }
 
 /// Draw one tool-group row with its icon, label, badge and availability hint.
+#[allow(dead_code)]
 fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup) -> egui::Response {
     let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 34.0), Sense::click());
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!(g.label)));
@@ -154,10 +349,13 @@ fn tool_detail(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, g: &'static To
         edit_panel(app, ui, t, g);
         return;
     }
-    let (back, close) = panel_header(ui, t, g.label, Some(("chevron-left", tl!("Back to all tools"))));
+    let (back, close, collapse) = panel_header_with_collapse(ui, t, g.label, Some(("chevron-left", tl!("Back to all tools"))));
     if back {
         app.left = LeftPanel::AllTools;
         app.enter_mode(crate::Mode::AllTools);
+    }
+    if collapse {
+        app.sidebar_collapsed = true;
     }
     if close {
         app.left_open = false;
@@ -222,25 +420,31 @@ fn tool_detail(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, g: &'static To
                     17.0,
                     if ready { t.icon } else { t.text_faint },
                 );
-                let (chip, fill, cfg) = match item.availability {
-                    Availability::Ready => (tl!("Ready"), t.pressed, t.text),
-                    Availability::Planned(m) => (m, t.pressed, t.text_muted),
-                    Availability::Provider => ("AI", t.pressed, t.text_muted),
+                let chip_info = match item.availability {
+                    Availability::Ready => None,
+                    Availability::Planned(m) => Some((m, t.pressed, t.text_muted)),
+                    Availability::Provider => Some(("AI", t.pressed, t.text_muted)),
                 };
-                let font = theme::semibold(9.5);
-                let chip_label = tl!(chip).to_string();
-                let w = crate::widgets::text_width(ui, &chip_label, &font);
-                let r = Rect::from_center_size(body.right_center() - vec2(w / 2.0 + 10.0, 0.0), vec2(w + 10.0, 16.0));
-                row_label(ui, tl!(item.label), theme::regular(13.0), fg, body.left_center() + vec2(34.0, 0.0), r.left() - body.left() - 42.0);
-                ui.painter().rect_filled(r, CornerRadius::same(4), fill);
-                ui.painter().text(r.center(), Align2::CENTER_CENTER, chip_label, font, cfg);
+                let (caret_pos, label_right) = if let Some((chip, fill, cfg)) = chip_info {
+                    let font = theme::semibold(9.5);
+                    let chip_label = tl!(chip).to_string();
+                    let w = crate::widgets::text_width(ui, &chip_label, &font);
+                    let r = Rect::from_center_size(body.right_center() - vec2(w / 2.0 + 10.0, 0.0), vec2(w + 10.0, 16.0));
+                    ui.painter().rect_filled(r, CornerRadius::same(4), fill);
+                    ui.painter().text(r.center(), Align2::CENTER_CENTER, chip_label, font, cfg);
+                    (r.left_center() - vec2(10.0, 0.0), r.left())
+                } else {
+                    let right_pad = if item.actions.is_empty() { 8.0 } else { 24.0 };
+                    (body.right_center() - vec2(14.0, 0.0), body.right() - right_pad)
+                };
+                row_label(ui, tl!(item.label), theme::regular(13.0), fg, body.left_center() + vec2(34.0, 0.0), label_right - body.left() - 42.0);
                 let resp = theme::hand(resp).on_hover_text(format!("{} — {}", tl!(item.label), item.command));
-                // An entry with further commands opens a menu; its caret goes before the chip.
+                // An entry with further commands opens a menu; its caret goes on the right.
                 if item.actions.is_empty() {
                     if resp.clicked() {
                         run = Some(item.command);
                     }
-                } else if let Some(cmd) = actions_menu(app, ui, &resp, item, r.left_center() - vec2(10.0, 0.0), fg) {
+                } else if let Some(cmd) = actions_menu(app, ui, &resp, item, caret_pos, fg) {
                     run = Some(cmd);
                 }
             }

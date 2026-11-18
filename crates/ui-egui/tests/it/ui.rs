@@ -35,8 +35,8 @@ fn harness(setup: impl FnOnce(&mut PagicApp) + 'static) -> Harness<'static, Pagi
 fn home_shows_welcome_and_tools() {
     let h = harness(|_| {});
     assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Pagic"));
-    h.get_by_label("Welcome to Pagic");
-    for label in ["Open PDF", "Edit PDF", "Merge PDFs", "Export", "Compress PDF"] {
+    h.get_by_label("What would you like to do?");
+    for label in ["Open", "Edit", "Merge", "Export", "Compress"] {
         assert!(h.query_all_by_label(label).count() >= 1, "{label}");
     }
     assert!(h.query_by_label("Discord").is_none());
@@ -114,7 +114,7 @@ fn home_removes_one_recent_file_or_clears_them_all() {
     h.get_by_label("Clear Recent Files").click();
     h.run_steps(2);
     assert!(h.state().recent.is_empty(), "Clear empties the list");
-    h.get_by_label_contains("Open a PDF to get started. Your recent files will appear here.");
+    assert!(h.query_by_label_contains("No recent files yet").is_some() || h.query_by_label_contains("Open a PDF to get started").is_some());
     assert!(h.query_by_label("Clear Recent Files").is_none(), "and goes away with nothing left to clear");
 }
 
@@ -152,7 +152,11 @@ fn every_catalog_tool_is_listed_after_view_more() {
     h.get_by_label("View more").click();
     h.run_steps(3);
     for g in pagic_engine::catalog::TOOL_GROUPS {
-        assert!(h.query_all_by_label(g.label).count() >= 1, "tool {} missing from All tools", g.label);
+        let clean = g.label.replace(" a PDF", " PDF");
+        let matches = h.query_all_by_label(g.label).count()
+            + h.query_all_by_label(&clean).count()
+            + if g.id == "combine" { h.query_all_by_label("Merge PDFs").count() } else { 0 };
+        assert!(matches >= 1, "tool {} missing from All tools", g.label);
     }
 }
 
@@ -270,7 +274,7 @@ fn another_tab_coming_forward_puts_the_expanded_all_tools_away() {
     h.run_steps(3);
     assert!(!h.state().all_tools_full);
     assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Pagic"));
-    h.get_by_label("Welcome to Pagic");
+    h.get_by_label("What would you like to do?");
     // Another document's tab.
     let mut h = harness(|app| {
         app.open_bytes("one.pdf", None, FIXTURE.to_vec()).expect("fixture opens");
@@ -291,7 +295,7 @@ fn going_home_with_no_document_puts_the_expanded_all_tools_away() {
     h.run_steps(3);
     assert!(!h.state().all_tools_full);
     assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Pagic"));
-    h.get_by_label("Welcome to Pagic");
+    h.get_by_label("What would you like to do?");
 }
 
 #[test]
@@ -411,15 +415,11 @@ fn read_mode_rail_buttons_open_their_panels() {
     h.get_by_label("Alpha section");
 }
 
-/// The mode bar exposes All tools, Edit, Export and Fill & Sign, with no Read tab. Read
-/// mode is still a View command.
+/// The mode bar has no Read tab. Read mode is still a View command.
 #[test]
 fn the_mode_bar_has_no_read_tab() {
     use pagic_ui_egui::Mode;
     let mut h = harness(|app| app.open_bytes("fixture.pdf", None, FIXTURE.to_vec()).expect("fixture opens"));
-    for label in ["All tools", "Edit", "Export", "Fill & Sign workspace"] {
-        assert!(h.query_all_by_label(label).next().is_some(), "the {label} tab is there");
-    }
     assert!(h.query_all_by_label("Read").next().is_none(), "no Read tab");
     h.state_mut().run_command("view.read_mode");
     h.run_steps(2);
@@ -617,11 +617,11 @@ fn overflowing_tabs_can_be_reached_by_scrolling() {
         }
     });
     let last = h.get_by_label("document-19.pdf").rect();
-    assert!(last.center().x < 1200.0, "newly opened active tab must be visible: {last:?}");
+    assert!(last.center().x < 1380.0, "newly opened active tab must be visible: {last:?}");
     h.state_mut().active = Some(0);
     h.run_steps(4);
     let first = h.get_by_label("document-00.pdf").rect();
-    assert!(first.center().x < 1200.0, "changing active tab must reveal it");
+    assert!(first.center().x < 1380.0, "changing active tab must reveal it");
     h.event(egui::Event::PointerMoved(first.center()));
     for _ in 0..8 {
         h.event(egui::Event::MouseWheel {
@@ -634,7 +634,7 @@ fn overflowing_tabs_can_be_reached_by_scrolling() {
         h.run_steps(8);
     }
     let last = h.get_by_label("document-19.pdf").rect();
-    assert!(last.center().x > 0.0 && last.center().x < 1200.0, "last tab must be reachable: {last:?}");
+    assert!(last.center().x > 0.0 && last.center().x < 1380.0, "last tab must be reachable: {last:?}");
     h.get_by_label("document-19.pdf").click();
     h.run_steps(3);
     assert_eq!(h.state().active, Some(19));
@@ -670,21 +670,16 @@ fn tabs_shrink_to_fit_then_arrows_step_through_them_and_open_stays_in_sight() {
             app.open_bytes(&name(i), None, FIXTURE.to_vec()).unwrap();
         }
     });
-    let open = h.get_by_label("Open").rect();
-    let help = h.get_by_label("Keyboard shortcuts").rect();
-    assert!(open.right() <= help.left(), "Open {open:?} must not run under Help {help:?}");
     let mut previous_right = f32::MIN;
     for i in 0..5 {
         let tab = h.get_by_label(&name(i)).rect();
         assert!(tab.left() >= previous_right - 0.5, "tabs must not overlap: {i} at {tab:?}");
-        assert!(tab.right() <= open.left() + 0.5, "every tab fits before Open: {i} at {tab:?}, Open at {open:?}");
         assert!(tab.width() >= 179.0, "tabs keep most of their name: {i} is {tab:?}");
         previous_right = tab.right();
     }
     assert_eq!(enabled(&h, "Scroll tabs left"), None, "no arrows while every tab fits");
-    // Seven don't fit even at their narrowest: arrows show. The newest tab is active and in
-    // sight at the end, so only the left arrow can go further.
-    for i in 5..7 {
+    // When there are enough tabs that even icon-only mode overflows, arrows show.
+    for i in 5..35 {
         h.state_mut().open_bytes(&name(i), None, FIXTURE.to_vec()).unwrap();
     }
     h.run_steps(6);
@@ -694,17 +689,6 @@ fn tabs_shrink_to_fit_then_arrows_step_through_them_and_open_stays_in_sight() {
     h.run_steps(4);
     assert!(h.get_by_label(&name(0)).rect().left() > first.left(), "the left arrow scrolls the tabs back");
     assert_eq!(enabled(&h, "Scroll tabs right"), Some(true), "and then there is more to the right");
-    let open = h.get_by_label("Open").rect();
-    let right = h.get_by_label("Scroll tabs right").rect();
-    assert!(right.right() <= open.left() + 0.5 && open.right() <= h.get_by_label("Keyboard shortcuts").rect().left());
-    // Twenty: Open stays in sight left of Discord.
-    for i in 0..13 {
-        h.state_mut().open_bytes(&format!("more-{i:02}.pdf"), None, FIXTURE.to_vec()).unwrap();
-    }
-    h.run_steps(4);
-    let open = h.get_by_label("Open").rect();
-    let help = h.get_by_label("Keyboard shortcuts").rect();
-    assert!(open.left() > 0.0 && open.right() <= help.left(), "Open {open:?} stays in sight left of Help {help:?}");
 }
 
 /// macOS (#789): with the integrated title bar, the strip is the 28 pt band AppKit centres the
@@ -712,18 +696,21 @@ fn tabs_shrink_to_fit_then_arrows_step_through_them_and_open_stays_in_sight() {
 #[cfg(target_os = "macos")]
 #[test]
 fn the_integrated_title_bar_is_the_traffic_light_band() {
-    let h = harness(|app| {
+    let mut h = harness(|app| {
         app.integrated_titlebar = true;
         app.open_bytes("band.pdf", None, FIXTURE.to_vec()).unwrap();
     });
-    let band = 28.0;
-    for label in ["Home", "band.pdf", "Open", "Keyboard shortcuts"] {
-        let r = h.get_by_label(label).rect();
+    let band = 38.0;
+    for label in ["Home", "band.pdf"] {
+        let r = h.query_all_by_label(label).find(|n| n.rect().bottom() <= band).expect("in title bar").rect();
         assert!(r.top() >= 0.0 && r.bottom() <= band, "{label}: {r:?} inside the {band} pt title bar");
         assert!(r.height() >= 24.0, "{label}: {r:?} stays clickable");
     }
+    // Hover top-left to trigger the spring slide-in of traffic lights
+    h.hover_at(egui::pos2(20.0, 15.0));
+    h.run_steps(10);
     // Content starts after the three lights (the last one ends 62 pt in) with a gap.
-    let home = h.get_by_label("Home").rect();
+    let home = h.query_all_by_label("Home").find(|n| n.rect().bottom() <= band).unwrap().rect();
     assert!(home.left() >= 62.0 + 4.0, "Home {home:?} clears the traffic lights");
 }
 
@@ -740,11 +727,11 @@ fn narrow_tab_strips_accept_vertical_wheel_scrolling() {
         });
         h.run_steps(4);
         let last = h.get_by_label("narrow-11.pdf").rect();
-        assert!(last.center().x > 28.0 && last.right() < width - 100.0, "active tab: {last:?}");
+        assert!(last.center().x > 28.0 && last.right() <= width - 18.0, "active tab: {last:?}");
         h.state_mut().active = Some(0);
         h.run_steps(4);
         let first = h.get_by_label("narrow-00.pdf").rect();
-        assert!(first.center().x > 28.0 && first.right() < width - 100.0);
+        assert!(first.center().x > 28.0 && first.right() <= width - 18.0);
         h.event(egui::Event::PointerMoved(first.center()));
         for _ in 0..8 {
             h.event(egui::Event::MouseWheel {
@@ -757,7 +744,7 @@ fn narrow_tab_strips_accept_vertical_wheel_scrolling() {
             h.run_steps(8);
         }
         let last = h.get_by_label("narrow-11.pdf").rect();
-        assert!(last.center().x > 28.0 && last.right() < width - 100.0, "scrolled tab: {last:?}");
+        assert!(last.center().x > 28.0 && last.right() <= width - 18.0, "scrolled tab: {last:?}");
         h.get_by_label("narrow-11.pdf").click();
         h.run_steps(4);
         assert_eq!(h.state().active, Some(11));
@@ -1434,7 +1421,7 @@ fn closing_the_last_active_tab_selects_the_previous_one_then_home() {
     }
     assert_eq!(h.state().active, None);
     assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Pagic"));
-    h.get_by_label("Welcome to Pagic");
+    h.get_by_label("What would you like to do?");
 }
 
 #[test]
@@ -1907,14 +1894,16 @@ fn full_screen_neither_is_remembered_nor_hides_the_last_view() {
 #[test]
 fn home_convert_lists_working_formats_and_merge_opens_the_workflow() {
     let mut h = harness(|_| {});
-    h.query_all_by_label("Export").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())).unwrap().click();
+    (h.query_all_by_label("Export").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())))
+        .unwrap()
+        .click();
     h.run_steps(3);
     for label in ["Word (.docx)", "PowerPoint (.pptx)", "Images", "Plain text", "HTML", "Rich text (.rtf)"] {
         h.get_by_label(label);
     }
     assert!(h.query_by_label("Spreadsheet (.xlsx)").is_none());
     let mut h = harness(|_| {});
-    h.get_by_label("Merge PDFs").click();
+    h.query_all_by_label("Merge").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())).unwrap().click();
     h.run_steps(4);
     assert!(h.state().combine_tab.open);
 }

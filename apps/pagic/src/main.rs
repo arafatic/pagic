@@ -200,8 +200,12 @@ fn main() -> eframe::Result {
     }
     let files = rejoin_split_paths(files, |p| std::path::Path::new(p).is_file());
     let integrated = cfg!(target_os = "macos");
-    // GNOME on Wayland leaves the window frame to the app (src/decorations.rs).
-    let window_controls = if cfg!(any(target_os = "macos", target_os = "windows")) { None } else { decorations::app_drawn() };
+    // macOS has a unified tab bar with in-bar sliding traffic lights; GNOME on Wayland uses app decorations.
+    let window_controls = if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
+        None
+    } else {
+        decorations::app_drawn()
+    };
     // The log file stays in the data folder; opened after the arguments (so `--version` leaves
     // no file behind). Legacy product folders are never moved or claimed.
     // Records logged until now are written to it first.

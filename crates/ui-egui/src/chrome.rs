@@ -1,17 +1,14 @@
 //! Window chrome: tab strip (with the integrated macOS title bar), mode bar, right rail.
 
 use craft_ui::panes::{Edge, Rail, RailItem, RailRequest};
-use egui::{Align, Color32, CornerRadius, Layout, Rect, Sense, Stroke, vec2};
+use egui::{Align, CornerRadius, Layout, Rect, Sense, Stroke, vec2};
 
 use crate::canvas::{DocView, Fit, PageLayout};
 use crate::theme::{self, ThemePreference, Tokens};
-use crate::{Dialog, Mode, PagicApp, PropsTab, RightPanel, icons, widgets, window_controls};
+use crate::{Dialog, PagicApp, PropsTab, RightPanel, icons, widgets, window_controls};
 
-/// Height of the tab strip when it doubles as the macOS title bar. AppKit draws the traffic
-/// lights itself, centred in the standard 28 pt title-bar band at the top of the window, and moving
-/// them takes AppKit calls the workspace forbids (`unsafe`). So on macOS the strip is that band:
-/// the lights sit vertically centred in it, and the controls beside them shrink to fit.
-pub const MAC_TITLE_BAR: f32 = 28.0;
+/// Height of the tab strip when it doubles as the macOS title bar.
+pub const MAC_TITLE_BAR: f32 = 38.0;
 /// The traffic lights as AppKit lays them out: button diameter, centre-to-centre pitch and the
 /// first button's left edge (8–10 pt depending on the macOS version; the larger value keeps the
 /// gap after them from shrinking).
@@ -30,16 +27,30 @@ const STRIP_BUTTON: f32 = 28.0;
 /// reordering, and platform window controls.
 pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
-    // macOS: the strip is the 28 pt title bar, so the traffic lights are centred in it; tabs and
-    // buttons shrink to keep a margin above and below.
     let mac = cfg!(target_os = "macos") && app.integrated_titlebar;
-    let left = if mac { MAC_CONTENT_LEFT as i8 } else { 8 };
-    let (tab_h, button) = if mac { (MAC_TITLE_BAR - 2.0, 24.0) } else { (TAB_HEIGHT, STRIP_BUTTON) };
+    let unified = mac;
+
+    let fullscreen = ui.ctx().input(|i| i.viewport().fullscreen.unwrap_or(false));
+    let left = if mac && !fullscreen {
+        MAC_CONTENT_LEFT as i8
+    } else if mac {
+        10
+    } else {
+        8
+    };
+
+    let (tab_h, button_size) = (TAB_HEIGHT, STRIP_BUTTON);
+    let strip_height = if mac { MAC_TITLE_BAR } else { TAB_STRIP };
+    let frame = egui::Frame::NONE.fill(t.titlebar).inner_margin(egui::Margin { left, right: 10, top: 0, bottom: 0 });
     egui::Panel::top("tab_strip")
-        .exact_size(if mac { MAC_TITLE_BAR } else { TAB_STRIP })
-        .frame(egui::Frame::NONE.fill(t.titlebar).inner_margin(egui::Margin { left, right: 10, top: 0, bottom: 0 }))
+        .exact_size(strip_height)
+        .show_separator_line(false)
+        .frame(frame)
         .show(ui, |ui| {
             let full = ui.max_rect();
+            if unified {
+                ui.painter().hline(full.x_range(), full.bottom(), Stroke::new(0.5, t.divider.gamma_multiply(0.6)));
+            }
             let drag = ui.interact(full, ui.scope_id().with("titledrag"), Sense::click_and_drag());
             if drag.drag_started() {
                 window_controls::desktop_grab(ui.ctx(), egui::ViewportCommand::StartDrag);
@@ -57,21 +68,30 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                 .unwrap_or_else(|| window_controls::Layout { left: Vec::new(), right: Vec::new() });
             ui.horizontal_centered(|ui| {
                 ui.spacing_mut().item_spacing.x = 4.0;
-                if !controls.left.is_empty() {
+                if !mac && !controls.left.is_empty() {
                     ui.scope(|ui| {
                         ui.spacing_mut().item_spacing.x = 0.0;
                         window_controls::buttons(ui, &controls.left);
                     });
                     ui.add_space(window_controls::SIDE_GAP - 4.0);
                 }
-                if icons::button(ui, "house", button, app.active.is_none() && !app.combine_showing(), tl!("Home")).clicked() {
-                    app.active = None;
-                    app.combine_tab.focused = false;
+                if unified {
+                    let is_home = app.active.is_none() && !app.combine_showing();
+                    let tip = tl!("Home");
+                    let home_btn = icons::button(ui, "house", button_size, is_home, tip);
+                    if home_btn.clicked() {
+                        app.active = None;
+                        app.combine_tab.focused = false;
+                    }
+                    ui.add_space(4.0);
                 }
-                let controls_width = 2.0 * button + 18.0 + window_controls::width(&controls.right);
-                // Open stays in sight after the tabs: its icon, text and padding, and the gaps around it.
-                let open_width = ui.fonts_mut(|f| f.layout_no_wrap(tl!("Open").into(), theme::medium(13.0), t.text).size().x) + 38.0 + 12.0;
-                let mut tabs_width = (ui.available_width() - controls_width - open_width).max(0.0);
+                let right_actions_budget: f32 = if unified {
+                    440.0
+                } else {
+                    0.0
+                };
+                let controls_width = 18.0 + window_controls::width(&controls.right) + right_actions_budget;
+                let mut tabs_width = (ui.available_width() - controls_width).max(0.0);
                 // Tabs shrink to share the strip (names end in "…") and scroll only once they reach
                 // their narrowest; then arrows either side say so and step through them.
                 let mut natural: Vec<f32> = Vec::with_capacity(app.views.len() + 1);
@@ -84,17 +104,22 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                     natural.push(tab_natural_width(ui, &t, tl!("Combine files")));
                 }
                 let gap = ui.spacing().item_spacing.x;
-                let overflow = tabs_overflow(&natural, tabs_width, gap, TAB_MIN_WIDTH);
+                let active_tab_index = if app.combine_showing() {
+                    Some(app.views.len())
+                } else {
+                    app.active
+                };
+                let (mut tab_widths, overflow) = compute_tab_widths(&natural, active_tab_index, tabs_width, gap);
                 if overflow {
                     tabs_width = (tabs_width - 2.0 * (TAB_ARROW + gap)).max(0.0);
+                    tab_widths = compute_tab_widths(&natural, active_tab_index, tabs_width, gap).0;
                 }
-                let cap = tab_cap(&natural, tabs_width, gap, TAB_MIN_WIDTH);
                 // Where the tabs were scrolled to last frame, and how far they can go.
                 let scroll_id = ui.scope_id().with("tab_scroll");
                 let (offset, max_offset) = ui.data(|d| d.get_temp::<(f32, f32)>(scroll_id)).unwrap_or((0.0, 0.0));
                 let mut scroll_to = None;
                 if overflow && arrow(ui, "chevron-left", offset > 0.5, tl!("Scroll tabs left")) {
-                    scroll_to = Some((offset - (TAB_MIN_WIDTH + gap)).max(0.0));
+                    scroll_to = Some((offset - (TAB_ICON_WIDTH + gap)).max(0.0));
                 }
                 // Keyed by document, not index: a tab dragged past the active one moves it without
                 // the strip jumping to it.
@@ -127,6 +152,7 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                                 let dirty = doc.dirty;
                                 // A tab showing the document's title names its file on hover.
                                 let file = (name != doc.name).then_some(doc.name.as_str());
+                                let width = tab_widths.get(i).copied().unwrap_or(TAB_ICON_WIDTH);
                                 let response = tab(
                                     ui,
                                     TabSpec {
@@ -138,7 +164,7 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                                         dirty,
                                         active: app.active == Some(i),
                                         index: i,
-                                        cap,
+                                        width,
                                         height: tab_h,
                                         draggable: true,
                                     },
@@ -211,6 +237,7 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                             if app.combine_tab.open {
                                 // After the document tabs; its index can't clash with theirs.
                                 let mut close = None;
+                                let width = tab_widths.get(app.views.len()).copied().unwrap_or(TAB_ICON_WIDTH);
                                 let response = tab(
                                     ui,
                                     TabSpec {
@@ -222,7 +249,7 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                                         dirty: false,
                                         active: app.combine_showing(),
                                         index: usize::MAX,
-                                        cap,
+                                        width,
                                         height: tab_h,
                                         draggable: false,
                                     },
@@ -260,16 +287,11 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                     }
                 });
                 if overflow && arrow(ui, "chevron-right", offset < max_offset - 0.5, tl!("Scroll tabs right")) {
-                    scroll_to = Some((offset + TAB_MIN_WIDTH + gap).min(max_offset));
+                    scroll_to = Some((offset + TAB_ICON_WIDTH + gap).min(max_offset));
                 }
                 if let Some(x) = scroll_to {
                     ui.data_mut(|d| d.insert_temp(scroll_id.with("to"), x));
                     ui.ctx().request_repaint();
-                }
-                ui.add_space(4.0);
-                let tip = crate::commands::command_tip(ui.ctx(), tl!("Open a PDF ({key})"), "file.open");
-                if widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).on_hover_text(tip).clicked() {
-                    app.open_dialog();
                 }
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     if !controls.right.is_empty() {
@@ -282,24 +304,8 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                         });
                         ui.add_space(window_controls::SIDE_GAP - 4.0);
                     }
-                    let (icon, label) = match app.theme_preference {
-                        ThemePreference::System => ("monitor", tl!("Use system setting")),
-                        ThemePreference::Light => ("sun", tl!("Light gray")),
-                        ThemePreference::Dark => ("moon", tl!("Dark gray")),
-                    };
-                    let tip = format!("{}: {label}", tl!("Display theme"));
-                    let response = icons::button(ui, icon, button, false, &tip);
-                    // A click cycles System, Light, Dark; a right-click opens the menu.
-                    if response.clicked() {
-                        app.execute(match app.theme_preference {
-                            ThemePreference::System => "view.theme.light",
-                            ThemePreference::Light => "view.theme.dark",
-                            ThemePreference::Dark => "view.theme.system",
-                        });
-                    }
-                    egui::Popup::context_menu(&response).id(response.id.with("theme_menu")).show(|ui| appearance_menu(app, ui));
-                    if icons::button(ui, "circle-help", button, false, tl!("Keyboard shortcuts")).clicked() {
-                        app.dialog = Some(Dialog::Shortcuts);
+                    if unified {
+                        render_right_actions(app, ui, &t, button_size);
                     }
                 });
             });
@@ -316,15 +322,103 @@ fn appearance_menu(app: &mut PagicApp, ui: &mut egui::Ui) {
 
 /// A tab's chrome around its name: the icon on the left, the close button on the right.
 const TAB_CHROME: f32 = 64.0;
-/// The narrowest a tab shrinks to before the strip scrolls: room for most of a name.
-const TAB_MIN_WIDTH: f32 = 180.0;
+/// The minimum width of an inactive tab in icon-only mode (Safari style).
+pub const TAB_ICON_WIDTH: f32 = 38.0;
+/// The narrowest an inactive tab shrinks before collapsing into icon-only mode.
+pub const TAB_MIN_TEXT_WIDTH: f32 = 90.0;
+/// The minimum width of an active tab so its title stays legible.
+pub const TAB_ACTIVE_MIN_WIDTH: f32 = 130.0;
 /// The arrows either side of tabs that don't fit.
 const TAB_ARROW: f32 = 24.0;
 
-/// Whether tabs of `natural` widths, `gap` apart, are wider than `budget` even at `min` each.
-fn tabs_overflow(natural: &[f32], budget: f32, gap: f32, min: f32) -> bool {
-    let narrowest: f32 = natural.iter().map(|w| w.min(min)).sum();
-    narrowest + gap * natural.len().saturating_sub(1) as f32 > budget
+/// Compute tab widths using the Safari smart tab sizing model:
+/// - When space allows, tabs keep natural widths.
+/// - As space tightens, inactive tabs shrink while the active tab keeps its title.
+/// - When crowded, inactive tabs collapse to compact 38px icon-only pills, leaving maximum room for the active tab.
+/// - When even icon-only pills don't fit, horizontal scroll arrows appear.
+fn compute_tab_widths(
+    natural: &[f32],
+    active_idx: Option<usize>,
+    budget: f32,
+    gap: f32,
+) -> (Vec<f32>, bool) {
+    let n = natural.len();
+    if n == 0 {
+        return (Vec::new(), false);
+    }
+    let total_gap = gap * (n - 1) as f32;
+    let sum_natural: f32 = natural.iter().sum::<f32>() + total_gap;
+
+    if sum_natural <= budget {
+        return (natural.to_vec(), false);
+    }
+
+    if n == 1 {
+        return (vec![budget.max(TAB_ICON_WIDTH).min(natural[0])], false);
+    }
+
+    let active = active_idx.unwrap_or(0).min(n - 1);
+    let active_nat = natural[active].min(240.0);
+
+    // 1. Try giving active tab its natural width, and see if inactive tabs can fit with text (>= TAB_MIN_TEXT_WIDTH)
+    let budget_for_inactive = budget - active_nat - total_gap;
+    let inactive_count = (n - 1) as f32;
+    let share = budget_for_inactive / inactive_count;
+
+    if share >= TAB_MIN_TEXT_WIDTH {
+        let mut widths = Vec::with_capacity(n);
+        for (i, &nat) in natural.iter().enumerate() {
+            if i == active {
+                widths.push(active_nat.min(nat));
+            } else {
+                widths.push(share.min(nat));
+            }
+        }
+        return (widths, false);
+    }
+
+    // 2. Inactive tabs cannot fit text comfortably: collapse inactive tabs to icon-only pills (38px)!
+    let inactive_total = inactive_count * TAB_ICON_WIDTH + total_gap;
+    let rem_for_active = budget - inactive_total;
+
+    if rem_for_active >= TAB_ACTIVE_MIN_WIDTH {
+        let active_w = rem_for_active.min(natural[active]);
+        let mut widths = Vec::with_capacity(n);
+        for i in 0..n {
+            if i == active {
+                widths.push(active_w);
+            } else {
+                widths.push(TAB_ICON_WIDTH);
+            }
+        }
+        return (widths, false);
+    }
+
+    // 3. Very tight space: active tab at TAB_ACTIVE_MIN_WIDTH
+    let min_needed = inactive_total + TAB_ACTIVE_MIN_WIDTH;
+    if min_needed <= budget {
+        let active_w = (budget - inactive_total).max(TAB_ACTIVE_MIN_WIDTH);
+        let mut widths = Vec::with_capacity(n);
+        for i in 0..n {
+            if i == active {
+                widths.push(active_w);
+            } else {
+                widths.push(TAB_ICON_WIDTH);
+            }
+        }
+        return (widths, false);
+    }
+
+    // 4. Overflow: needs scroll area and scroll arrows
+    let mut widths = Vec::with_capacity(n);
+    for i in 0..n {
+        if i == active {
+            widths.push(TAB_ACTIVE_MIN_WIDTH.min(natural[active]));
+        } else {
+            widths.push(TAB_ICON_WIDTH);
+        }
+    }
+    (widths, true)
 }
 
 /// How close to either end of a scrolling strip a dragged tab scrolls it, and how far per frame.
@@ -366,30 +460,6 @@ fn tab_natural_width(ui: &egui::Ui, t: &Tokens, name: &str) -> f32 {
     ui.fonts_mut(|f| f.layout_no_wrap(label, theme::regular(13.0), t.text).size().x) + TAB_CHROME
 }
 
-/// The widest any tab may be so that tabs of `natural` widths, `gap` apart, fit in `budget`:
-/// narrow tabs keep their width and the rest share what is left equally (as browsers do).
-/// `None` when every tab fits as it is; never below `min` (then the strip scrolls).
-fn tab_cap(natural: &[f32], budget: f32, gap: f32, min: f32) -> Option<f32> {
-    let n = natural.len();
-    if n == 0 {
-        return None;
-    }
-    let mut left = budget - gap * (n - 1) as f32;
-    if natural.iter().sum::<f32>() <= left {
-        return None;
-    }
-    let mut sorted = natural.to_vec();
-    sorted.sort_by(f32::total_cmp);
-    for (k, w) in sorted.iter().enumerate() {
-        let share = left / (n - k) as f32;
-        if *w > share {
-            return Some(share.max(min));
-        }
-        left -= w;
-    }
-    None
-}
-
 /// Draw one tab with its icon, elided label, close button and unsaved dot; records a close request and
 /// returns the tab response for drag handling.
 struct TabSpec<'a> {
@@ -401,26 +471,17 @@ struct TabSpec<'a> {
     dirty: bool,
     active: bool,
     index: usize,
-    cap: Option<f32>,
+    width: f32,
     height: f32,
     draggable: bool,
 }
 
 fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui::Response {
-    let TabSpec { id, theme: t, icon, name, file, dirty, active, index, cap, height, draggable } = spec;
+    let TabSpec { id, theme: t, icon, name, file, dirty, active, index, width, height, draggable } = spec;
     let font = theme::regular(13.0);
     let mut label = tab_name(name);
-    // A shrunk tab shows as much of its name as fits (the tooltip has all of it).
-    if let Some(cap) = cap {
-        let room = (cap - TAB_CHROME).max(0.0);
-        label = crate::panels::ellipsized_prefix(&label, |s| crate::bidi::layout_ltr(ui, s.to_owned(), font.clone(), t.text).size().x <= room);
-    }
-    // Logical text, laid out explicitly left to right: the fork shapes and reorders it once,
-    // and an Arabic file name keeps its extension at the visual end. AccessKit names stay logical.
-    let label_color = if active { t.text } else { t.text_muted };
-    let label_galley = crate::bidi::layout_ltr(ui, label.clone(), font.clone(), label_color);
-    let text_w = label_galley.size().x;
-    let width = cap.map_or(text_w + TAB_CHROME, |cap| (text_w + TAB_CHROME).min(cap));
+    let is_icon_only = width <= 48.0 && !active;
+
     // Full strip height so the active tab sits on the mode bar instead of floating in the title bar.
     let height = ui.available_height().max(height);
     let (rect, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
@@ -428,39 +489,86 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
     let sense = if draggable { Sense::click_and_drag() } else { Sense::click() };
     let resp = craft_ui::tabs::Tab::new(id, &a11y, active).sense(sense).focus_stroke(Stroke::new(1.0, t.accent)).show_at(ui, rect, |ui, resp| {
         let press = theme::Press::track(ui, resp);
+        let inactive_bg = t.chrome.lerp_to_gamma(t.titlebar, 0.45);
         let bg = if active {
             press.fill(t.chrome, t.chrome.lerp_to_gamma(t.hover, 0.65), t.hover)
         } else {
-            press.fill(Color32::TRANSPARENT, t.hover, t.pressed)
+            press.fill(inactive_bg, t.hover, t.pressed)
         };
-        if bg.a() > 0 {
-            ui.painter().rect_filled(rect, CornerRadius { nw: 7, ne: 7, sw: 0, se: 0 }, bg);
-        }
-        icons::paint(
-            ui,
-            Rect::from_min_size(rect.min + vec2(6.0, (height - 16.0) / 2.0), vec2(16.0, 16.0)),
-            icon,
-            15.0,
-            if active { t.accent } else { t.text_muted },
-        );
-        let title_pos = rect.min + vec2(28.0, (rect.height() - label_galley.size().y) / 2.0);
-        ui.painter().galley(title_pos, label_galley.clone(), label_color);
-        if dirty {
-            let dot_pos = egui::pos2(title_pos.x + text_w + 6.0, rect.center().y);
-            ui.painter().circle_filled(dot_pos, 3.0, if active { t.accent } else { t.text_muted });
+        let tab_radius = CornerRadius { nw: 7, ne: 7, sw: 0, se: 0 };
+        let tab_stroke = if active {
+            Stroke::new(0.75, t.divider)
+        } else {
+            Stroke::new(0.5, t.divider.gamma_multiply(0.65))
+        };
+        ui.painter().rect(rect, tab_radius, bg, tab_stroke, egui::StrokeKind::Inside);
+
+        if is_icon_only {
+            // Safari-style icon-only compact pill:
+            // Centered icon when idle
+            let icon_rect = Rect::from_center_size(rect.center(), vec2(16.0, 16.0));
+            icons::paint(
+                ui,
+                icon_rect,
+                icon,
+                15.0,
+                if active { t.accent } else { t.text_muted },
+            );
+            if dirty {
+                let dot_pos = egui::pos2(rect.right() - 6.0, rect.top() + 6.0);
+                ui.painter().circle_filled(dot_pos, 3.0, if active { t.accent } else { t.text_muted });
+            }
+        } else {
+            icons::paint(
+                ui,
+                Rect::from_min_size(rect.min + vec2(8.0, (height - 16.0) / 2.0), vec2(16.0, 16.0)),
+                icon,
+                15.0,
+                if active { t.accent } else { t.text_muted },
+            );
+
+            let room = (width - TAB_CHROME).max(0.0);
+            label = crate::panels::ellipsized_prefix(&label, |s| crate::bidi::layout_ltr(ui, s.to_owned(), font.clone(), t.text).size().x <= room);
+
+            let label_color = if active { t.text } else { t.text_muted };
+            let label_galley = crate::bidi::layout_ltr(ui, label.clone(), font.clone(), label_color);
+            let text_w = label_galley.size().x;
+            let title_pos = rect.min + vec2(28.0, (rect.height() - label_galley.size().y) / 2.0);
+            ui.painter().galley(title_pos, label_galley.clone(), label_color);
+
+            if dirty {
+                let dot_pos = egui::pos2(title_pos.x + text_w + 6.0, rect.center().y);
+                ui.painter().circle_filled(dot_pos, 3.0, if active { t.accent } else { t.text_muted });
+            }
         }
     });
-    let x_rect = Rect::from_center_size(rect.right_center() - vec2(16.0, 0.0), vec2(20.0, 20.0));
-    let x = ui.interact(x_rect, id.with("close"), Sense::click());
-    let x_press = theme::Press::track(ui, &x);
-    x_press.wash(ui, x_rect, 4, false);
-    // Unsaved changes: close button or dot when idle; persistent dot beside title stays visible.
-    if active || resp.hovered() || x.hovered() {
-        icons::paint(ui, x_rect.translate(x_press.offset()), "x", 13.0, t.text_muted);
-    } else if dirty {
-        ui.painter().circle_filled(x_rect.center(), 4.0, if active { t.text } else { t.text_muted });
-    }
-    if theme::hand(x).clicked() {
+
+    let x_clicked = if is_icon_only {
+        if resp.hovered() {
+            let x_rect = Rect::from_center_size(rect.right_center() - vec2(10.0, 0.0), vec2(14.0, 14.0));
+            let x = ui.interact(x_rect, id.with("close"), Sense::click());
+            let x_press = theme::Press::track(ui, &x);
+            x_press.wash(ui, x_rect, 3, false);
+            ui.painter().rect_filled(x_rect, CornerRadius::same(3), t.hover);
+            icons::paint(ui, x_rect.translate(x_press.offset()), "x", 11.0, t.text);
+            theme::hand(x).clicked()
+        } else {
+            false
+        }
+    } else {
+        let x_rect = Rect::from_center_size(rect.right_center() - vec2(16.0, 0.0), vec2(20.0, 20.0));
+        let x = ui.interact(x_rect, id.with("close"), Sense::click());
+        let x_press = theme::Press::track(ui, &x);
+        x_press.wash(ui, x_rect, 4, false);
+        if active || resp.hovered() || x.hovered() || !dirty {
+            icons::paint(ui, x_rect.translate(x_press.offset()), "x", 13.0, t.text_muted);
+        } else if dirty {
+            ui.painter().circle_filled(x_rect.center(), 4.0, if active { t.text } else { t.text_muted });
+        }
+        theme::hand(x).clicked()
+    };
+
+    if x_clicked {
         *close = Some(index);
     }
     let shown = match file {
@@ -470,69 +578,108 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
     theme::hand(resp).on_hover_text(if dirty { crate::i18n::fmt(tl!("{name} — unsaved changes"), &[("name", &shown)]) } else { shown })
 }
 
+fn render_right_actions(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, button_size: f32) {
+    ui.spacing_mut().item_spacing.x = 4.0;
+
+    // Theme toggle on the far right.
+    let (icon, label) = match app.theme_preference {
+        ThemePreference::System => ("monitor", tl!("Use system setting")),
+        ThemePreference::Light => ("sun", tl!("Light gray")),
+        ThemePreference::Dark => ("moon", tl!("Dark gray")),
+    };
+    let tip = format!("{}: {label}", tl!("Display theme"));
+    let theme_btn = icons::button(ui, icon, button_size, false, &tip);
+    if theme_btn.clicked() {
+        app.execute(match app.theme_preference {
+            ThemePreference::System => "view.theme.light",
+            ThemePreference::Light => "view.theme.dark",
+            ThemePreference::Dark => "view.theme.system",
+        });
+    }
+    egui::Popup::context_menu(&theme_btn).id(theme_btn.id.with("theme_menu_mode")).show(|ui| appearance_menu(app, ui));
+
+    // Help / About Pagic.
+    let tip = crate::commands::command_tip(ui.ctx(), tl!("About Pagic ({key})"), "help.about");
+    if icons::button(ui, "circle-help", button_size, false, &tip).clicked() {
+        app.dialog = Some(Dialog::About);
+    }
+
+    // Divider before help & theme.
+    ui.add_space(4.0);
+    ui.painter().vline(ui.cursor().left(), ui.max_rect().y_range().shrink(8.0), Stroke::new(1.0, t.divider));
+    ui.add_space(4.0);
+
+    // Document action icons: Print, Save, Info.
+    let has_doc = app.active.is_some();
+    ui.add_enabled_ui(has_doc, |ui| {
+        let tip = crate::commands::command_tip(ui.ctx(), tl!("Print ({key})"), "print.dialog");
+        let may_print = !has_doc || pagic_engine::commands::command("print.dialog").is_some_and(|c| app.command_enabled(c));
+        let mut print = ui.add_enabled_ui(may_print, |ui| icons::button(ui, "printer", button_size, false, &tip)).inner;
+        if !may_print {
+            print = print.on_disabled_hover_text(crate::print_refused());
+        }
+        if print.clicked() {
+            app.run_command("print.dialog");
+        }
+        let tip = crate::commands::command_tip(ui.ctx(), tl!("Save ({key})"), "file.save");
+        if icons::button(ui, "save", button_size, false, &tip).clicked() {
+            app.run_command("file.save");
+        }
+        let tip = crate::commands::command_tip(ui.ctx(), tl!("Document properties ({key})"), "file.properties");
+        if icons::button(ui, "info", button_size, false, &tip).clicked() {
+            app.dialog = Some(Dialog::Properties(PropsTab::Description));
+        }
+    });
+
+    // Divider between search and document actions.
+    ui.add_space(4.0);
+    ui.painter().vline(ui.cursor().left(), ui.max_rect().y_range().shrink(8.0), Stroke::new(1.0, t.divider));
+    ui.add_space(4.0);
+
+    // Search box with enlarged clamp range and keycap shortcut badge.
+    let avail = ui.available_width();
+    if avail >= 110.0 {
+        if widgets::search_box(ui, tl!("Find tools and commands"), avail.clamp(40.0, 280.0)).clicked() {
+            app.palette_open = true;
+        }
+    } else if avail >= 32.0 {
+        let tip = crate::commands::command_tip(ui.ctx(), tl!("Find tools and commands ({key})"), "view.palette");
+        if icons::button(ui, "search", button_size, false, &tip).clicked() {
+            app.palette_open = true;
+        }
+    }
+}
+
 pub fn mode_bar(app: &mut PagicApp, ui: &mut egui::Ui) {
+    // On macOS with integrated titlebar, the unified top bar in tab_strip handles everything.
+    if cfg!(target_os = "macos") && app.integrated_titlebar {
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     egui::Panel::top("mode_bar")
         .exact_size(44.0)
         .frame(egui::Frame::NONE.fill(t.chrome).inner_margin(egui::Margin::symmetric(10, 0)).stroke(Stroke::new(1.0, t.divider)))
         .show(ui, |ui| {
             ui.horizontal_centered(|ui| {
-                ui.spacing_mut().item_spacing.x = 2.0;
+                ui.spacing_mut().item_spacing.x = 4.0;
+                // Home button on the far left.
+                let is_home = app.active.is_none() && !app.combine_showing();
+                let tip = tl!("Home");
+                let home_btn = icons::button(ui, "house", 28.0, is_home, tip);
+                if home_btn.clicked() {
+                    app.active = None;
+                    app.combine_tab.focused = false;
+                }
+                ui.add_space(4.0);
+
                 // The menus, unless the native macOS menu bar has them.
                 if app.native_menu.is_none() {
                     app.menu_bar_ui(ui);
                     ui.add_space(6.0);
-                    ui.painter().vline(ui.cursor().left(), ui.max_rect().y_range().shrink(12.0), Stroke::new(1.0, t.divider));
-                    ui.add_space(10.0);
                 }
-                // Acrobat's mode bar has no Read tab: reading is what the viewer does with no tool
-                // in use. Read mode (the panes hidden) stays a View command and a default workspace.
-                for (mode, label) in [(Mode::AllTools, "All tools"), (Mode::Edit, "Edit"), (Mode::Convert, "Export"), (Mode::Sign, "Fill & Sign")] {
-                    let response = widgets::mode_tab(ui, tl!(label), app.mode == mode);
-                    if mode == Mode::Sign {
-                        // Distinguish the workspace from the same-named All tools entry.
-                        let name = crate::i18n::fmt(tl!("{name} workspace"), &[("name", tl!(label))]);
-                        response.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, ui.is_enabled(), app.mode == mode, name.clone()));
-                    }
-                    if response.clicked() {
-                        app.switch_mode(mode, true);
-                    }
-                }
+
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    ui.spacing_mut().item_spacing.x = 4.0;
-                    let has_doc = app.active.is_some();
-                    ui.add_enabled_ui(has_doc, |ui| {
-                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Print ({key})"), "print.dialog");
-                        // A document that forbids printing says so here, before the dialog (#2669).
-                        let may_print = !has_doc || pagic_engine::commands::command("print.dialog").is_some_and(|c| app.command_enabled(c));
-                        let mut print = ui.add_enabled_ui(may_print, |ui| icons::button(ui, "printer", 32.0, false, &tip)).inner;
-                        if !may_print {
-                            print = print.on_disabled_hover_text(crate::print_refused());
-                        }
-                        if print.clicked() {
-                            app.run_command("print.dialog");
-                        }
-                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Save ({key})"), "file.save");
-                        if icons::button(ui, "save", 32.0, false, &tip).clicked() {
-                            app.run_command("file.save");
-                        }
-                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Document properties ({key})"), "file.properties");
-                        if icons::button(ui, "info", 32.0, false, &tip).clicked() {
-                            app.dialog = Some(Dialog::Properties(PropsTab::Description));
-                        }
-                    });
-                    ui.add_space(8.0);
-                    let avail = ui.available_width();
-                    if avail >= 110.0 {
-                        if widgets::search_box(ui, tl!("Find tools and commands"), avail.clamp(40.0, 220.0)).clicked() {
-                            app.palette_open = true;
-                        }
-                    } else if avail >= 32.0 {
-                        let tip = crate::commands::command_tip(ui.ctx(), tl!("Find tools and commands ({key})"), "view.palette");
-                        if icons::button(ui, "search", 32.0, false, &tip).clicked() {
-                            app.palette_open = true;
-                        }
-                    }
+                    render_right_actions(app, ui, &t, 28.0);
                 });
             });
         });
@@ -805,6 +952,34 @@ mod page_position_tests {
 }
 
 #[cfg(test)]
+fn tab_cap(natural: &[f32], budget: f32, gap: f32, min: f32) -> Option<f32> {
+    let n = natural.len();
+    if n == 0 {
+        return None;
+    }
+    let mut left = budget - gap * (n - 1) as f32;
+    if natural.iter().sum::<f32>() <= left {
+        return None;
+    }
+    let mut sorted = natural.to_vec();
+    sorted.sort_by(f32::total_cmp);
+    for (k, w) in sorted.iter().enumerate() {
+        let share = left / (n - k) as f32;
+        if *w > share {
+            return Some(share.max(min));
+        }
+        left -= w;
+    }
+    None
+}
+
+#[cfg(test)]
+fn tabs_overflow(natural: &[f32], budget: f32, gap: f32, min: f32) -> bool {
+    let narrowest: f32 = natural.iter().map(|&w| w.min(min)).sum();
+    narrowest + gap * natural.len().saturating_sub(1) as f32 > budget
+}
+
+#[cfg(test)]
 mod tab_widths {
     use super::{MAC_CONTENT_LEFT, MAC_LIGHT, MAC_LIGHT_PITCH, MAC_LIGHTS_LEFT, MAC_TITLE_BAR, tab_cap};
 
@@ -821,7 +996,7 @@ mod tab_widths {
     fn wide_tabs_share_what_narrow_ones_leave() {
         let natural = [120.0, 300.0, 300.0];
         let cap = tab_cap(&natural, 500.0, 4.0, 110.0).expect("must shrink");
-        let used: f32 = natural.iter().map(|w| w.min(cap)).sum::<f32>() + 2.0 * 4.0;
+        let used: f32 = natural.iter().map(|&w| w.min(cap)).sum::<f32>() + 2.0 * 4.0;
         assert!((used - 500.0).abs() < 0.01, "{cap} uses {used}");
         assert!((cap - 186.0).abs() < 0.01, "{cap}");
     }

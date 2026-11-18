@@ -47,6 +47,7 @@ impl PagicApp {
             left: LeftPanel::AllTools,
             side_panels: Default::default(),
             left_open: true,
+            sidebar_collapsed: false,
             right: None,
             last_right: RightPanel::Comments,
             right_before_read: None,

@@ -20,7 +20,7 @@ fn harness(setup: impl FnOnce(&mut PagicApp) + 'static) -> Harness<'static, Pagi
 fn workspace_has_no_promotional_links() {
     let h = harness(|_| {});
     assert_eq!(h.root().accesskit_node().label().as_deref(), Some("Pagic"));
-    h.get_by_label("Welcome to Pagic");
+    h.get_by_label("What would you like to do?");
     for label in ["Discord", "Join our Discord", "Join the community", "LegacySuite"] {
         assert!(h.query_by_label(label).is_none(), "{label}");
     }
