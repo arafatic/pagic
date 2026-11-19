@@ -240,6 +240,11 @@ impl PagicApp {
             "create.images" => self.create_from_images_dialog(),
             "create.clipboard" => self.create_from_clipboard(),
             "optimize.reduce" => self.reduce_file_size(),
+            "optimize.audit" => {
+                self.refresh_space_audit();
+                self.dialog = Some(Dialog::Properties(PropsTab::SpaceAudit));
+            }
+            "help.docs" => self.dialog = Some(Dialog::Documentation),
             "help.shortcuts" => self.dialog = Some(Dialog::Shortcuts),
             "help.about" => self.dialog = Some(Dialog::About),
             "help.credits" => self.dialog = Some(Dialog::CreditsLicenses),
@@ -498,7 +503,18 @@ impl PagicApp {
                 };
                 self.apply_edit(Edit::RemoveMarks { kind });
             }
-            "export.image" => self.dialog = Some(Dialog::Export(crate::export_ui::ExportKind::Image)),
+            "export.image" => {
+                self.export_draft.format = pagic_engine::export::ImageFormat::Png;
+                self.dialog = Some(Dialog::Export(crate::export_ui::ExportKind::Image));
+            }
+            "export.jpeg" => {
+                self.export_draft.format = pagic_engine::export::ImageFormat::Jpeg { quality: 90 };
+                self.dialog = Some(Dialog::Export(crate::export_ui::ExportKind::Image));
+            }
+            "export.tiff" => {
+                self.export_draft.format = pagic_engine::export::ImageFormat::Tiff;
+                self.dialog = Some(Dialog::Export(crate::export_ui::ExportKind::Image));
+            }
             "export.text" => self.dialog = Some(Dialog::Export(crate::export_ui::ExportKind::Text)),
             "ocr.recognize" => self.dialog = Some(Dialog::RecognizeText),
             "ocr.recognize_batch" => self.ocr_files_dialog(),
@@ -557,9 +573,12 @@ impl PagicApp {
                 }
             }
             "export.docx" => self.export_office_dialog(pagic_engine::compare::OfficeFormat::Docx),
+            "export.xlsx" => self.export_office_dialog(pagic_engine::compare::OfficeFormat::Xlsx),
             "export.pptx" => self.export_office_dialog(pagic_engine::compare::OfficeFormat::Pptx),
             "export.html" => self.export_office_dialog(pagic_engine::compare::OfficeFormat::Html),
             "export.rtf" => self.export_office_dialog(pagic_engine::compare::OfficeFormat::Rtf),
+            "export.xml" => self.export_office_dialog(pagic_engine::compare::OfficeFormat::Xml),
+            "export.csv" => self.export_office_dialog(pagic_engine::compare::OfficeFormat::Csv),
             "ocr.enhance_camera" => {
                 // The corners start on the document's edges when they can be found, else
                 // inset on the current page (camera_ui::page_input).

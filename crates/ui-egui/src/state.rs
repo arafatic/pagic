@@ -106,6 +106,7 @@ pub enum Dialog {
     Properties(PropsTab),
     About,
     CreditsLicenses,
+    Documentation,
     Shortcuts,
     UpdateAvailable,
     Split,

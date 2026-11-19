@@ -39,8 +39,8 @@ pub(super) fn edit_panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, g: &
         if icons::button(ui, "settings", 26.0, false, settings).clicked() {
             run = Some("app.preferences");
         }
-        if icons::button(ui, "x", 26.0, false, tl!("Close panel")).clicked() {
-            app.left_open = false;
+        if icons::button(ui, "panel-left-close", 29.0, false, tl!("Collapse sidebar")).clicked() {
+            app.sidebar_collapsed = true;
         }
     });
     ui.add_space(4.0);
@@ -200,9 +200,8 @@ fn edit_row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability
     row_label(ui, label, theme::regular(13.5), fg, body.left_center() + vec2(34.0, 0.0), rect.width() - 42.0);
     let resp = theme::hand(resp);
     match availability {
-        Availability::Ready => resp,
-        Availability::Planned(m) => resp.on_hover_text(format!("{} {m}", tl!("Planned for milestone"))),
-        Availability::Provider => resp.on_hover_text(tl!("Optional: needs an AI provider you configure")),
+        Availability::Ready | Availability::Planned(_) => resp,
+        Availability::Provider => resp.on_hover_text(tl!("Needs an AI provider you configure")),
     }
 }
 

@@ -119,7 +119,7 @@ fn tile(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, items: &[&'static str]) ->
     ui.painter().rect(rect, CornerRadius::same(3), press.fill(t.card, t.hover, t.pressed), Stroke::new(1.0, t.divider), egui::StrokeKind::Inside);
     let body = rect.translate(press.offset());
     let ready = g.availability == Availability::Ready;
-    let hue = t.icon;
+    let hue = if ready { t.icon } else { t.text_faint };
     icons::paint(ui, Rect::from_center_size(body.center_top() + vec2(0.0, 34.0), vec2(32.0, 32.0)), g.icon, 30.0, hue);
     let mut job =
         egui::text::LayoutJob::simple(tl!(g.label).to_owned(), theme::medium(13.0), if ready { t.text } else { t.text_muted }, body.width() - 16.0);
@@ -132,8 +132,7 @@ fn tile(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, items: &[&'static str]) ->
     // What found the tool, or else whether it works today.
     let note = if items.is_empty() {
         match g.availability {
-            Availability::Ready => String::new(),
-            Availability::Planned(m) => format!("{} · {m}", tl!("Planned")),
+            Availability::Ready | Availability::Planned(_) => String::new(),
             Availability::Provider => g.badge.map(|b| tl!(b).to_owned()).unwrap_or_default(),
         }
     } else {

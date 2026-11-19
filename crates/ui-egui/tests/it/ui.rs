@@ -163,7 +163,7 @@ fn every_catalog_tool_is_listed_after_view_more() {
 #[test]
 fn expanded_all_tools_lists_every_tool_by_category_and_searches() {
     let mut h = harness(|_| {});
-    h.get_by_label("Expand all tools").click();
+    h.state_mut().set_option("tools", "full").unwrap();
     h.run_steps(3);
     assert!(h.state().all_tools_full);
     for c in pagic_engine::catalog::TOOL_CATEGORIES {
@@ -176,7 +176,7 @@ fn expanded_all_tools_lists_every_tool_by_category_and_searches() {
     h.state_mut().all_tools_query = "rotate".into();
     h.run_steps(3);
     assert_eq!(h.query_all_by_label("Organize pages").count(), 1, "only the expanded view's tile; the sidebar is gone");
-    assert!(h.query_by_label("Forms & Signatures").is_none());
+    assert!(h.query_by_label("Protect & Sign").is_none());
     h.state_mut().all_tools_query = "no such tool".into();
     h.run_steps(3);
     h.get_by_label("No tools match your search.");
@@ -196,8 +196,7 @@ fn collapse_and_escape_close_the_expanded_all_tools() {
     h.get_by_label("Collapse all tools").click();
     h.run_steps(3);
     assert!(!h.state().all_tools_full);
-    h.get_by_label("View more");
-    h.get_by_label("Expand all tools").click();
+    h.state_mut().set_option("tools", "full").unwrap();
     h.run_steps(3);
     h.key_press(egui::Key::Escape);
     h.run_steps(3);
@@ -1898,10 +1897,9 @@ fn home_convert_lists_working_formats_and_merge_opens_the_workflow() {
         .unwrap()
         .click();
     h.run_steps(3);
-    for label in ["Word (.docx)", "PowerPoint (.pptx)", "Images", "Plain text", "HTML", "Rich text (.rtf)"] {
+    for label in ["Word (.docx)", "Spreadsheet (.xlsx)", "PowerPoint (.pptx)", "Images (PNG)", "Images (JPEG)", "Images (TIFF)", "Plain text", "HTML", "Rich text (.rtf)", "XML (.xml)", "CSV (.csv)"] {
         h.get_by_label(label);
     }
-    assert!(h.query_by_label("Spreadsheet (.xlsx)").is_none());
     let mut h = harness(|_| {});
     h.query_all_by_label("Merge").max_by(|a, b| a.rect().height().total_cmp(&b.rect().height())).unwrap().click();
     h.run_steps(4);

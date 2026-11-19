@@ -35,9 +35,9 @@ fn side(h: &Harness<'static, PagicApp>) -> egui::Rect {
     h.get_by_label(NO_BOOKMARKS).rect()
 }
 
-/// The Tools pane's All tools header button.
+/// A tool button inside the Tools pane.
 fn tools(h: &Harness<'static, PagicApp>) -> egui::Rect {
-    h.get_by_label("Expand all tools").rect()
+    h.get_by_label("Create PDF").rect()
 }
 
 #[test]

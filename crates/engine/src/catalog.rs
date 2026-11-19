@@ -84,12 +84,16 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Export to",
             items: &[
                 item("Microsoft Word (.docx)", "file-text", "export.docx", Ready),
-                item("Spreadsheet (.xlsx)", "grid-3x3", "export.xlsx", Planned("M10")),
+                item("Spreadsheet (.xlsx)", "grid-3x3", "export.xlsx", Ready),
                 item("Presentation (.pptx)", "presentation", "export.pptx", Ready),
                 item("Image (PNG)", "image", "export.image", Ready),
+                item("Image (JPEG)", "image", "export.jpeg", Ready),
+                item("Image (TIFF)", "image", "export.tiff", Ready),
                 item("Export all images", "image", "export.all_images", Ready),
                 item("HTML web page", "file-symlink", "export.html", Ready),
                 item("Rich Text Format (.rtf)", "file-text", "export.rtf", Ready),
+                item("XML 1.0 (.xml)", "braces", "export.xml", Ready),
+                item("CSV (.csv)", "grid-3x3", "export.csv", Ready),
                 item("Text (plain)", "type", "export.text", Ready),
                 item("PostScript / EPS", "file-down", "export.ps", Planned("M10")),
             ],
@@ -325,7 +329,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             items: &[
                 item("Reduce file size", "file-down", "optimize.reduce", Ready),
                 item("Advanced optimization", "settings-2", "optimize.advanced", Ready),
-                item("Audit space usage", "gauge", "optimize.audit", Planned("M11")),
+                item("Audit space usage", "gauge", "optimize.audit", Ready),
             ],
         }],
     },
@@ -559,11 +563,14 @@ pub struct ToolCategory {
 }
 
 pub static TOOL_CATEGORIES: &[ToolCategory] = &[
-    ToolCategory { label: "Create & Edit", groups: &["create", "edit", "export", "combine", "organize", "scan", "compress"] },
-    ToolCategory { label: "Review & Compare", groups: &["comment", "stamp", "compare", "measure"] },
-    ToolCategory { label: "Forms & Signatures", groups: &["fill_sign", "form", "certificate"] },
-    ToolCategory { label: "Protect & Standardize", groups: &["protect", "redact", "accessibility", "standards", "print_production"] },
-    ToolCategory { label: "Customize & Automate", groups: &["actions", "javascript", "search_index", "ai"] },
+    ToolCategory { label: "Create & Edit", groups: &["create", "edit", "form", "comment", "stamp"] },
+    ToolCategory { label: "Organize", groups: &["combine", "organize", "compress", "compare"] },
+    ToolCategory { label: "Convert", groups: &["export", "scan"] },
+    ToolCategory { label: "Protect & Sign", groups: &["fill_sign", "certificate", "protect", "redact"] },
+    ToolCategory {
+        label: "Advanced & Automate",
+        groups: &["standards", "accessibility", "actions", "ai", "measure", "print_production", "javascript", "search_index"],
+    },
 ];
 
 #[cfg(test)]

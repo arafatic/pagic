@@ -33,6 +33,7 @@ mod fallback;
 mod interp;
 mod lines;
 mod rewrite;
+mod ruling;
 
 use blocks::paragraph_separator;
 #[cfg(test)]
@@ -41,6 +42,7 @@ pub use blocks::{
     BlockKey, BlockStyle, RangeStyle, ReadingBlocks, TextBlock, block_overlapping, clear_block, reading_blocks, reading_blocks_checked,
     replace_block, text_blocks,
 };
+pub use ruling::{RulingSegment, page_ruling_lines};
 use editor::layout_draft;
 pub use editor::{TextEditLayout, TextEditorFont, register_text_font, text_edit_layout, text_editor_fonts};
 #[cfg(test)]

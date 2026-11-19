@@ -5,7 +5,7 @@ exclude = ["vendor", "vendor/pagic-libs", "vendor/pagic-winit"]
 default-members = ["crates/*", "apps/pagic", "apps/pagic-cli", "xtask"]
 
 [workspace.package]
-version = "0.14.0"
+version = "0.14.1"
 edition = "2024"
 authors = ["Arafat <typearaf@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -26,39 +26,39 @@ craft-print = { path = "vendor/pagic-libs/crates/print", version = "0.1.0" }
 craft-docpath = { version = "0.1.0", path = "vendor/pagic-libs/crates/docpath" }
 craft-update = { path = "vendor/pagic-libs/crates/update", version = "=0.1.0", features = ["egui"] }
 # internal
-pagic-geom = { path = "crates/geom", version = "0.14.0" }
-pagic-filters = { path = "crates/filters", version = "0.14.0" }
-pagic-cos = { path = "crates/cos", version = "0.14.0" }
-pagic-crypt = { path = "crates/crypt", version = "0.14.0" }
-pagic-organize = { path = "crates/organize", version = "0.14.0" }
-pagic-measure = { path = "crates/measure", version = "0.14.0" }
-pagic-annot = { path = "crates/annot", version = "0.14.0" }
-pagic-audit = { path = "crates/audit", version = "0.14.0" }
-pagic-fonts = { path = "crates/fonts", version = "0.14.0" }
-pagic-model = { path = "crates/model", version = "0.14.0" }
-pagic-content = { path = "crates/content", version = "0.14.0" }
-pagic-redact = { path = "crates/redact", version = "0.14.0" }
-pagic-print = { path = "crates/print", version = "0.14.0" }
-pagic-xfdf = { path = "crates/xfdf", version = "0.14.0" }
-pagic-sign = { path = "crates/sign", version = "0.14.0" }
-pagic-optimize = { path = "crates/optimize", version = "0.14.0" }
-pagic-a11y = { path = "crates/a11y", version = "0.14.0" }
-pagic-oracle = { path = "crates/oracle", version = "0.14.0" }
-pagic-testkit = { path = "crates/testkit", version = "0.14.0" }
-pagic-ocr = { path = "crates/ocr", version = "0.14.0" }
-pagic-js = { path = "crates/js", version = "0.14.0" }
-pagic-compare = { path = "crates/compare", version = "0.14.0" }
-pagic-preflight = { path = "crates/preflight", version = "0.14.0" }
-pagic-export = { path = "crates/export", version = "0.14.0" }
-pagic-edit = { path = "crates/edit", version = "0.14.0" }
-pagic-create = { path = "crates/create", version = "0.14.0" }
-pagic-forms = { path = "crates/forms", version = "0.14.0" }
-pagic-xfa = { path = "crates/xfa", version = "0.14.0" }
-pagic-render = { path = "crates/render", version = "0.14.0" }
-pagic-engine = { path = "crates/engine", version = "0.14.0" }
-pagic-platform = { path = "crates/platform", version = "0.14.0" }
-pagic-ui-egui = { path = "crates/ui-egui", version = "0.14.0" }
-pagic-automation = { path = "crates/automation", version = "0.14.0", default-features = false }
+pagic-geom = { path = "crates/geom", version = "0.14.1" }
+pagic-filters = { path = "crates/filters", version = "0.14.1" }
+pagic-cos = { path = "crates/cos", version = "0.14.1" }
+pagic-crypt = { path = "crates/crypt", version = "0.14.1" }
+pagic-organize = { path = "crates/organize", version = "0.14.1" }
+pagic-measure = { path = "crates/measure", version = "0.14.1" }
+pagic-annot = { path = "crates/annot", version = "0.14.1" }
+pagic-audit = { path = "crates/audit", version = "0.14.1" }
+pagic-fonts = { path = "crates/fonts", version = "0.14.1" }
+pagic-model = { path = "crates/model", version = "0.14.1" }
+pagic-content = { path = "crates/content", version = "0.14.1" }
+pagic-redact = { path = "crates/redact", version = "0.14.1" }
+pagic-print = { path = "crates/print", version = "0.14.1" }
+pagic-xfdf = { path = "crates/xfdf", version = "0.14.1" }
+pagic-sign = { path = "crates/sign", version = "0.14.1" }
+pagic-optimize = { path = "crates/optimize", version = "0.14.1" }
+pagic-a11y = { path = "crates/a11y", version = "0.14.1" }
+pagic-oracle = { path = "crates/oracle", version = "0.14.1" }
+pagic-testkit = { path = "crates/testkit", version = "0.14.1" }
+pagic-ocr = { path = "crates/ocr", version = "0.14.1" }
+pagic-js = { path = "crates/js", version = "0.14.1" }
+pagic-compare = { path = "crates/compare", version = "0.14.1" }
+pagic-preflight = { path = "crates/preflight", version = "0.14.1" }
+pagic-export = { path = "crates/export", version = "0.14.1" }
+pagic-edit = { path = "crates/edit", version = "0.14.1" }
+pagic-create = { path = "crates/create", version = "0.14.1" }
+pagic-forms = { path = "crates/forms", version = "0.14.1" }
+pagic-xfa = { path = "crates/xfa", version = "0.14.1" }
+pagic-render = { path = "crates/render", version = "0.14.1" }
+pagic-engine = { path = "crates/engine", version = "0.14.1" }
+pagic-platform = { path = "crates/platform", version = "0.14.1" }
+pagic-ui-egui = { path = "crates/ui-egui", version = "0.14.1" }
+pagic-automation = { path = "crates/automation", version = "0.14.1", default-features = false }
 
 # pdf
 hayro = "0.7.1"

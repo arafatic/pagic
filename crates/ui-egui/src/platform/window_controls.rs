@@ -84,6 +84,12 @@ pub fn width(buttons: &[Button]) -> f32 {
 /// layout running left to right; the caller adds [`SIDE_GAP`] where the strip continues.
 pub fn buttons(ui: &mut egui::Ui, buttons: &[Button]) {
     let t = Tokens::get(ui.ctx());
+    buttons_tinted(ui, buttons, t.text);
+}
+
+/// Draw the window buttons using an explicit foreground color `fg` (e.g. light icons on a black title bar).
+pub fn buttons_tinted(ui: &mut egui::Ui, buttons: &[Button], fg: egui::Color32) {
+    let t = Tokens::get(ui.ctx());
     let maximized = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
     for (n, &button) in buttons.iter().enumerate() {
         if n > 0 {
@@ -99,7 +105,7 @@ pub fn buttons(ui: &mut egui::Ui, buttons: &[Button]) {
         response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, label));
         let response = response.on_hover_text(label);
         if ui.is_rect_visible(rect) {
-            paint(ui.painter(), rect, button, maximized, &t, &response);
+            paint(ui.painter(), rect, button, maximized, &t, fg, &response);
         }
         if response.clicked() {
             let command = match button {
@@ -115,7 +121,7 @@ pub fn buttons(ui: &mut egui::Ui, buttons: &[Button]) {
 
 /// Adwaita's look: a round wash of the text colour, stronger on hover and press, and a 16-point
 /// symbolic glyph drawn with lines (no icon files).
-fn paint(painter: &egui::Painter, rect: Rect, button: Button, maximized: bool, t: &Tokens, response: &egui::Response) {
+fn paint(painter: &egui::Painter, rect: Rect, button: Button, maximized: bool, t: &Tokens, fg: egui::Color32, response: &egui::Response) {
     let alpha = if response.is_pointer_button_down_on() {
         0.28
     } else if response.hovered() {
@@ -123,11 +129,11 @@ fn paint(painter: &egui::Painter, rect: Rect, button: Button, maximized: bool, t
     } else {
         0.10
     };
-    painter.circle_filled(rect.center(), BUTTON / 2.0, t.text.gamma_multiply(alpha));
+    painter.circle_filled(rect.center(), BUTTON / 2.0, fg.gamma_multiply(alpha));
     if response.has_focus() {
         painter.circle_stroke(rect.center(), BUTTON / 2.0 - 0.5, Stroke::new(1.0, t.accent));
     }
-    let stroke = Stroke::new(1.25, t.text);
+    let stroke = Stroke::new(1.25, fg);
     // The glyph's 16-point square, its corners on pixel centres so lines stay crisp.
     let c = rect.center();
     let at = |x: f32, y: f32| Pos2::new((c.x - 8.0 + x).round() + 0.5, (c.y - 8.0 + y).round() + 0.5);

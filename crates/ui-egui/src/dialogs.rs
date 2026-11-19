@@ -10,6 +10,7 @@ use crate::{CloseRequest, Dialog, PagicApp, PropsTab, panels::human_size, widget
 pub(super) mod appearance;
 pub(super) mod comment_props;
 pub(super) mod credits;
+pub(super) mod docs;
 mod licenses;
 pub(super) mod marks_ui;
 pub(super) mod pageboxes;
@@ -432,6 +433,11 @@ fn dialog_body(ui: &mut egui::Ui, app: &mut PagicApp, dialog: Dialog, req: &mut 
             }
         }
         Dialog::CreditsLicenses => return dialog_credits(ui, req),
+        Dialog::Documentation => {
+            if !docs::show(ui, app) {
+                return false;
+            }
+        }
         Dialog::UpdateAvailable => {
             if !dialog_update(ui, app, req) {
                 return false;

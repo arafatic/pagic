@@ -134,31 +134,40 @@ impl Session {
     }
 }
 
-/// Export a PDF ▸ Word, PowerPoint, HTML or RTF.
+/// Export a PDF ▸ Word, Excel, PowerPoint, HTML, RTF, XML or CSV.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OfficeFormat {
     Docx,
+    Xlsx,
     Pptx,
     Html,
     Rtf,
+    Xml,
+    Csv,
 }
 
 impl OfficeFormat {
     pub fn extension(self) -> &'static str {
         match self {
             OfficeFormat::Docx => "docx",
+            OfficeFormat::Xlsx => "xlsx",
             OfficeFormat::Pptx => "pptx",
             OfficeFormat::Html => "html",
             OfficeFormat::Rtf => "rtf",
+            OfficeFormat::Xml => "xml",
+            OfficeFormat::Csv => "csv",
         }
     }
 
     pub fn from_extension(ext: &str) -> Option<OfficeFormat> {
         match ext.to_ascii_lowercase().as_str() {
             "docx" => Some(OfficeFormat::Docx),
+            "xlsx" => Some(OfficeFormat::Xlsx),
             "pptx" => Some(OfficeFormat::Pptx),
             "html" | "htm" => Some(OfficeFormat::Html),
             "rtf" => Some(OfficeFormat::Rtf),
+            "xml" => Some(OfficeFormat::Xml),
+            "csv" => Some(OfficeFormat::Csv),
             _ => None,
         }
     }
@@ -267,6 +276,37 @@ impl crate::Document {
         (pages, truncated)
     }
 
+    /// Extract axis-aligned vector ruling lines per page in visible view coordinates (y-up).
+    fn export_rulings(&self) -> Vec<pagic_export::RulingLines> {
+        let Some(cos) = self.editor.as_ref().map(|e| &e.cos) else {
+            return Vec::new();
+        };
+        self.info
+            .pages
+            .iter()
+            .enumerate()
+            .map(|(i, info)| {
+                let visible_rect = |r: [f64; 4]| {
+                    let a = info.user_to_view(r[0] as f32, r[1] as f32);
+                    let b = info.user_to_view(r[2] as f32, r[3] as f32);
+                    [a[0].min(b[0]) as f64, (info.height - a[1].max(b[1])) as f64, a[0].max(b[0]) as f64, (info.height - a[1].min(b[1])) as f64]
+                };
+                let mut out = pagic_export::RulingLines::default();
+                for seg in pagic_edit::page_ruling_lines(cos, i).unwrap_or_default() {
+                    let vr = visible_rect(seg.rect);
+                    let dx = (vr[2] - vr[0]).abs();
+                    let dy = (vr[3] - vr[1]).abs();
+                    if dx >= dy && dx >= 4.0 {
+                        out.h.push([0.5 * (vr[1] + vr[3]), vr[0], vr[2]]);
+                    } else if dy > dx && dy >= 4.0 {
+                        out.v.push([0.5 * (vr[0] + vr[2]), vr[1], vr[3]]);
+                    }
+                }
+                out
+            })
+            .collect()
+    }
+
     /// The document as a Word, PowerPoint, HTML or RTF file.
     pub fn export_office(&self, format: OfficeFormat) -> Vec<u8> {
         self.export_office_checked(format).bytes
@@ -275,14 +315,18 @@ impl crate::Document {
     /// [`Self::export_office`], and the pages whose text it had to leave out
     /// ([`OfficeExport::truncated_pages`]).
     pub fn export_office_checked(&self, format: OfficeFormat) -> OfficeExport {
-        // RTF leaves pictures out.
-        let (pages, truncated_pages) = self.export_pages_checked(format != OfficeFormat::Rtf, MAX_EXPORT_IMAGE_BYTES);
+        // Text-only formats skip extracting embedded pictures.
+        let needs_images = !matches!(format, OfficeFormat::Rtf | OfficeFormat::Xlsx | OfficeFormat::Csv);
+        let (pages, truncated_pages) = self.export_pages_checked(needs_images, MAX_EXPORT_IMAGE_BYTES);
         let title = self.info.title.clone().unwrap_or_else(|| self.name.trim_end_matches(".pdf").to_string());
         let bytes = match format {
             OfficeFormat::Docx => pagic_export::docx(&pages, &title),
+            OfficeFormat::Xlsx => pagic_export::xlsx_with_rulings(&pages, &self.export_rulings(), &title),
             OfficeFormat::Pptx => pagic_export::pptx(&pages, &title),
             OfficeFormat::Html => pagic_export::html(&pages, &title).into_bytes(),
             OfficeFormat::Rtf => pagic_export::rtf(&pages).into_bytes(),
+            OfficeFormat::Xml => pagic_export::xml(&pages, &title).into_bytes(),
+            OfficeFormat::Csv => pagic_export::csv(&pages).into_bytes(),
         };
         OfficeExport { bytes, truncated_pages }
     }

@@ -769,3 +769,74 @@ fn a_paragraph_is_a_heading_only_when_its_text_is() {
     assert!(!xml.contains("Heading2"), "the lead-in made its paragraph a heading: {xml}");
     assert_eq!(word_paragraphs(&xml).len(), 2, "{xml}");
 }
+
+#[test]
+fn xlsx_xml_and_csv_export_tables_and_paragraphs() {
+    let blocks = vec![
+        Block { size: 20.0, ..block("Sales Report", 72.0, 740.0, 220.0, 760.0) },
+        block("Item", 72.0, 700.0, 120.0, 712.0),
+        block("Qty", 200.0, 700.0, 240.0, 712.0),
+        block("Widget", 72.0, 680.0, 130.0, 692.0),
+        block("42", 200.0, 680.0, 230.0, 692.0),
+    ];
+    let p = Page { width: 612.0, height: 792.0, blocks, images: Vec::new(), background: None };
+    let pages = std::slice::from_ref(&p);
+
+    let xlsx_bytes = xlsx(pages, "Sales");
+    let sheet_xml = part(&xlsx_bytes, "xl/worksheets/sheet1.xml");
+    assert!(sheet_xml.contains("Sales Report"), "{sheet_xml}");
+    assert!(sheet_xml.contains("Widget"), "{sheet_xml}");
+    assert!(sheet_xml.contains("42"), "{sheet_xml}");
+
+    let xml_str = xml(pages, "Sales");
+    assert!(xml_str.contains("Sales Report"), "{xml_str}");
+    assert!(xml_str.contains("<table>") && xml_str.contains("<cell>Widget</cell>"), "{xml_str}");
+
+    let csv_str = csv(pages);
+    assert!(csv_str.contains("Sales Report"), "{csv_str}");
+    assert!(csv_str.contains("Item,Qty"), "{csv_str}");
+    assert!(csv_str.contains("Widget,42"), "{csv_str}");
+}
+
+#[test]
+fn xlsx_lattice_handles_merged_cells_multiline_and_hybrid_stream() {
+    // Title above the table (stream mode) + 3-col, 3-row bordered table:
+    // Row 0 (table): [Merged A2:B2 "Summary"] [C2 "Total"]
+    // Row 1 (table): [A3 "Line 1\nLine 2"] [B3 "100"] [C3..C4 rowspan "Note"]
+    // Row 2 (table): [A4 "Item B"] [B4 "200"]
+    let blocks = vec![
+        Block { size: 16.0, bold: true, ..block("Quarterly Report", 72.0, 740.0, 220.0, 756.0) },
+        Block { bold: true, ..block("Summary", 90.0, 685.0, 160.0, 697.0) },
+        Block { bold: true, ..block("Total", 310.0, 685.0, 350.0, 697.0) },
+        block("Line 1", 80.0, 648.0, 130.0, 660.0),
+        block("Line 2", 80.0, 632.0, 130.0, 644.0),
+        block("100", 210.0, 640.0, 240.0, 652.0),
+        block("Note", 310.0, 610.0, 350.0, 622.0),
+        block("Item B", 80.0, 580.0, 130.0, 592.0),
+        block("200", 210.0, 580.0, 240.0, 592.0),
+    ];
+    let p = Page { width: 612.0, height: 792.0, blocks, images: Vec::new(), background: None };
+
+    // Table bounds: x = [70, 190, 290, 390], y = [710, 670, 620, 570]
+    let rulings = RulingLines {
+        h: vec![
+            [710.0, 70.0, 390.0], // top
+            [670.0, 70.0, 390.0], // below row 0
+            [620.0, 70.0, 290.0], // below row 1 (missing in col 2 -> C3:C4 rowspan!)
+            [570.0, 70.0, 390.0], // bottom
+        ],
+        v: vec![
+            [70.0, 570.0, 710.0],  // left
+            [190.0, 570.0, 670.0], // col 0/1 divider (missing in row 0 -> A2:B2 colspan!)
+            [290.0, 570.0, 710.0], // col 1/2 divider
+            [390.0, 570.0, 710.0], // right
+        ],
+    };
+
+    let bytes = xlsx_with_rulings(std::slice::from_ref(&p), std::slice::from_ref(&rulings), "Lattice");
+    let sheet_xml = part(&bytes, "xl/worksheets/sheet1.xml");
+    assert!(sheet_xml.contains("Quarterly Report"), "{sheet_xml}");
+    assert!(sheet_xml.contains("Line 1\nLine 2"), "expected multiline cell in {sheet_xml}");
+    assert!(sheet_xml.contains("<mergeCell ref=\"A2:B2\"/>"), "expected colspan merge in {sheet_xml}");
+    assert!(sheet_xml.contains("<mergeCell ref=\"C3:C4\"/>"), "expected rowspan merge in {sheet_xml}");
+}

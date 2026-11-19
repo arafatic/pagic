@@ -16,11 +16,15 @@ mod zip;
 pub use pptx::pptx;
 pub use zip::Zip;
 
+mod as_csv;
 mod as_docx;
 mod as_html;
 mod as_rtf;
+mod as_xlsx;
+mod as_xml;
 mod layout;
 
+pub use as_csv::csv;
 pub use as_docx::docx;
 pub(crate) use as_docx::hex;
 #[cfg(test)]
@@ -30,6 +34,8 @@ pub use as_html::html;
 #[cfg(test)]
 use as_html::{allowed, base64};
 pub use as_rtf::rtf;
+pub use as_xlsx::{RulingLines, xlsx, xlsx_with_rulings};
+pub use as_xml::xml;
 pub use layout::{Block, Cell, Image, Page, Table};
 #[cfg(test)]
 use layout::{LOOKUP_STEPS, MAX_COLS, body_size};

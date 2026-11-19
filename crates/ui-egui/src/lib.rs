@@ -319,6 +319,7 @@ pub struct PagicApp {
     pub(crate) print_tasks: print_ui::PrintTasks,
     pub palette_open: bool,
     pub palette_query: String,
+    pub docs_query: String,
     pub all_tools_expanded: bool,
     /// The All tools view fills the workspace (its sidebar's expand button).
     pub all_tools_full: bool,

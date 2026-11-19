@@ -76,11 +76,16 @@ pub fn show(app: &mut PagicApp, ui: &mut egui::Ui) {
                         egui::Popup::menu(&resp).show(|ui| {
                             for (format, command) in [
                                 ("Word (.docx)", "export.docx"),
+                                ("Spreadsheet (.xlsx)", "export.xlsx"),
                                 ("PowerPoint (.pptx)", "export.pptx"),
-                                ("Images", "export.image"),
+                                ("Images (PNG)", "export.image"),
+                                ("Images (JPEG)", "export.jpeg"),
+                                ("Images (TIFF)", "export.tiff"),
                                 ("Plain text", "export.text"),
                                 ("HTML", "export.html"),
                                 ("Rich text (.rtf)", "export.rtf"),
+                                ("XML (.xml)", "export.xml"),
+                                ("CSV (.csv)", "export.csv"),
                             ] {
                                 if ui.button(format).clicked() {
                                     app.run_command(command);

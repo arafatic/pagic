@@ -200,9 +200,19 @@ fn main() -> eframe::Result {
     }
     let files = rejoin_split_paths(files, |p| std::path::Path::new(p).is_file());
     let integrated = cfg!(target_os = "macos");
-    // macOS has a unified tab bar with in-bar sliding traffic lights; GNOME on Wayland uses app decorations.
-    let window_controls = if cfg!(target_os = "windows") || cfg!(target_os = "macos") {
+    // macOS has a unified single top bar; Windows uses a 2-bar layout (black menu+controls bar + unified tab/action bar);
+    // GNOME on Wayland uses app decorations.
+    let window_controls = if cfg!(target_os = "macos") {
         None
+    } else if cfg!(target_os = "windows") {
+        Some(pagic_ui_egui::window_controls::Layout {
+            left: Vec::new(),
+            right: vec![
+                pagic_ui_egui::window_controls::Button::Minimize,
+                pagic_ui_egui::window_controls::Button::Maximize,
+                pagic_ui_egui::window_controls::Button::Close,
+            ],
+        })
     } else {
         decorations::app_drawn()
     };

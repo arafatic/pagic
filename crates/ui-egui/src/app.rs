@@ -80,6 +80,7 @@ impl PagicApp {
             print_tasks: print_ui::PrintTasks::default(),
             palette_open: false,
             palette_query: String::new(),
+            docs_query: String::new(),
             all_tools_expanded: false,
             all_tools_full: false,
             all_tools_query: String::new(),

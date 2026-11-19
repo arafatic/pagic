@@ -47,7 +47,7 @@ pub(crate) fn panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
     let n = info.pages.len();
     let mut act: Option<Act> = None;
     let mut back = false;
-    let mut close = false;
+    let close = false;
     let Some(view) = app.views.get_mut(index) else { return };
 
     ui.horizontal(|ui| {
@@ -58,8 +58,8 @@ pub(crate) fn panel(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens) {
         let title_width = (ui.available_width() - 26.0 - ui.spacing().item_spacing.x).max(1.0);
         ui.add_sized([title_width, 26.0], egui::Label::new(egui::RichText::new(title).font(theme::semibold(15.5)).color(t.text)).truncate())
             .on_hover_text(title);
-        if icons::button(ui, "x", 26.0, false, tl!("Close panel")).clicked() {
-            close = true;
+        if icons::button(ui, "panel-left-close", 29.0, false, tl!("Collapse sidebar")).clicked() {
+            app.sidebar_collapsed = true;
         }
     });
     ui.add_space(4.0);
@@ -215,7 +215,7 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
     }
     match availability {
         Availability::Ready => theme::hand(resp),
-        Availability::Later => resp.on_hover_text(tl!("Planned")),
+        Availability::Later => resp,
     }
 }
 

@@ -115,6 +115,21 @@ pub fn show(app: &mut PagicApp, ctx: &egui::Context) {
             }
         }
     }
+    if !q.is_empty() {
+        for (di, doc) in super::docs::matches(&q).into_iter().take(3).enumerate() {
+            hits.push((
+                20 + di,
+                Hit {
+                    group: None,
+                    label: doc.question.to_owned(),
+                    detail: tl!("Documentation").into(),
+                    icon: "book-open",
+                    command: Some("help.docs"),
+                    ready: true,
+                },
+            ));
+        }
+    }
     hits.sort_by_key(|(s, h)| (*s, !h.ready));
     hits.truncate(12);
     let (down, up) = ctx.input(|i| (i.key_pressed(egui::Key::ArrowDown), i.key_pressed(egui::Key::ArrowUp)));
@@ -223,12 +238,16 @@ pub fn show(app: &mut PagicApp, ctx: &egui::Context) {
     });
 
     if let Some((command, group)) = chosen {
+        let query = app.palette_query.trim().to_owned();
         app.palette_open = false;
         app.palette_query.clear();
         if let Some(g) = group {
             app.select_tool(g);
         }
         if let Some(c) = command {
+            if c == "help.docs" {
+                app.docs_query = query;
+            }
             app.run_command(c);
         }
     }

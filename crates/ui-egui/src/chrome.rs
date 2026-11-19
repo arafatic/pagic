@@ -23,20 +23,92 @@ const TAB_STRIP: f32 = 38.0;
 const TAB_HEIGHT: f32 = 30.0;
 const STRIP_BUTTON: f32 = 28.0;
 
-/// Draw the window's tab strip: home and open controls, shrinkable and scrollable document tabs with drag
-/// reordering, and platform window controls.
+/// Draw the window's tab strip: on macOS, a single unified bar with Home, tabs, search and actions;
+/// on Windows/Linux, a 2-bar layout with a black top menu+window-controls bar (Bar 1) above the
+/// unified Home + tabs + search + actions bar (Bar 2).
 pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
     let mac = cfg!(target_os = "macos") && app.integrated_titlebar;
-    let unified = mac;
-
     let fullscreen = ui.ctx().input(|i| i.viewport().fullscreen.unwrap_or(false));
+    let controls = app
+        .window_controls
+        .clone()
+        .filter(|_| app.draws_window_frame() && !fullscreen)
+        .unwrap_or_else(|| window_controls::Layout { left: Vec::new(), right: Vec::new() });
+
+    // Bar 1 (Windows/Linux): black title/menu bar with Pagic logo + File..Help menus on the left,
+    // and Minimize/Maximize/Close window controls on the right.
+    if !mac && (app.native_menu.is_none() || !controls.right.is_empty() || !controls.left.is_empty()) {
+        let bar_bg = egui::Color32::from_rgb(16, 16, 18);
+        let bar_fg = egui::Color32::from_gray(235);
+        let bar_frame = egui::Frame::NONE.fill(bar_bg).inner_margin(egui::Margin { left: 10, right: 10, top: 0, bottom: 0 });
+        egui::Panel::top("win_menu_titlebar")
+            .exact_size(34.0)
+            .show_separator_line(false)
+            .frame(bar_frame)
+            .show(ui, |ui| {
+                let full = ui.max_rect();
+                let drag = ui.interact(full, ui.scope_id().with("win_titledrag"), Sense::click_and_drag());
+                if drag.drag_started() {
+                    window_controls::desktop_grab(ui.ctx(), egui::ViewportCommand::StartDrag);
+                }
+                if drag.double_clicked() {
+                    let max = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
+                    ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!max));
+                }
+                ui.horizontal_centered(|ui| {
+                    ui.spacing_mut().item_spacing.x = 6.0;
+                    if !controls.left.is_empty() {
+                        ui.scope(|ui| {
+                            ui.spacing_mut().item_spacing.x = 0.0;
+                            window_controls::buttons_tinted(ui, &controls.left, bar_fg);
+                        });
+                        ui.add_space(4.0);
+                    }
+                    // Pagic app logo on the far left of Bar 1.
+                    let logo_bytes: &[u8] = include_bytes!("../../../assets/app-icon/pagic.svg");
+                    let logo = egui::Image::from_bytes("bytes://app-icon/pagic.svg", logo_bytes)
+                        .fit_to_exact_size(vec2(18.0, 18.0));
+                    ui.add(logo);
+                    ui.add_space(2.0);
+                    if app.native_menu.is_none() {
+                        ui.scope(|ui| {
+                            let v = ui.visuals_mut();
+                            let hover_bg = egui::Color32::from_rgb(46, 50, 58);
+                            let open_bg = egui::Color32::from_rgb(60, 65, 75);
+                            v.override_text_color = Some(bar_fg);
+                            v.widgets.inactive.fg_stroke.color = bar_fg;
+                            v.widgets.hovered.weak_bg_fill = hover_bg;
+                            v.widgets.hovered.bg_fill = hover_bg;
+                            v.widgets.hovered.fg_stroke.color = egui::Color32::WHITE;
+                            v.widgets.active.weak_bg_fill = open_bg;
+                            v.widgets.active.bg_fill = open_bg;
+                            v.widgets.active.fg_stroke.color = egui::Color32::WHITE;
+                            v.widgets.open.weak_bg_fill = open_bg;
+                            v.widgets.open.bg_fill = open_bg;
+                            v.widgets.open.fg_stroke.color = egui::Color32::WHITE;
+                            app.menu_bar_ui(ui);
+                        });
+                    }
+                    if !controls.right.is_empty() {
+                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                            let size = egui::vec2(window_controls::width(&controls.right) - window_controls::SIDE_GAP, window_controls::BUTTON);
+                            ui.allocate_ui_with_layout(size, Layout::left_to_right(Align::Center), |ui| {
+                                ui.spacing_mut().item_spacing.x = 0.0;
+                                window_controls::buttons_tinted(ui, &controls.right, bar_fg);
+                            });
+                        });
+                    }
+                });
+            });
+    }
+
     let left = if mac && !fullscreen {
         MAC_CONTENT_LEFT as i8
     } else if mac {
         10
     } else {
-        8
+        10
     };
 
     let (tab_h, button_size) = (TAB_HEIGHT, STRIP_BUTTON);
@@ -48,49 +120,30 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
         .frame(frame)
         .show(ui, |ui| {
             let full = ui.max_rect();
-            if unified {
-                ui.painter().hline(full.x_range(), full.bottom(), Stroke::new(0.5, t.divider.gamma_multiply(0.6)));
+            ui.painter().hline(full.x_range(), full.bottom(), Stroke::new(0.5, t.divider.gamma_multiply(0.6)));
+            if mac {
+                let drag = ui.interact(full, ui.scope_id().with("titledrag"), Sense::click_and_drag());
+                if drag.drag_started() {
+                    window_controls::desktop_grab(ui.ctx(), egui::ViewportCommand::StartDrag);
+                }
+                if drag.double_clicked() {
+                    let max = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
+                    ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!max));
+                }
             }
-            let drag = ui.interact(full, ui.scope_id().with("titledrag"), Sense::click_and_drag());
-            if drag.drag_started() {
-                window_controls::desktop_grab(ui.ctx(), egui::ViewportCommand::StartDrag);
-            }
-            if drag.double_clicked() {
-                let max = ui.ctx().input(|i| i.viewport().maximized.unwrap_or(false));
-                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Maximized(!max));
-            }
-            // GNOME on Wayland: the strip is the header bar, with the window buttons at its ends.
-            let fullscreen = ui.ctx().input(|i| i.viewport().fullscreen.unwrap_or(false));
-            let controls = app
-                .window_controls
-                .clone()
-                .filter(|_| app.draws_window_frame() && !fullscreen)
-                .unwrap_or_else(|| window_controls::Layout { left: Vec::new(), right: Vec::new() });
             ui.horizontal_centered(|ui| {
                 ui.spacing_mut().item_spacing.x = 4.0;
-                if !mac && !controls.left.is_empty() {
-                    ui.scope(|ui| {
-                        ui.spacing_mut().item_spacing.x = 0.0;
-                        window_controls::buttons(ui, &controls.left);
-                    });
-                    ui.add_space(window_controls::SIDE_GAP - 4.0);
+                // Home button on the far left of Bar 2 (all platforms).
+                let is_home = app.active.is_none() && !app.combine_showing();
+                let tip = tl!("Home");
+                let home_btn = icons::button(ui, "house", button_size, is_home, tip);
+                if home_btn.clicked() {
+                    app.active = None;
+                    app.combine_tab.focused = false;
                 }
-                if unified {
-                    let is_home = app.active.is_none() && !app.combine_showing();
-                    let tip = tl!("Home");
-                    let home_btn = icons::button(ui, "house", button_size, is_home, tip);
-                    if home_btn.clicked() {
-                        app.active = None;
-                        app.combine_tab.focused = false;
-                    }
-                    ui.add_space(4.0);
-                }
-                let right_actions_budget: f32 = if unified {
-                    440.0
-                } else {
-                    0.0
-                };
-                let controls_width = 18.0 + window_controls::width(&controls.right) + right_actions_budget;
+                ui.add_space(4.0);
+                let right_actions_budget: f32 = 440.0;
+                let controls_width = 18.0 + right_actions_budget;
                 let mut tabs_width = (ui.available_width() - controls_width).max(0.0);
                 // Tabs shrink to share the strip (names end in "…") and scroll only once they reach
                 // their narrowest; then arrows either side say so and step through them.
@@ -294,19 +347,7 @@ pub fn tab_strip(app: &mut PagicApp, ui: &mut egui::Ui) {
                     ui.ctx().request_repaint();
                 }
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    if !controls.right.is_empty() {
-                        // Laid out left to right inside the right-to-left run, so they read in
-                        // the desktop's order.
-                        let size = egui::vec2(window_controls::width(&controls.right) - window_controls::SIDE_GAP, window_controls::BUTTON);
-                        ui.allocate_ui_with_layout(size, Layout::left_to_right(Align::Center), |ui| {
-                            ui.spacing_mut().item_spacing.x = 0.0;
-                            window_controls::buttons(ui, &controls.right);
-                        });
-                        ui.add_space(window_controls::SIDE_GAP - 4.0);
-                    }
-                    if unified {
-                        render_right_actions(app, ui, &t, button_size);
-                    }
+                    render_right_actions(app, ui, &t, button_size);
                 });
             });
         });
@@ -325,9 +366,9 @@ const TAB_CHROME: f32 = 64.0;
 /// The minimum width of an inactive tab in icon-only mode (Safari style).
 pub const TAB_ICON_WIDTH: f32 = 38.0;
 /// The narrowest an inactive tab shrinks before collapsing into icon-only mode.
-pub const TAB_MIN_TEXT_WIDTH: f32 = 90.0;
+pub const TAB_MIN_TEXT_WIDTH: f32 = 56.0;
 /// The minimum width of an active tab so its title stays legible.
-pub const TAB_ACTIVE_MIN_WIDTH: f32 = 130.0;
+pub const TAB_ACTIVE_MIN_WIDTH: f32 = 150.0;
 /// The arrows either side of tabs that don't fit.
 const TAB_ARROW: f32 = 24.0;
 
@@ -360,16 +401,21 @@ fn compute_tab_widths(
     let active = active_idx.unwrap_or(0).min(n - 1);
     let active_nat = natural[active].min(240.0);
 
-    // 1. Try giving active tab its natural width, and see if inactive tabs can fit with text (>= TAB_MIN_TEXT_WIDTH)
-    let budget_for_inactive = budget - active_nat - total_gap;
+    // 1. Keep active tab wide (up to 240px, flexing down to TAB_ACTIVE_MIN_WIDTH if needed)
+    //    so inactive tabs shrink gradually with ellipsized titles down to TAB_MIN_TEXT_WIDTH.
     let inactive_count = (n - 1) as f32;
-    let share = budget_for_inactive / inactive_count;
+    let active_max = active_nat.max(TAB_ACTIVE_MIN_WIDTH.min(natural[active]));
+    let active_min = TAB_ACTIVE_MIN_WIDTH.min(natural[active]);
+    let needed_for_inactive_text = inactive_count * TAB_MIN_TEXT_WIDTH;
+    let available_for_active = budget - total_gap - needed_for_inactive_text;
+    let active_w = available_for_active.clamp(active_min, active_max);
+    let share = (budget - active_w - total_gap) / inactive_count;
 
     if share >= TAB_MIN_TEXT_WIDTH {
         let mut widths = Vec::with_capacity(n);
         for (i, &nat) in natural.iter().enumerate() {
             if i == active {
-                widths.push(active_nat.min(nat));
+                widths.push(active_w.min(nat));
             } else {
                 widths.push(share.min(nat));
             }
@@ -481,6 +527,7 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
     let font = theme::regular(13.0);
     let mut label = tab_name(name);
     let is_icon_only = width <= 48.0 && !active;
+    let compact_close = !active && width < 96.0;
 
     // Full strip height so the active tab sits on the mode bar instead of floating in the title bar.
     let height = ui.available_height().max(height);
@@ -527,7 +574,12 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
                 if active { t.accent } else { t.text_muted },
             );
 
-            let room = (width - TAB_CHROME).max(0.0);
+            let chrome = if compact_close {
+                if dirty { 44.0 } else { 36.0 }
+            } else {
+                TAB_CHROME
+            };
+            let room = (width - chrome).max(0.0);
             label = crate::panels::ellipsized_prefix(&label, |s| crate::bidi::layout_ltr(ui, s.to_owned(), font.clone(), t.text).size().x <= room);
 
             let label_color = if active { t.text } else { t.text_muted };
@@ -537,7 +589,8 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
             ui.painter().galley(title_pos, label_galley.clone(), label_color);
 
             if dirty {
-                let dot_pos = egui::pos2(title_pos.x + text_w + 6.0, rect.center().y);
+                let dot_x = (title_pos.x + text_w + 6.0).min(rect.right() - 6.0);
+                let dot_pos = egui::pos2(dot_x, rect.center().y);
                 ui.painter().circle_filled(dot_pos, 3.0, if active { t.accent } else { t.text_muted });
             }
         }
@@ -546,6 +599,18 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
     let x_clicked = if is_icon_only {
         if resp.hovered() {
             let x_rect = Rect::from_center_size(rect.right_center() - vec2(10.0, 0.0), vec2(14.0, 14.0));
+            let x = ui.interact(x_rect, id.with("close"), Sense::click());
+            let x_press = theme::Press::track(ui, &x);
+            x_press.wash(ui, x_rect, 3, false);
+            ui.painter().rect_filled(x_rect, CornerRadius::same(3), t.hover);
+            icons::paint(ui, x_rect.translate(x_press.offset()), "x", 11.0, t.text);
+            theme::hand(x).clicked()
+        } else {
+            false
+        }
+    } else if compact_close {
+        if resp.hovered() {
+            let x_rect = Rect::from_center_size(rect.right_center() - vec2(12.0, 0.0), vec2(16.0, 16.0));
             let x = ui.interact(x_rect, id.with("close"), Sense::click());
             let x_press = theme::Press::track(ui, &x);
             x_press.wash(ui, x_rect, 3, false);
@@ -650,39 +715,8 @@ fn render_right_actions(app: &mut PagicApp, ui: &mut egui::Ui, t: &Tokens, butto
     }
 }
 
-pub fn mode_bar(app: &mut PagicApp, ui: &mut egui::Ui) {
-    // On macOS with integrated titlebar, the unified top bar in tab_strip handles everything.
-    if cfg!(target_os = "macos") && app.integrated_titlebar {
-        return;
-    }
-    let t = Tokens::get(ui.ctx());
-    egui::Panel::top("mode_bar")
-        .exact_size(44.0)
-        .frame(egui::Frame::NONE.fill(t.chrome).inner_margin(egui::Margin::symmetric(10, 0)).stroke(Stroke::new(1.0, t.divider)))
-        .show(ui, |ui| {
-            ui.horizontal_centered(|ui| {
-                ui.spacing_mut().item_spacing.x = 4.0;
-                // Home button on the far left.
-                let is_home = app.active.is_none() && !app.combine_showing();
-                let tip = tl!("Home");
-                let home_btn = icons::button(ui, "house", 28.0, is_home, tip);
-                if home_btn.clicked() {
-                    app.active = None;
-                    app.combine_tab.focused = false;
-                }
-                ui.add_space(4.0);
-
-                // The menus, unless the native macOS menu bar has them.
-                if app.native_menu.is_none() {
-                    app.menu_bar_ui(ui);
-                    ui.add_space(6.0);
-                }
-
-                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    render_right_actions(app, ui, &t, 28.0);
-                });
-            });
-        });
+pub fn mode_bar(_app: &mut PagicApp, _ui: &mut egui::Ui) {
+    // Menus, Home, tabs, search and actions are now handled cleanly in Bar 1 + Bar 2 (or 1 bar on macOS).
 }
 
 /// Draw the right tool rail with page navigation, history, zoom, rotation and page-display controls for the

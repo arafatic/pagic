@@ -33,6 +33,7 @@ pub(crate) const CUT: &str = "edit.cut";
 pub(crate) const PASTE: &str = "edit.paste";
 pub(crate) const DELETE: &str = "edit.delete";
 pub(crate) const SELECT_ALL: &str = "edit.select_all";
+const ALL_TOOLS: &str = "tools.all";
 pub(crate) const NO_RECENT: &str = "file.no_recent";
 /// An open document in the Window menu, `{"index": n}` in the tab strip.
 pub(crate) const DOCUMENT: &str = "window.document";
@@ -130,7 +131,21 @@ const FILE: &[&str] = &[
     "print.dialog",
 ];
 const CREATE: &[&str] = &["create.file", "create.multiple", "create.multiple_separate", "create.images", "create.clipboard"];
-const EXPORT: &[&str] = &["export.docx", "export.pptx", "export.rtf", "export.html", "export.text", SEP, "export.image", "export.all_images"];
+const EXPORT: &[&str] = &[
+    "export.docx",
+    "export.xlsx",
+    "export.pptx",
+    "export.rtf",
+    "export.html",
+    "export.xml",
+    "export.csv",
+    "export.text",
+    SEP,
+    "export.image",
+    "export.jpeg",
+    "export.tiff",
+    "export.all_images",
+];
 const PROTECT: &[&str] = &["protect.password", "protect.remove", "protect.unlock", SEP, "protect.properties"];
 const EDIT: &[&str] = &[
     "edit.undo",
@@ -223,7 +238,7 @@ const SIGN: &[&str] = &[
     "sign.panel",
 ];
 const WINDOW: &[&str] = &["view.next_tab", "view.previous_tab"];
-const HELP: &[&str] = &["help.check_updates", SEP, "help.shortcuts", SEP, "help.credits", SEP, "help.about"];
+const HELP: &[&str] = &["help.docs", SEP, "help.check_updates", SEP, "help.shortcuts", SEP, "help.credits", SEP, "help.about"];
 
 /// A registry shortcut as a craft-keymap chord: `command` is ⌘ (Ctrl elsewhere) and `mac_ctrl`
 /// the Control key on macOS. `None` for a key craft-keymap doesn't name.
@@ -350,13 +365,18 @@ impl PagicApp {
         view.extend(list(MODES, &mut used));
         view.push(Node::submenu(tl!("Display theme"), list(THEMES, &mut used)));
         view.push(Node::Separator);
-        view.push(Node::submenu(tl!("Tools"), self.tools_menu(&used)));
         view.extend(list(&["view.palette"], &mut used));
+        let mut tools = vec![
+            Item::new(CommandRef::new(ALL_TOOLS), tl!("All tools")).into(),
+            Node::Separator,
+        ];
+        tools.extend(self.tools_menu(&used));
         let mut bar = MenuBar {
             menus: vec![
                 Menu::new(tl!("File"), craft_menu::tidy(file)).role(MenuRole::File),
                 Menu::new(tl!("Edit"), craft_menu::tidy(edit)).role(MenuRole::Edit),
                 Menu::new(tl!("View"), craft_menu::tidy(view)).role(MenuRole::View),
+                Menu::new(tl!("Tools"), craft_menu::tidy(tools)),
                 Menu::new(tl!("Sign"), craft_menu::tidy(sign)),
                 Menu::new(tl!("Window"), window).role(MenuRole::Window),
                 Menu::new(tl!("Help"), craft_menu::tidy(help)).role(MenuRole::Help),
@@ -479,6 +499,7 @@ impl PagicApp {
                 CUT => organize && enabled_id("page.cut"),
                 PASTE => organize && self.page_clipboard.is_some() && enabled_id("page.paste"),
                 SELECT_ALL | DELETE => has_doc,
+                ALL_TOOLS => true,
                 ACTUAL_SIZE | PAGE_LEVEL | FIT_WIDTH | FIT_HEIGHT | ZOOM_IN | ZOOM_OUT | ROTATE_CW | ROTATE_CCW => has_doc,
                 PANEL => panel(command).is_some(),
                 id => enabled_id(id),
@@ -535,6 +556,7 @@ impl PagicApp {
             PASTE => ctx.send_viewport_cmd(egui::ViewportCommand::RequestPaste),
             SELECT_ALL => self.menu_input.extend(key(egui::Key::A, egui::Modifiers::COMMAND)),
             DELETE => self.menu_input.extend(key(egui::Key::Delete, egui::Modifiers::NONE)),
+            ALL_TOOLS => self.expand_all_tools(),
             PANEL => self.choose_right_panel(panel(command)),
             ACTUAL_SIZE | PAGE_LEVEL | FIT_WIDTH | FIT_HEIGHT | ZOOM_IN | ZOOM_OUT | ROTATE_CW | ROTATE_CCW => {
                 let Some(v) = self.active.and_then(|i| self.views.get_mut(i)) else { return };
@@ -680,7 +702,7 @@ mod tests {
         for it in items {
             let id = it.command.id.as_str();
             assert!(
-                commands::command(id).is_some() || extra(id).is_some() || [PANEL, DOCUMENT].contains(&id) || Builtin::of(&it.command).is_some(),
+                commands::command(id).is_some() || extra(id).is_some() || [PANEL, DOCUMENT, ALL_TOOLS].contains(&id) || Builtin::of(&it.command).is_some(),
                 "{id} runs something"
             );
         }
