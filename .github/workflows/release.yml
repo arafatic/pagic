@@ -23,10 +23,10 @@ jobs:
       version: ${{ steps.plan.outputs.version }}
       store_version: ${{ steps.plan.outputs.store_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Check version and release intent
@@ -73,11 +73,11 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.source }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
@@ -101,7 +101,7 @@ jobs:
             throw 'MSIX source or version does not match the release plan'
           }
           Get-Content dist/msix/SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Pagic-desktop-msix
           path: dist/msix/Pagic-${{ needs.plan.outputs.store_version }}-x64.msix
@@ -124,7 +124,7 @@ jobs:
           & $ISCC "/DMyAppVersion=$env:PAGIC_RELEASE_VERSION" "/DReleasePayload=$Payload" "/O$Output" "/F$Name" packaging/windows/setup.iss
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed' }
           Get-FileHash (Join-Path $Output "$Name.exe") -Algorithm SHA256 | Format-List
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Pagic-desktop-exe
           path: dist/release/Pagic-${{ needs.plan.outputs.version }}-x64-setup.exe
@@ -141,7 +141,7 @@ jobs:
           ./packaging/windows/test-setup.ps1 -Installer "dist/release/Pagic-$env:PAGIC_RELEASE_VERSION-x64-setup.exe" -LogPath dist/release/setup-install.log
       - name: Retain Windows validation reports
         if: '!cancelled()'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Pagic-Windows-validation
           path: |
@@ -162,11 +162,11 @@ jobs:
       PAGIC_VERSION: ${{ needs.plan.outputs.version }}
       MACOS_SIGN_IDENTITY: '-'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.plan.outputs.source }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
@@ -183,7 +183,7 @@ jobs:
           bash packaging/macos/package.sh --arch aarch64
           hdiutil verify "dist/release/pagic-$PAGIC_VERSION-macos-aarch64.dmg"
           shasum -a 256 "dist/release/pagic-$PAGIC_VERSION-macos-aarch64.dmg"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Pagic-desktop-dmg
           path: dist/release/pagic-${{ needs.plan.outputs.version }}-macos-aarch64.dmg
@@ -199,7 +199,7 @@ jobs:
       PAGIC_VERSION: ${{ needs.plan.outputs.version }}
       PAGIC_STORE_VERSION: ${{ needs.plan.outputs.store_version }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: Pagic-desktop-*
           merge-multiple: true
@@ -215,7 +215,7 @@ jobs:
           sha256sum -- "${files[@]}" > SHA256SUMS.txt
           cat SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Pagic-${{ needs.plan.outputs.version }}-desktop-release
           path: release/
@@ -232,7 +232,7 @@ jobs:
       contents: write
     concurrency: pagic-draft-${{ github.ref }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: Pagic-${{ needs.plan.outputs.version }}-desktop-release
           path: release

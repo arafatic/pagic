@@ -26,7 +26,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Record exact source and require approved identity
         run: |
           git rev-parse HEAD
@@ -35,7 +35,7 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $origin -notmatch '^https://github.com/arafatic/pagic(?:\.git)?$') {
             throw 'This workflow is restricted to the Pagic repository.'
           }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
@@ -62,7 +62,7 @@ jobs:
           ./packaging/windows/msix/test-install.ps1 -Package $package[0].FullName -ReportDirectory dist/msix -TestPackageDirectory dist/test-package
       - name: Retain private validation artifacts and reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Pagic-msix-x64-${{ github.sha }}
           path: |
@@ -76,7 +76,7 @@ jobs:
           retention-days: 14
       - name: Retain test-signed MSIX for manual acceptance
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Pagic-1.14.0.0-x64-test-signed
           path: |
